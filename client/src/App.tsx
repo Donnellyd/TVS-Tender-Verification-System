@@ -16,6 +16,8 @@ import Documents from "@/pages/documents";
 import Compliance from "@/pages/compliance";
 import Analytics from "@/pages/analytics";
 import Municipalities from "@/pages/municipalities";
+import Submissions from "@/pages/submissions";
+import TenderRequirements from "@/pages/tender-requirements";
 
 function LoadingScreen() {
   return (
@@ -44,6 +46,8 @@ function AuthenticatedApp() {
             <Route path="/" component={Dashboard} />
             <Route path="/vendors" component={Vendors} />
             <Route path="/tenders" component={Tenders} />
+            <Route path="/tenders/:id/requirements" component={TenderRequirements} />
+            <Route path="/submissions" component={Submissions} />
             <Route path="/documents" component={Documents} />
             <Route path="/compliance" component={Compliance} />
             <Route path="/analytics" component={Analytics} />

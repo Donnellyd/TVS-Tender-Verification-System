@@ -11,6 +11,7 @@ import {
   Shield,
   FolderOpen,
   LogOut,
+  Send,
 } from "lucide-react";
 import {
   Sidebar,
@@ -32,6 +33,7 @@ const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Vendors", url: "/vendors", icon: Users },
   { title: "Tenders", url: "/tenders", icon: FileText },
+  { title: "Submissions", url: "/submissions", icon: Send },
   { title: "Documents", url: "/documents", icon: FolderOpen },
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },

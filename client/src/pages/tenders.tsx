@@ -35,7 +35,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { DataTableSkeleton } from "@/components/DataTableSkeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Search, Filter, X, FileText, Trash2, Calendar } from "lucide-react";
+import { Plus, Search, Filter, X, FileText, Trash2, Calendar, ClipboardList } from "lucide-react";
+import { Link } from "wouter";
 import { format } from "date-fns";
 import type { Tender, InsertTender, Municipality, Vendor } from "@shared/schema";
 
@@ -344,17 +345,29 @@ export default function Tenders() {
                       <StatusBadge status={tender.status} />
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setTenderToDelete(tender);
-                          setDeleteDialogOpen(true);
-                        }}
-                        data-testid={`button-delete-tender-${tender.id}`}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Link href={`/tenders/${tender.id}/requirements`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            data-testid={`button-requirements-${tender.id}`}
+                            title="Manage Requirements"
+                          >
+                            <ClipboardList className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setTenderToDelete(tender);
+                            setDeleteDialogOpen(true);
+                          }}
+                          data-testid={`button-delete-tender-${tender.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

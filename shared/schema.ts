@@ -311,6 +311,253 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 
+// New enums for submission workflow
+export const submissionStatusEnum = z.enum(["draft", "submitted", "auto_checking", "manual_review", "passed", "failed", "awarded", "rejected"]);
+export const requirementTypeEnum = z.enum(["CSD Registration", "Tax Clearance", "BBBEE Certificate", "Company Registration", "COIDA Certificate", "Public Liability Insurance", "Municipal Rates Clearance", "Audited Financials", "Declaration of Interest", "Bid Defaulters Check", "Professional Registration", "Safety Certification", "Other"]);
+export const scoringSystemEnum = z.enum(["80/20", "90/10"]);
+export const letterTypeEnum = z.enum(["award", "rejection", "regret", "disqualification"]);
+
+// Tender Requirements table - AI-extracted from tender PDFs
+export const tenderRequirements = pgTable("tender_requirements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenderId: varchar("tender_id").notNull().references(() => tenders.id),
+  requirementType: text("requirement_type").notNull(),
+  description: text("description").notNull(),
+  isMandatory: boolean("is_mandatory").default(true),
+  maxAgeDays: integer("max_age_days"),
+  minValue: integer("min_value"),
+  validityPeriod: text("validity_period"),
+  sourceDocument: text("source_document"),
+  pageReference: text("page_reference"),
+  aiExtracted: boolean("ai_extracted").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const tenderRequirementsRelations = relations(tenderRequirements, ({ one }) => ({
+  tender: one(tenders, {
+    fields: [tenderRequirements.tenderId],
+    references: [tenders.id],
+  }),
+}));
+
+export const insertTenderRequirementSchema = createInsertSchema(tenderRequirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  requirementType: requirementTypeEnum,
+  description: z.string().min(3, "Description is required"),
+});
+
+export type InsertTenderRequirement = z.infer<typeof insertTenderRequirementSchema>;
+export type TenderRequirement = typeof tenderRequirements.$inferSelect;
+
+// Bid Submissions table - vendor submissions per tender
+export const bidSubmissions = pgTable("bid_submissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenderId: varchar("tender_id").notNull().references(() => tenders.id),
+  vendorId: varchar("vendor_id").notNull().references(() => vendors.id),
+  submissionDate: timestamp("submission_date"),
+  status: text("status").notNull().default("draft"),
+  bidAmount: integer("bid_amount"),
+  technicalScore: integer("technical_score"),
+  bbbeePoints: integer("bbbee_points"),
+  priceScore: integer("price_score"),
+  totalScore: integer("total_score"),
+  scoringSystem: text("scoring_system"),
+  complianceResult: text("compliance_result").default("pending"),
+  complianceNotes: text("compliance_notes"),
+  autoCheckCompletedAt: timestamp("auto_check_completed_at"),
+  manualReviewCompletedAt: timestamp("manual_review_completed_at"),
+  reviewedBy: varchar("reviewed_by"),
+  awardedAt: timestamp("awarded_at"),
+  rejectedAt: timestamp("rejected_at"),
+  rejectionReasons: jsonb("rejection_reasons"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_submission_tender").on(table.tenderId),
+  index("idx_submission_vendor").on(table.vendorId),
+  index("idx_submission_status").on(table.status),
+]);
+
+export const bidSubmissionsRelations = relations(bidSubmissions, ({ one, many }) => ({
+  tender: one(tenders, {
+    fields: [bidSubmissions.tenderId],
+    references: [tenders.id],
+  }),
+  vendor: one(vendors, {
+    fields: [bidSubmissions.vendorId],
+    references: [vendors.id],
+  }),
+  submissionDocuments: many(submissionDocuments),
+  evaluationScores: many(evaluationScores),
+}));
+
+export const insertBidSubmissionSchema = createInsertSchema(bidSubmissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  status: submissionStatusEnum.optional(),
+  complianceResult: complianceResultEnum.optional(),
+  scoringSystem: scoringSystemEnum.optional(),
+});
+
+export type InsertBidSubmission = z.infer<typeof insertBidSubmissionSchema>;
+export type BidSubmission = typeof bidSubmissions.$inferSelect;
+
+// Submission Documents table - documents submitted for a bid
+export const submissionDocuments = pgTable("submission_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  submissionId: varchar("submission_id").notNull().references(() => bidSubmissions.id),
+  requirementId: varchar("requirement_id").references(() => tenderRequirements.id),
+  documentName: text("document_name").notNull(),
+  documentType: text("document_type").notNull(),
+  filePath: text("file_path"),
+  fileSize: integer("file_size"),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  documentDate: timestamp("document_date"),
+  expiryDate: timestamp("expiry_date"),
+  verificationStatus: text("verification_status").default("pending"),
+  verificationNotes: text("verification_notes"),
+  aiVerified: boolean("ai_verified").default(false),
+  aiConfidenceScore: integer("ai_confidence_score"),
+  meetsRequirement: boolean("meets_requirement"),
+  failureReason: text("failure_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const submissionDocumentsRelations = relations(submissionDocuments, ({ one }) => ({
+  submission: one(bidSubmissions, {
+    fields: [submissionDocuments.submissionId],
+    references: [bidSubmissions.id],
+  }),
+  requirement: one(tenderRequirements, {
+    fields: [submissionDocuments.requirementId],
+    references: [tenderRequirements.id],
+  }),
+}));
+
+export const insertSubmissionDocumentSchema = createInsertSchema(submissionDocuments).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  documentName: z.string().min(1, "Document name is required"),
+  documentType: requirementTypeEnum,
+  verificationStatus: verificationStatusEnum.optional(),
+});
+
+export type InsertSubmissionDocument = z.infer<typeof insertSubmissionDocumentSchema>;
+export type SubmissionDocument = typeof submissionDocuments.$inferSelect;
+
+// Evaluation Scores table - manual evaluation by reviewers
+export const evaluationScores = pgTable("evaluation_scores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  submissionId: varchar("submission_id").notNull().references(() => bidSubmissions.id),
+  evaluatorId: varchar("evaluator_id"),
+  criteriaName: text("criteria_name").notNull(),
+  criteriaCategory: text("criteria_category").notNull(),
+  maxScore: integer("max_score").notNull(),
+  score: integer("score").notNull(),
+  weight: integer("weight").default(1),
+  comments: text("comments"),
+  evaluatedAt: timestamp("evaluated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const evaluationScoresRelations = relations(evaluationScores, ({ one }) => ({
+  submission: one(bidSubmissions, {
+    fields: [evaluationScores.submissionId],
+    references: [bidSubmissions.id],
+  }),
+}));
+
+export const insertEvaluationScoreSchema = createInsertSchema(evaluationScores).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  criteriaName: z.string().min(1, "Criteria name is required"),
+  criteriaCategory: z.string().min(1, "Category is required"),
+  maxScore: z.number().min(1, "Max score must be at least 1"),
+  score: z.number().min(0, "Score cannot be negative"),
+});
+
+export type InsertEvaluationScore = z.infer<typeof insertEvaluationScoreSchema>;
+export type EvaluationScore = typeof evaluationScores.$inferSelect;
+
+// Letter Templates table - for auto-generated award/rejection letters
+export const letterTemplates = pgTable("letter_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  letterType: text("letter_type").notNull(),
+  subject: text("subject").notNull(),
+  bodyTemplate: text("body_template").notNull(),
+  municipalityId: varchar("municipality_id").references(() => municipalities.id),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const letterTemplatesRelations = relations(letterTemplates, ({ one }) => ({
+  municipality: one(municipalities, {
+    fields: [letterTemplates.municipalityId],
+    references: [municipalities.id],
+  }),
+}));
+
+export const insertLetterTemplateSchema = createInsertSchema(letterTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Template name is required"),
+  letterType: letterTypeEnum,
+  subject: z.string().min(1, "Subject is required"),
+  bodyTemplate: z.string().min(10, "Body template must be at least 10 characters"),
+});
+
+export type InsertLetterTemplate = z.infer<typeof insertLetterTemplateSchema>;
+export type LetterTemplate = typeof letterTemplates.$inferSelect;
+
+// Generated Letters table - actual letters generated for submissions
+export const generatedLetters = pgTable("generated_letters", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  submissionId: varchar("submission_id").notNull().references(() => bidSubmissions.id),
+  templateId: varchar("template_id").references(() => letterTemplates.id),
+  letterType: text("letter_type").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  recipientEmail: text("recipient_email"),
+  sentAt: timestamp("sent_at"),
+  generatedBy: varchar("generated_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const generatedLettersRelations = relations(generatedLetters, ({ one }) => ({
+  submission: one(bidSubmissions, {
+    fields: [generatedLetters.submissionId],
+    references: [bidSubmissions.id],
+  }),
+  template: one(letterTemplates, {
+    fields: [generatedLetters.templateId],
+    references: [letterTemplates.id],
+  }),
+}));
+
+export const insertGeneratedLetterSchema = createInsertSchema(generatedLetters).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  letterType: letterTypeEnum,
+  subject: z.string().min(1, "Subject is required"),
+  body: z.string().min(10, "Letter body is required"),
+});
+
+export type InsertGeneratedLetter = z.infer<typeof insertGeneratedLetterSchema>;
+export type GeneratedLetter = typeof generatedLetters.$inferSelect;
+
 // Dashboard stats type
 export type DashboardStats = {
   totalVendors: number;
@@ -353,4 +600,38 @@ export type MonthlyTrends = {
   tenders: number;
   vendors: number;
   complianceChecks: number;
+};
+
+// Submission workflow types
+export type SubmissionWithDetails = BidSubmission & {
+  vendor: Vendor;
+  tender: Tender;
+  documents: SubmissionDocument[];
+  evaluationScores: EvaluationScore[];
+};
+
+export type TenderWithRequirements = Tender & {
+  requirements: TenderRequirement[];
+  submissions: BidSubmission[];
+};
+
+export type ComplianceCheckResult = {
+  requirementId: string;
+  requirementType: string;
+  passed: boolean;
+  reason: string;
+  documentId?: string;
+  aiConfidence?: number;
+};
+
+export type SubmissionsByStage = {
+  stage: string;
+  count: number;
+};
+
+export type BBBEEPointsCalculation = {
+  vendorLevel: string;
+  scoringSystem: "80/20" | "90/10";
+  points: number;
+  maxPoints: number;
 };

@@ -9,6 +9,12 @@ import {
   complianceChecks,
   auditLogs,
   notifications,
+  tenderRequirements,
+  bidSubmissions,
+  submissionDocuments,
+  evaluationScores,
+  letterTemplates,
+  generatedLetters,
   type InsertMunicipality,
   type Municipality,
   type InsertVendor,
@@ -31,6 +37,19 @@ import {
   type ComplianceByCategory,
   type VendorsByStatus,
   type MonthlyTrends,
+  type InsertTenderRequirement,
+  type TenderRequirement,
+  type InsertBidSubmission,
+  type BidSubmission,
+  type InsertSubmissionDocument,
+  type SubmissionDocument,
+  type InsertEvaluationScore,
+  type EvaluationScore,
+  type InsertLetterTemplate,
+  type LetterTemplate,
+  type InsertGeneratedLetter,
+  type GeneratedLetter,
+  type SubmissionsByStage,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -90,6 +109,47 @@ export interface IStorage {
   getComplianceByCategory(): Promise<ComplianceByCategory[]>;
   getVendorsByStatus(): Promise<VendorsByStatus[]>;
   getMonthlyTrends(): Promise<MonthlyTrends[]>;
+
+  // Tender Requirements
+  getTenderRequirements(tenderId: string): Promise<TenderRequirement[]>;
+  getTenderRequirement(id: string): Promise<TenderRequirement | undefined>;
+  createTenderRequirement(data: InsertTenderRequirement): Promise<TenderRequirement>;
+  updateTenderRequirement(id: string, data: Partial<InsertTenderRequirement>): Promise<TenderRequirement | undefined>;
+  deleteTenderRequirement(id: string): Promise<boolean>;
+  createBulkTenderRequirements(data: InsertTenderRequirement[]): Promise<TenderRequirement[]>;
+
+  // Bid Submissions
+  getBidSubmissions(tenderId?: string): Promise<BidSubmission[]>;
+  getBidSubmission(id: string): Promise<BidSubmission | undefined>;
+  getBidSubmissionsByVendor(vendorId: string): Promise<BidSubmission[]>;
+  createBidSubmission(data: InsertBidSubmission): Promise<BidSubmission>;
+  updateBidSubmission(id: string, data: Partial<InsertBidSubmission>): Promise<BidSubmission | undefined>;
+  deleteBidSubmission(id: string): Promise<boolean>;
+  getSubmissionsByStage(): Promise<SubmissionsByStage[]>;
+
+  // Submission Documents
+  getSubmissionDocuments(submissionId: string): Promise<SubmissionDocument[]>;
+  getSubmissionDocument(id: string): Promise<SubmissionDocument | undefined>;
+  createSubmissionDocument(data: InsertSubmissionDocument): Promise<SubmissionDocument>;
+  updateSubmissionDocument(id: string, data: Partial<InsertSubmissionDocument>): Promise<SubmissionDocument | undefined>;
+  deleteSubmissionDocument(id: string): Promise<boolean>;
+
+  // Evaluation Scores
+  getEvaluationScores(submissionId: string): Promise<EvaluationScore[]>;
+  createEvaluationScore(data: InsertEvaluationScore): Promise<EvaluationScore>;
+  updateEvaluationScore(id: string, data: Partial<InsertEvaluationScore>): Promise<EvaluationScore | undefined>;
+  deleteEvaluationScore(id: string): Promise<boolean>;
+
+  // Letter Templates
+  getLetterTemplates(municipalityId?: string): Promise<LetterTemplate[]>;
+  getLetterTemplate(id: string): Promise<LetterTemplate | undefined>;
+  createLetterTemplate(data: InsertLetterTemplate): Promise<LetterTemplate>;
+  updateLetterTemplate(id: string, data: Partial<InsertLetterTemplate>): Promise<LetterTemplate | undefined>;
+  deleteLetterTemplate(id: string): Promise<boolean>;
+
+  // Generated Letters
+  getGeneratedLetters(submissionId: string): Promise<GeneratedLetter[]>;
+  createGeneratedLetter(data: InsertGeneratedLetter): Promise<GeneratedLetter>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -455,6 +515,192 @@ export class DatabaseStorage implements IStorage {
     }
 
     return months;
+  }
+
+  // Tender Requirements
+  async getTenderRequirements(tenderId: string): Promise<TenderRequirement[]> {
+    return await db.select().from(tenderRequirements).where(eq(tenderRequirements.tenderId, tenderId)).orderBy(tenderRequirements.createdAt);
+  }
+
+  async getTenderRequirement(id: string): Promise<TenderRequirement | undefined> {
+    const [result] = await db.select().from(tenderRequirements).where(eq(tenderRequirements.id, id));
+    return result;
+  }
+
+  async createTenderRequirement(data: InsertTenderRequirement): Promise<TenderRequirement> {
+    const [result] = await db.insert(tenderRequirements).values(data).returning();
+    return result;
+  }
+
+  async updateTenderRequirement(id: string, data: Partial<InsertTenderRequirement>): Promise<TenderRequirement | undefined> {
+    const [result] = await db
+      .update(tenderRequirements)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tenderRequirements.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteTenderRequirement(id: string): Promise<boolean> {
+    const result = await db.delete(tenderRequirements).where(eq(tenderRequirements.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async createBulkTenderRequirements(data: InsertTenderRequirement[]): Promise<TenderRequirement[]> {
+    if (data.length === 0) return [];
+    return await db.insert(tenderRequirements).values(data).returning();
+  }
+
+  // Bid Submissions
+  async getBidSubmissions(tenderId?: string): Promise<BidSubmission[]> {
+    if (tenderId) {
+      return await db.select().from(bidSubmissions).where(eq(bidSubmissions.tenderId, tenderId)).orderBy(desc(bidSubmissions.createdAt));
+    }
+    return await db.select().from(bidSubmissions).orderBy(desc(bidSubmissions.createdAt));
+  }
+
+  async getBidSubmission(id: string): Promise<BidSubmission | undefined> {
+    const [result] = await db.select().from(bidSubmissions).where(eq(bidSubmissions.id, id));
+    return result;
+  }
+
+  async getBidSubmissionsByVendor(vendorId: string): Promise<BidSubmission[]> {
+    return await db.select().from(bidSubmissions).where(eq(bidSubmissions.vendorId, vendorId)).orderBy(desc(bidSubmissions.createdAt));
+  }
+
+  async createBidSubmission(data: InsertBidSubmission): Promise<BidSubmission> {
+    const [result] = await db.insert(bidSubmissions).values(data).returning();
+    return result;
+  }
+
+  async updateBidSubmission(id: string, data: Partial<InsertBidSubmission>): Promise<BidSubmission | undefined> {
+    const [result] = await db
+      .update(bidSubmissions)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(bidSubmissions.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteBidSubmission(id: string): Promise<boolean> {
+    // Delete related documents and scores first
+    await db.delete(submissionDocuments).where(eq(submissionDocuments.submissionId, id));
+    await db.delete(evaluationScores).where(eq(evaluationScores.submissionId, id));
+    await db.delete(generatedLetters).where(eq(generatedLetters.submissionId, id));
+    const result = await db.delete(bidSubmissions).where(eq(bidSubmissions.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getSubmissionsByStage(): Promise<SubmissionsByStage[]> {
+    const results = await db
+      .select({
+        stage: bidSubmissions.status,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(bidSubmissions)
+      .groupBy(bidSubmissions.status);
+
+    return results.map((r) => ({
+      stage: r.stage.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+      count: r.count,
+    }));
+  }
+
+  // Submission Documents
+  async getSubmissionDocuments(submissionId: string): Promise<SubmissionDocument[]> {
+    return await db.select().from(submissionDocuments).where(eq(submissionDocuments.submissionId, submissionId)).orderBy(submissionDocuments.createdAt);
+  }
+
+  async getSubmissionDocument(id: string): Promise<SubmissionDocument | undefined> {
+    const [result] = await db.select().from(submissionDocuments).where(eq(submissionDocuments.id, id));
+    return result;
+  }
+
+  async createSubmissionDocument(data: InsertSubmissionDocument): Promise<SubmissionDocument> {
+    const [result] = await db.insert(submissionDocuments).values(data).returning();
+    return result;
+  }
+
+  async updateSubmissionDocument(id: string, data: Partial<InsertSubmissionDocument>): Promise<SubmissionDocument | undefined> {
+    const [result] = await db
+      .update(submissionDocuments)
+      .set(data)
+      .where(eq(submissionDocuments.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteSubmissionDocument(id: string): Promise<boolean> {
+    const result = await db.delete(submissionDocuments).where(eq(submissionDocuments.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Evaluation Scores
+  async getEvaluationScores(submissionId: string): Promise<EvaluationScore[]> {
+    return await db.select().from(evaluationScores).where(eq(evaluationScores.submissionId, submissionId)).orderBy(evaluationScores.createdAt);
+  }
+
+  async createEvaluationScore(data: InsertEvaluationScore): Promise<EvaluationScore> {
+    const [result] = await db.insert(evaluationScores).values(data).returning();
+    return result;
+  }
+
+  async updateEvaluationScore(id: string, data: Partial<InsertEvaluationScore>): Promise<EvaluationScore | undefined> {
+    const [result] = await db
+      .update(evaluationScores)
+      .set(data)
+      .where(eq(evaluationScores.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteEvaluationScore(id: string): Promise<boolean> {
+    const result = await db.delete(evaluationScores).where(eq(evaluationScores.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Letter Templates
+  async getLetterTemplates(municipalityId?: string): Promise<LetterTemplate[]> {
+    if (municipalityId) {
+      return await db.select().from(letterTemplates).where(
+        or(eq(letterTemplates.municipalityId, municipalityId), eq(letterTemplates.isDefault, true))
+      ).orderBy(desc(letterTemplates.createdAt));
+    }
+    return await db.select().from(letterTemplates).orderBy(desc(letterTemplates.createdAt));
+  }
+
+  async getLetterTemplate(id: string): Promise<LetterTemplate | undefined> {
+    const [result] = await db.select().from(letterTemplates).where(eq(letterTemplates.id, id));
+    return result;
+  }
+
+  async createLetterTemplate(data: InsertLetterTemplate): Promise<LetterTemplate> {
+    const [result] = await db.insert(letterTemplates).values(data).returning();
+    return result;
+  }
+
+  async updateLetterTemplate(id: string, data: Partial<InsertLetterTemplate>): Promise<LetterTemplate | undefined> {
+    const [result] = await db
+      .update(letterTemplates)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(letterTemplates.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteLetterTemplate(id: string): Promise<boolean> {
+    const result = await db.delete(letterTemplates).where(eq(letterTemplates.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Generated Letters
+  async getGeneratedLetters(submissionId: string): Promise<GeneratedLetter[]> {
+    return await db.select().from(generatedLetters).where(eq(generatedLetters.submissionId, submissionId)).orderBy(desc(generatedLetters.createdAt));
+  }
+
+  async createGeneratedLetter(data: InsertGeneratedLetter): Promise<GeneratedLetter> {
+    const [result] = await db.insert(generatedLetters).values(data).returning();
+    return result;
   }
 }
 
