@@ -1,17 +1,17 @@
 # Tender Vetting and Verification System (TVS)
 
 ## Overview
-A comprehensive procurement management system for South African municipalities. The system handles vendor management, tender tracking, compliance checks, document verification, and analytics dashboards with full CRUD operations.
+A comprehensive procurement management system for South African municipalities. The system handles vendor management, tender tracking, AI-powered compliance checking, document verification, bid submission workflow, and analytics dashboards with full CRUD operations.
 
 ## Current State
-- **Status**: MVP Complete
+- **Status**: MVP Complete with AI-Powered Tender Workflow
 - **Last Updated**: January 2026
 
 ## Project Architecture
 
 ### Frontend (React + TypeScript)
 - **Entry**: `client/src/App.tsx`
-- **Pages**: Landing, Dashboard, Vendors, Tenders, Documents, Compliance, Analytics, Municipalities
+- **Pages**: Landing, Dashboard, Vendors, Tenders, Documents, Compliance, Analytics, Municipalities, Submissions, TenderRequirements
 - **Components**: AppSidebar, PageHeader, StatsCard, StatusBadge, EmptyState, DataTableSkeleton, ThemeToggle
 - **Styling**: Tailwind CSS with professional blue/teal government color scheme, dark mode support
 - **State Management**: TanStack Query for server state
@@ -19,19 +19,33 @@ A comprehensive procurement management system for South African municipalities. 
 
 ### Backend (Express + TypeScript)
 - **Entry**: `server/index.ts`
-- **Routes**: `server/routes.ts` - Full CRUD for all entities + analytics endpoints
+- **Routes**: `server/routes.ts` - Full CRUD for all entities + AI endpoints + analytics
 - **Storage**: `server/storage.ts` - DatabaseStorage class with PostgreSQL
 - **Auth**: Replit Auth integration with session management
+- **AI Integration**: OpenAI gpt-4o for PDF requirement extraction and letter generation
+- **PDF Processing**: pdf-parse for extracting text from uploaded tender documents
 
 ### Database (PostgreSQL)
 - **Schema**: `shared/schema.ts`
-- **Tables**: municipalities, vendors, tenders, documents, compliance_rules, compliance_checks, audit_logs, notifications, sessions, users
+- **Core Tables**: municipalities, vendors, tenders, documents, compliance_rules, compliance_checks, audit_logs, notifications, sessions, users
+- **Submission Tables**: tender_requirements, bid_submissions, submission_documents, evaluation_scores, letter_templates, generated_letters
+
+### AI-Powered Features
+- **PDF Requirement Extraction**: Upload tender PDF → AI extracts compliance requirements automatically
+- **Automated Compliance Checking**: Verify vendor documents against tender requirements
+- **Letter Generation**: AI-powered or template-based award/rejection letter generation
+- **B-BBEE Points Calculator**: Support for 80/20 (under R50M) and 90/10 (over R50M) preferential scoring systems
 
 ### SA-Specific Features
-- CSD ID verification fields
-- VAT status checking
-- BBBEE certificate tracking (Levels 1-8 + Non-Compliant)
-- Tax clearance validation with expiry dates
+- CSD ID verification (max 10 days old requirement)
+- Tax Clearance PIN verification with SARS
+- BBBEE certificate tracking (Levels 1-8 + Non-Compliant) with preferential points
+- COIDA Letter of Good Standing
+- Municipal Rates Clearance (max 90 days old)
+- Public Liability Insurance (minimum R5M cover)
+- Audited Financials (3 years)
+- Declaration of Interest forms
+- Bid Defaulters Register check
 - Debarment status tracking
 - PFMA/MFMA compliance alignment
 
@@ -68,6 +82,10 @@ npm run db:push  # Push schema changes
 ```
 
 ## Recent Changes
-- Added global 401 handling for queries and mutations
-- Enhanced schema validation with SA-specific enums
-- Implemented stricter validation on insert schemas with min length, email, and enum constraints
+- Added AI-powered PDF parsing for automatic tender requirement extraction
+- Implemented bid submission tracking with workflow stages (draft → submitted → auto_checking → manual_review → passed/failed → awarded)
+- Created automated compliance checking engine with document verification
+- Added letter template system with AI-powered generation for award/rejection letters
+- Implemented B-BBEE preferential points calculator (80/20 and 90/10 systems)
+- Added 6 new database tables for submission workflow
+- Created seed script with realistic SA municipal tender data
