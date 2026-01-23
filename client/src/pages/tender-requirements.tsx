@@ -127,11 +127,12 @@ export default function TenderRequirements() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/tenders", tenderId, "requirements"] });
       toast({ 
-        title: "Success", 
-        description: `Extracted ${data.requirements?.length || 0} requirements from tender document` 
+        title: "Requirements Saved!", 
+        description: `Successfully extracted and saved ${data.requirements?.length || 0} requirements to the checklist` 
       });
       setExtractDialogOpen(false);
       setPdfContent("");
+      setSelectedFile(null);
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to extract requirements", variant: "destructive" });
@@ -547,7 +548,7 @@ export default function TenderRequirements() {
               AI-Powered Requirement Extraction
             </DialogTitle>
             <DialogDescription>
-              Upload a tender PDF document or paste the content below. The AI will automatically extract compliance requirements.
+              Upload a tender PDF document or paste the content below. The AI will automatically extract compliance requirements and save them to your checklist.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4 overflow-y-auto flex-1">
@@ -658,12 +659,12 @@ export default function TenderRequirements() {
               ) : extractMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Extracting Requirements...
+                  Extracting & Saving...
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  Extract Requirements
+                  Extract & Save Requirements
                 </>
               )}
             </Button>
