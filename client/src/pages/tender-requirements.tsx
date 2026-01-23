@@ -89,11 +89,11 @@ export default function TenderRequirements() {
       apiRequest("POST", `/api/tenders/${tenderId}/requirements`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tenders", tenderId, "requirements"] });
-      toast({ title: "Success", description: "Requirement added successfully" });
+      toast({ title: "Requirement Saved!", description: "New requirement has been added to the checklist" });
       handleCloseDialog();
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to add requirement", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to save requirement", variant: "destructive" });
     },
   });
 
@@ -102,11 +102,11 @@ export default function TenderRequirements() {
       apiRequest("PUT", `/api/tender-requirements/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tenders", tenderId, "requirements"] });
-      toast({ title: "Success", description: "Requirement updated successfully" });
+      toast({ title: "Requirement Updated!", description: "Changes have been saved to the checklist" });
       handleCloseDialog();
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to update requirement", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to save changes", variant: "destructive" });
     },
   });
 
@@ -528,7 +528,7 @@ export default function TenderRequirements() {
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-submit"
             >
-              {createMutation.isPending || updateMutation.isPending ? "Saving..." : editingRequirement ? "Update" : "Add"} Requirement
+              {createMutation.isPending || updateMutation.isPending ? "Saving..." : editingRequirement ? "Save Changes" : "Save Requirement"}
             </Button>
           </DialogFooter>
         </DialogContent>
