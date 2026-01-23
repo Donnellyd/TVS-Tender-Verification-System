@@ -75,9 +75,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         details: { name: municipality.name },
       });
       res.status(201).json(municipality);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
+      }
+      // PostgreSQL unique constraint violation: code 23505
+      if (error.code === "23505" || error.constraint?.includes("code") || 
+          (error.message && (error.message.includes("unique") || error.message.includes("duplicate")))) {
+        return res.status(400).json({ error: "A municipality with this code already exists" });
       }
       res.status(500).json({ error: "Failed to create municipality" });
     }
@@ -98,9 +103,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         details: { name: municipality.name },
       });
       res.json(municipality);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
+      }
+      // PostgreSQL unique constraint violation: code 23505
+      if (error.code === "23505" || error.constraint?.includes("code") || 
+          (error.message && (error.message.includes("unique") || error.message.includes("duplicate")))) {
+        return res.status(400).json({ error: "A municipality with this code already exists" });
       }
       res.status(500).json({ error: "Failed to update municipality" });
     }
@@ -229,9 +239,28 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  const parseDate = (value: unknown): Date | undefined => {
+    if (!value) return undefined;
+    if (value instanceof Date) return isNaN(value.getTime()) ? undefined : value;
+    if (typeof value === "string") {
+      const date = new Date(value);
+      return isNaN(date.getTime()) ? undefined : date;
+    }
+    return undefined;
+  };
+
   app.post("/api/tenders", async (req, res) => {
     try {
-      const data = insertTenderSchema.parse(req.body);
+      const body = { ...req.body };
+      body.closingDate = parseDate(body.closingDate);
+      body.openingDate = parseDate(body.openingDate);
+      body.awardDate = parseDate(body.awardDate);
+      
+      if (!body.closingDate) {
+        return res.status(400).json({ error: "A valid closing date is required" });
+      }
+      
+      const data = insertTenderSchema.parse(body);
       const tender = await storage.createTender(data);
       await storage.createAuditLog({
         userId: (req as any).user?.id,
@@ -251,7 +280,30 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.put("/api/tenders/:id", async (req, res) => {
     try {
-      const data = insertTenderSchema.partial().parse(req.body);
+      const body = { ...req.body };
+      // Validate and parse dates - reject invalid date strings rather than silently clearing
+      if (body.closingDate !== undefined) {
+        const parsed = parseDate(body.closingDate);
+        if (body.closingDate && !parsed) {
+          return res.status(400).json({ error: "Invalid closing date format" });
+        }
+        body.closingDate = parsed;
+      }
+      if (body.openingDate !== undefined) {
+        const parsed = parseDate(body.openingDate);
+        if (body.openingDate && !parsed) {
+          return res.status(400).json({ error: "Invalid opening date format" });
+        }
+        body.openingDate = parsed;
+      }
+      if (body.awardDate !== undefined) {
+        const parsed = parseDate(body.awardDate);
+        if (body.awardDate && !parsed) {
+          return res.status(400).json({ error: "Invalid award date format" });
+        }
+        body.awardDate = parsed;
+      }
+      const data = insertTenderSchema.partial().parse(body);
       const tender = await storage.updateTender(req.params.id, data);
       if (!tender) {
         return res.status(404).json({ error: "Tender not found" });

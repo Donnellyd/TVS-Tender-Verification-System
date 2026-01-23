@@ -4,6 +4,22 @@ import { isUnauthorizedError } from "./auth-utils";
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
+    // Try to parse as JSON to get a cleaner error message
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json") && text) {
+      try {
+        const json = JSON.parse(text);
+        if (json.error) {
+          const errorMsg = typeof json.error === "string" ? json.error : JSON.stringify(json.error);
+          throw new Error(errorMsg);
+        }
+      } catch (e) {
+        // If JSON parsing fails or no error field, continue to fallback
+        if (e instanceof Error && e.name !== "SyntaxError") {
+          throw e;
+        }
+      }
+    }
     throw new Error(`${res.status}: ${text}`);
   }
 }

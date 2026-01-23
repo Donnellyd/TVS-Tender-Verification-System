@@ -82,8 +82,9 @@ export default function Municipalities() {
       toast({ title: "Success", description: "Municipality created successfully" });
       handleCloseDialog();
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to create municipality", variant: "destructive" });
+    onError: (error: Error) => {
+      const message = error.message || "Failed to create municipality";
+      toast({ title: "Error", description: message, variant: "destructive" });
     },
   });
 
@@ -95,8 +96,9 @@ export default function Municipalities() {
       toast({ title: "Success", description: "Municipality updated successfully" });
       handleCloseDialog();
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to update municipality", variant: "destructive" });
+    onError: (error: Error) => {
+      const message = error.message || "Failed to update municipality";
+      toast({ title: "Error", description: message, variant: "destructive" });
     },
   });
 

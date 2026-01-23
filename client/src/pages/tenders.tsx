@@ -37,8 +37,15 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, Search, Filter, X, FileText, Trash2, Calendar, ClipboardList } from "lucide-react";
 import { Link } from "wouter";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import type { Tender, InsertTender, Municipality, Vendor } from "@shared/schema";
+
+const formatDateForInput = (date: Date | string | null | undefined): string => {
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (!isValid(d)) return "";
+  return format(d, "yyyy-MM-dd");
+};
 
 const tenderTypes = ["RFQ", "RFP", "RFT", "EOI"];
 const tenderStatuses = ["open", "closed", "under_review", "awarded", "cancelled"];
@@ -89,8 +96,9 @@ export default function Tenders() {
       toast({ title: "Success", description: "Tender created successfully" });
       handleCloseDialog();
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to create tender", variant: "destructive" });
+    onError: (error: Error) => {
+      const message = error.message || "Failed to create tender";
+      toast({ title: "Error", description: message, variant: "destructive" });
     },
   });
 
@@ -102,8 +110,9 @@ export default function Tenders() {
       toast({ title: "Success", description: "Tender updated successfully" });
       handleCloseDialog();
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to update tender", variant: "destructive" });
+    onError: (error: Error) => {
+      const message = error.message || "Failed to update tender";
+      toast({ title: "Error", description: message, variant: "destructive" });
     },
   });
 
@@ -499,8 +508,8 @@ export default function Tenders() {
                   <Input
                     id="closingDate"
                     type="date"
-                    value={formData.closingDate ? format(new Date(formData.closingDate), "yyyy-MM-dd") : ""}
-                    onChange={(e) => setFormData({ ...formData, closingDate: new Date(e.target.value) })}
+                    value={formatDateForInput(formData.closingDate)}
+                    onChange={(e) => setFormData({ ...formData, closingDate: e.target.value ? new Date(e.target.value) : undefined })}
                     data-testid="input-closing-date"
                   />
                 </div>
