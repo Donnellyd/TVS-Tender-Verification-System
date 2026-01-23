@@ -900,6 +900,127 @@ Return a JSON array of requirements with this structure:
     }
   });
 
+  // Upload document for a specific requirement - uses Object Storage
+  app.post("/api/submissions/:submissionId/requirements/:requirementId/upload", async (req, res) => {
+    try {
+      const { submissionId, requirementId } = req.params;
+      
+      // Verify submission exists
+      const submission = await storage.getBidSubmission(submissionId);
+      if (!submission) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+      
+      // Verify requirement exists
+      const requirements = await storage.getTenderRequirements(submission.tenderId);
+      const requirement = requirements.find(r => r.id === requirementId);
+      if (!requirement) {
+        return res.status(404).json({ error: "Requirement not found for this tender" });
+      }
+
+      // Import object storage service dynamically
+      const { ObjectStorageService } = await import("./replit_integrations/object_storage/objectStorage");
+      const objectStorageService = new ObjectStorageService();
+      
+      // Generate presigned URL for upload
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+
+      res.json({
+        uploadURL,
+        objectPath,
+        submissionId,
+        requirementId,
+        requirementType: requirement.requirementType,
+      });
+    } catch (error) {
+      console.error("Error generating upload URL:", error);
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  });
+
+  // Confirm document upload and save metadata
+  app.post("/api/submissions/:submissionId/requirements/:requirementId/confirm-upload", async (req, res) => {
+    try {
+      const { submissionId, requirementId } = req.params;
+      const { objectPath, documentName, documentDate, expiryDate } = req.body;
+      
+      // Validate required field
+      if (!objectPath) {
+        return res.status(400).json({ error: "objectPath is required" });
+      }
+      
+      // Verify submission exists
+      const submission = await storage.getBidSubmission(submissionId);
+      if (!submission) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+      
+      // Verify requirement exists
+      const requirements = await storage.getTenderRequirements(submission.tenderId);
+      const requirement = requirements.find(r => r.id === requirementId);
+      if (!requirement) {
+        return res.status(404).json({ error: "Requirement not found" });
+      }
+
+      // Parse and validate dates if provided
+      let parsedDocumentDate: Date | undefined;
+      let parsedExpiryDate: Date | undefined;
+      
+      if (documentDate) {
+        parsedDocumentDate = new Date(documentDate);
+        if (isNaN(parsedDocumentDate.getTime())) {
+          return res.status(400).json({ error: "Invalid documentDate format" });
+        }
+      }
+      
+      if (expiryDate) {
+        parsedExpiryDate = new Date(expiryDate);
+        if (isNaN(parsedExpiryDate.getTime())) {
+          return res.status(400).json({ error: "Invalid expiryDate format" });
+        }
+      }
+
+      // Check if there's already a document for this requirement, and delete it
+      const existingDocs = await storage.getSubmissionDocuments(submissionId);
+      const existingDoc = existingDocs.find(d => d.requirementId === requirementId);
+      if (existingDoc) {
+        await storage.deleteSubmissionDocument(existingDoc.id);
+      }
+
+      // Create submission document record using the requirement's type (which matches requirementTypeEnum)
+      const document = await storage.createSubmissionDocument({
+        submissionId,
+        requirementId,
+        documentName: documentName || `${requirement.requirementType} Document`,
+        documentType: requirement.requirementType as any,
+        filePath: objectPath,
+        uploadedAt: new Date(),
+        documentDate: parsedDocumentDate || new Date(),
+        expiryDate: parsedExpiryDate,
+        verificationStatus: "pending",
+      });
+
+      await storage.createAuditLog({
+        userId: (req as any).user?.id,
+        action: "upload_submission_document",
+        entityType: "submission_document",
+        entityId: document.id,
+        details: { 
+          submissionId,
+          requirementId,
+          requirementType: requirement.requirementType,
+          documentName 
+        },
+      });
+
+      res.status(201).json(document);
+    } catch (error) {
+      console.error("Error confirming upload:", error);
+      res.status(500).json({ error: "Failed to confirm document upload" });
+    }
+  });
+
   app.put("/api/submission-documents/:id", async (req, res) => {
     try {
       const data = insertSubmissionDocumentSchema.partial().parse(req.body);
@@ -1161,7 +1282,9 @@ Return a JSON array of requirements with this structure:
 
       // Check each requirement against submitted documents
       for (const req of requirements) {
-        const matchingDoc = documents.find(d => d.documentType === req.requirementType);
+        // First try to match by requirementId (preferred), then fall back to documentType
+        const matchingDoc = documents.find(d => d.requirementId === req.id) || 
+                           documents.find(d => d.documentType === req.requirementType);
         
         if (!matchingDoc) {
           results.push({
@@ -1231,11 +1354,13 @@ Return a JSON array of requirements with this structure:
       const overallPassed = passedMandatory === totalMandatory;
       const failedReasons = results.filter(r => !r.passed).map(r => r.reason);
 
-      // Update submission
+      // Update submission - if passed, move to manual_review; if failed, set to failed
+      // Status progression: draft → submitted → auto_checking → manual_review (if passed) or failed
+      // Then manually: manual_review → passed → awarded OR manual_review → failed → rejected
       await storage.updateBidSubmission(req.params.submissionId, {
-        status: overallPassed ? "passed" : "failed",
+        status: overallPassed ? "manual_review" : "failed",
         complianceResult: overallPassed ? "passed" : "failed",
-        complianceNotes: failedReasons.length > 0 ? failedReasons.join("; ") : "All requirements met",
+        complianceNotes: failedReasons.length > 0 ? failedReasons.join("; ") : "All requirements met - ready for manual review",
         autoCheckCompletedAt: new Date(),
         rejectionReasons: overallPassed ? null : failedReasons,
       });

@@ -38,7 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { 
   Plus, Search, FileText, Trash2, CheckCircle, XCircle, AlertCircle, 
-  Clock, Send, Eye, Download, RefreshCw, Mail, FileCheck, Building2
+  Clock, Send, Eye, Download, RefreshCw, Mail, FileCheck, Building2, Upload, Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import type { BidSubmission, Tender, Vendor, TenderRequirement, SubmissionDocument } from "@shared/schema";
@@ -56,6 +56,12 @@ export default function Submissions() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [tenderFilter, setTenderFilter] = useState<string>("");
   const [complianceResults, setComplianceResults] = useState<any>(null);
+  const [uploadingRequirementId, setUploadingRequirementId] = useState<string | null>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadRequirement, setUploadRequirement] = useState<TenderRequirement | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [documentDate, setDocumentDate] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
 
   const [formData, setFormData] = useState({
     tenderId: "",
@@ -156,6 +162,112 @@ export default function Submissions() {
       toast({ title: "Error", description: "Failed to generate letter", variant: "destructive" });
     },
   });
+
+  const submitBidMutation = useMutation({
+    mutationFn: async (submissionId: string) => {
+      // Step 1: Update status to "submitted"
+      await apiRequest("PUT", `/api/submissions/${submissionId}`, { 
+        status: "submitted",
+        submissionDate: new Date().toISOString(),
+      });
+      
+      // Step 2: Update to "auto_checking" and run compliance check
+      await apiRequest("PUT", `/api/submissions/${submissionId}`, { 
+        status: "auto_checking" 
+      });
+      
+      // Step 3: Run compliance check - this will set final status to passed/failed
+      return apiRequest("POST", `/api/submissions/${submissionId}/run-compliance-check`, {});
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/submissions-by-stage"] });
+      setComplianceResults(data);
+      
+      if (data.summary.overallPassed) {
+        toast({ 
+          title: "Bid Submitted - Compliance Passed!", 
+          description: `All ${data.summary.passedCount} requirements met. Ready for manual review.`,
+        });
+      } else {
+        toast({ 
+          title: "Bid Submitted - Compliance Issues Found", 
+          description: `${data.summary.failedCount} of ${data.summary.totalRequirements} requirements failed.`,
+          variant: "destructive"
+        });
+      }
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to submit bid", variant: "destructive" });
+    },
+  });
+
+  const handleUploadDocument = async (requirementId: string, file: File) => {
+    if (!selectedSubmission) return;
+    
+    setUploadingRequirementId(requirementId);
+    
+    try {
+      // Step 1: Request presigned URL
+      const urlResponse = await apiRequest(
+        "POST", 
+        `/api/submissions/${selectedSubmission.id}/requirements/${requirementId}/upload`,
+        {}
+      ) as unknown as { uploadURL: string; objectPath: string };
+      
+      const { uploadURL, objectPath } = urlResponse;
+      
+      // Step 2: Upload file directly to the presigned URL
+      const uploadRes = await fetch(uploadURL, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type || "application/pdf" },
+      });
+      
+      if (!uploadRes.ok) {
+        throw new Error("Failed to upload file");
+      }
+      
+      // Step 3: Confirm upload and save metadata
+      await apiRequest(
+        "POST",
+        `/api/submissions/${selectedSubmission.id}/requirements/${requirementId}/confirm-upload`,
+        {
+          objectPath,
+          documentName: file.name,
+          documentDate: documentDate || new Date().toISOString(),
+          expiryDate: expiryDate || undefined,
+        }
+      );
+      
+      // Refresh documents list
+      queryClient.invalidateQueries({ queryKey: ["/api/submissions", selectedSubmission.id, "documents"] });
+      
+      toast({ title: "Document Uploaded!", description: `${file.name} has been uploaded successfully` });
+      handleCloseUploadDialog();
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({ title: "Upload Failed", description: "Could not upload the document. Please try again.", variant: "destructive" });
+    } finally {
+      setUploadingRequirementId(null);
+    }
+  };
+
+  const handleOpenUploadDialog = (requirement: TenderRequirement) => {
+    setUploadRequirement(requirement);
+    setUploadFile(null);
+    setDocumentDate("");
+    setExpiryDate("");
+    setUploadDialogOpen(true);
+  };
+
+  const handleCloseUploadDialog = () => {
+    setUploadDialogOpen(false);
+    setUploadRequirement(null);
+    setUploadFile(null);
+    setDocumentDate("");
+    setExpiryDate("");
+  };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
@@ -558,10 +670,17 @@ export default function Submissions() {
                   </Badge>
                 </div>
 
+                {selectedSubmission.status === "draft" && (
+                  <p className="text-sm text-muted-foreground">
+                    Upload documents for each requirement below. Once all required documents are uploaded, you can submit your bid.
+                  </p>
+                )}
+
                 {requirements?.length ? (
                   <div className="space-y-2">
                     {requirements.map((req) => {
                       const doc = submissionDocuments?.find(d => d.requirementId === req.id);
+                      const isUploading = uploadingRequirementId === req.id;
                       return (
                         <div 
                           key={req.id} 
@@ -576,7 +695,12 @@ export default function Submissions() {
                             )}
                             <div>
                               <p className="font-medium">{req.requirementType}</p>
-                              <p className="text-sm text-muted-foreground">{req.description}</p>
+                              <p className="text-sm text-muted-foreground line-clamp-2">{req.description}</p>
+                              {doc && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {doc.documentName} {doc.uploadedAt && `• Uploaded ${format(new Date(doc.uploadedAt), "dd MMM yyyy")}`}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -590,6 +714,22 @@ export default function Submissions() {
                               </Badge>
                             ) : (
                               <Badge variant="secondary">Missing</Badge>
+                            )}
+                            {selectedSubmission.status === "draft" && (
+                              <Button 
+                                size="sm" 
+                                variant={doc ? "outline" : "default"}
+                                onClick={() => handleOpenUploadDialog(req)}
+                                disabled={isUploading}
+                                data-testid={`button-upload-${req.id}`}
+                              >
+                                {isUploading ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Upload className="w-4 h-4 mr-1" />
+                                )}
+                                {doc ? "Replace" : "Upload"}
+                              </Button>
                             )}
                           </div>
                         </div>
@@ -696,6 +836,46 @@ export default function Submissions() {
               <TabsContent value="actions" className="space-y-4">
                 <h3 className="text-lg font-semibold">Workflow Actions</h3>
                 
+                {selectedSubmission.status === "draft" && (
+                  <Card className="border-primary">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Send className="w-5 h-5" />
+                        Submit Bid
+                      </CardTitle>
+                      <CardDescription>
+                        Submit your bid for compliance checking. Ensure all required documents are uploaded.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <FileCheck className="w-4 h-4" />
+                        <span>
+                          {submissionDocuments?.length || 0} / {requirements?.length || 0} documents uploaded
+                        </span>
+                      </div>
+                      <Button 
+                        className="w-full gap-2"
+                        onClick={() => submitBidMutation.mutate(selectedSubmission.id)}
+                        disabled={submitBidMutation.isPending}
+                        data-testid="button-submit-bid"
+                      >
+                        {submitBidMutation.isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Submitting...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            Submit Bid for Review
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <Card>
                     <CardHeader>
@@ -759,6 +939,81 @@ export default function Submissions() {
               </TabsContent>
             </Tabs>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>
+              Upload a document for: {uploadRequirement?.requirementType}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="upload-file">Select File *</Label>
+              <Input
+                id="upload-file"
+                type="file"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                data-testid="input-upload-file"
+              />
+              {uploadFile && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {uploadFile.name} ({(uploadFile.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="document-date">Document Date</Label>
+              <Input
+                id="document-date"
+                type="date"
+                value={documentDate}
+                onChange={(e) => setDocumentDate(e.target.value)}
+                data-testid="input-document-date"
+              />
+              <p className="text-xs text-muted-foreground">
+                Date the document was issued (important for CSD, Municipal Rates)
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="expiry-date">Expiry Date</Label>
+              <Input
+                id="expiry-date"
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+                data-testid="input-expiry-date"
+              />
+              <p className="text-xs text-muted-foreground">
+                When the document expires (important for certificates)
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseUploadDialog}>Cancel</Button>
+            <Button 
+              onClick={() => {
+                if (uploadFile && uploadRequirement) {
+                  handleUploadDocument(uploadRequirement.id, uploadFile);
+                }
+              }}
+              disabled={!uploadFile || uploadingRequirementId !== null}
+              data-testid="button-confirm-upload"
+            >
+              {uploadingRequirementId ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Uploading...
+                </>
+              ) : (
+                "Upload Document"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
