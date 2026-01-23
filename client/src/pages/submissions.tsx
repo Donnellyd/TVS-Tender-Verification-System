@@ -210,37 +210,29 @@ export default function Submissions() {
     setUploadingRequirementId(requirementId);
     
     try {
-      // Step 1: Request presigned URL
-      const urlResponse = await apiRequest(
-        "POST", 
-        `/api/submissions/${selectedSubmission.id}/requirements/${requirementId}/upload`,
-        {}
-      ) as unknown as { uploadURL: string; objectPath: string };
-      
-      const { uploadURL, objectPath } = urlResponse;
-      
-      // Step 2: Upload file directly to the presigned URL
-      const uploadRes = await fetch(uploadURL, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type || "application/pdf" },
-      });
-      
-      if (!uploadRes.ok) {
-        throw new Error("Failed to upload file");
+      // Use FormData to upload directly to server (bypasses CORS issues with presigned URLs)
+      const formData = new FormData();
+      formData.append('file', file);
+      if (documentDate) {
+        formData.append('documentDate', documentDate);
+      }
+      if (expiryDate) {
+        formData.append('expiryDate', expiryDate);
       }
       
-      // Step 3: Confirm upload and save metadata
-      await apiRequest(
-        "POST",
-        `/api/submissions/${selectedSubmission.id}/requirements/${requirementId}/confirm-upload`,
+      const response = await fetch(
+        `/api/submissions/${selectedSubmission.id}/requirements/${requirementId}/upload-direct`,
         {
-          objectPath,
-          documentName: file.name,
-          documentDate: documentDate || new Date().toISOString(),
-          expiryDate: expiryDate || undefined,
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
         }
       );
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+      }
       
       // Refresh documents list
       queryClient.invalidateQueries({ queryKey: ["/api/submissions", selectedSubmission.id, "documents"] });
@@ -249,7 +241,8 @@ export default function Submissions() {
       handleCloseUploadDialog();
     } catch (error) {
       console.error("Upload error:", error);
-      toast({ title: "Upload Failed", description: "Could not upload the document. Please try again.", variant: "destructive" });
+      const errorMessage = error instanceof Error ? error.message : "Could not upload the document";
+      toast({ title: "Upload Failed", description: errorMessage + ". Please try again.", variant: "destructive" });
     } finally {
       setUploadingRequirementId(null);
     }
@@ -646,44 +639,53 @@ export default function Submissions() {
                         )}
                       </CardDescription>
                       {editingBidAmount ? (
-                        <div className="flex gap-2 mt-1">
-                          <Input
-                            type="number"
-                            value={bidAmountValue}
-                            onChange={(e) => setBidAmountValue(e.target.value)}
-                            placeholder="Enter amount"
-                            className="h-8"
-                            data-testid="input-edit-bid-amount"
-                          />
-                          <Button
-                            size="sm"
-                            className="h-8"
-                            onClick={() => {
-                              const newBidAmount = bidAmountValue ? parseInt(bidAmountValue) : null;
-                              updateMutation.mutate({
-                                id: selectedSubmission.id,
-                                data: { bidAmount: newBidAmount }
-                              }, {
-                                onSuccess: () => {
-                                  setEditingBidAmount(false);
-                                  setSelectedSubmission({ ...selectedSubmission, bidAmount: newBidAmount });
-                                  toast({ title: "Bid amount updated" });
-                                }
-                              });
-                            }}
-                            disabled={updateMutation.isPending}
-                            data-testid="button-save-bid-amount"
-                          >
-                            Save
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8"
-                            onClick={() => setEditingBidAmount(false)}
-                          >
-                            Cancel
-                          </Button>
+                        <div className="space-y-2 mt-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">R</span>
+                            <Input
+                              type="number"
+                              value={bidAmountValue}
+                              onChange={(e) => setBidAmountValue(e.target.value)}
+                              placeholder="e.g. 5000000"
+                              className="flex-1 text-right"
+                              data-testid="input-edit-bid-amount"
+                            />
+                          </div>
+                          {bidAmountValue && !isNaN(parseInt(bidAmountValue)) && (
+                            <p className="text-sm text-muted-foreground">
+                              Preview: R {parseInt(bidAmountValue).toLocaleString()}
+                            </p>
+                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                const parsed = parseInt(bidAmountValue);
+                                const newBidAmount = !isNaN(parsed) ? parsed : null;
+                                updateMutation.mutate({
+                                  id: selectedSubmission.id,
+                                  data: { bidAmount: newBidAmount }
+                                }, {
+                                  onSuccess: () => {
+                                    setEditingBidAmount(false);
+                                    setSelectedSubmission({ ...selectedSubmission, bidAmount: newBidAmount });
+                                    toast({ title: "Bid amount updated" });
+                                  }
+                                });
+                              }}
+                              disabled={updateMutation.isPending}
+                              data-testid="button-save-bid-amount"
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingBidAmount(false)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
                       ) : (
                         <CardTitle className="text-lg">

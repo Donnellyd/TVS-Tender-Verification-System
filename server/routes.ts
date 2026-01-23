@@ -23,7 +23,8 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const { PDFParse } = require("pdf-parse");
 
-const upload = multer({ 
+// Multer config for PDF parsing (tender documents)
+const pdfUpload = multer({ 
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
@@ -33,6 +34,12 @@ const upload = multer({
       cb(new Error('Only PDF files are allowed'));
     }
   }
+});
+
+// Multer config for document uploads (any file type)
+const documentUpload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit for documents
 });
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<void> {
@@ -641,7 +648,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // PDF file upload and extraction endpoint
-  app.post("/api/tenders/:tenderId/upload-pdf", upload.single('file'), async (req, res) => {
+  app.post("/api/tenders/:tenderId/upload-pdf", pdfUpload.single('file'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "PDF file is required" });
@@ -936,6 +943,124 @@ Return a JSON array of requirements with this structure:
     } catch (error) {
       console.error("Error generating upload URL:", error);
       res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  });
+
+  // Direct server-side document upload (bypasses CORS issues with presigned URLs)
+  app.post("/api/submissions/:submissionId/requirements/:requirementId/upload-direct", 
+    documentUpload.single('file'), 
+    async (req, res) => {
+    try {
+      const { submissionId, requirementId } = req.params;
+      // Handle FormData fields which may come as strings or arrays
+      const documentDate = Array.isArray(req.body.documentDate) ? req.body.documentDate[0] : req.body.documentDate;
+      const expiryDate = Array.isArray(req.body.expiryDate) ? req.body.expiryDate[0] : req.body.expiryDate;
+      
+      if (!req.file) {
+        return res.status(400).json({ error: "File is required" });
+      }
+      
+      // Verify submission exists
+      const submission = await storage.getBidSubmission(submissionId);
+      if (!submission) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+      
+      // Verify requirement exists
+      const requirements = await storage.getTenderRequirements(submission.tenderId);
+      const requirement = requirements.find(r => r.id === requirementId);
+      if (!requirement) {
+        return res.status(404).json({ error: "Requirement not found for this tender" });
+      }
+
+      // Import object storage service
+      const { ObjectStorageService, objectStorageClient } = await import("./replit_integrations/object_storage/objectStorage");
+      const objectStorageService = new ObjectStorageService();
+      
+      // Get private object directory and create unique path
+      const privateDir = objectStorageService.getPrivateObjectDir();
+      const { randomUUID } = await import("crypto");
+      const objectId = randomUUID();
+      const fullPath = `${privateDir}/uploads/${objectId}`;
+      
+      // Parse the path to get bucket and object name
+      const parts = fullPath.startsWith('/') ? fullPath.slice(1).split('/') : fullPath.split('/');
+      const bucketName = parts[0];
+      const objectName = parts.slice(1).join('/');
+      
+      // Upload file directly to Object Storage
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      await file.save(req.file.buffer, {
+        contentType: req.file.mimetype,
+        metadata: {
+          originalName: req.file.originalname,
+          uploadedAt: new Date().toISOString(),
+        },
+      });
+      
+      const objectPath = `/objects/uploads/${objectId}`;
+      
+      // Check if there's already a document for this requirement, and delete it
+      const existingDocs = await storage.getSubmissionDocuments(submissionId);
+      const existingDoc = existingDocs.find(d => d.requirementId === requirementId);
+      if (existingDoc) {
+        await storage.deleteSubmissionDocument(existingDoc.id);
+      }
+
+      // Parse and validate dates if provided
+      let parsedDocumentDate: Date | undefined;
+      let parsedExpiryDate: Date | undefined;
+      
+      if (documentDate) {
+        parsedDocumentDate = new Date(documentDate);
+        if (isNaN(parsedDocumentDate.getTime())) {
+          parsedDocumentDate = undefined;
+        }
+      }
+      
+      if (expiryDate) {
+        parsedExpiryDate = new Date(expiryDate);
+        if (isNaN(parsedExpiryDate.getTime())) {
+          parsedExpiryDate = undefined;
+        }
+      }
+
+      // Create submission document record
+      const document = await storage.createSubmissionDocument({
+        submissionId,
+        requirementId,
+        documentName: req.file.originalname,
+        documentType: requirement.requirementType as any,
+        filePath: objectPath,
+        uploadedAt: new Date(),
+        documentDate: parsedDocumentDate || new Date(),
+        expiryDate: parsedExpiryDate,
+        verificationStatus: "pending",
+      });
+
+      await storage.createAuditLog({
+        userId: (req as any).user?.id,
+        action: "upload_submission_document",
+        entityType: "submission_document",
+        entityId: document.id,
+        details: { 
+          submissionId, 
+          requirementId, 
+          documentName: req.file.originalname,
+          fileSize: req.file.size,
+        },
+      });
+
+      res.status(201).json({ 
+        success: true, 
+        document,
+        message: "Document uploaded successfully" 
+      });
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      res.status(500).json({ error: "Failed to upload document" });
     }
   });
 
