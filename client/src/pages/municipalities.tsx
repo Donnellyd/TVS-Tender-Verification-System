@@ -127,6 +127,20 @@ export default function Municipalities() {
     });
   };
 
+  const handleAddNew = () => {
+    setEditingMunicipality(null);
+    setFormData({
+      name: "",
+      code: "",
+      province: "",
+      contactEmail: "",
+      contactPhone: "",
+      address: "",
+      status: "active",
+    });
+    setDialogOpen(true);
+  };
+
   const handleEdit = (municipality: Municipality) => {
     setEditingMunicipality(municipality);
     setFormData({
@@ -175,7 +189,7 @@ export default function Municipalities() {
         action={{
           label: "Add Municipality",
           icon: <Plus className="h-4 w-4 mr-2" />,
-          onClick: () => setDialogOpen(true),
+          onClick: handleAddNew,
           testId: "button-add-municipality",
         }}
       />
@@ -237,7 +251,7 @@ export default function Municipalities() {
               title="No municipalities found"
               description={searchTerm || provinceFilter ? "Try adjusting your filters" : "Add your first municipality"}
               actionLabel={!searchTerm && !provinceFilter ? "Add Municipality" : undefined}
-              onAction={() => setDialogOpen(true)}
+              onAction={handleAddNew}
               testId="empty-municipalities"
             />
           ) : (
