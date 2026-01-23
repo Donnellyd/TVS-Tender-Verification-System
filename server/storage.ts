@@ -10,6 +10,7 @@ import {
   auditLogs,
   notifications,
   tenderRequirements,
+  tenderScoringCriteria,
   bidSubmissions,
   submissionDocuments,
   evaluationScores,
@@ -39,6 +40,8 @@ import {
   type MonthlyTrends,
   type InsertTenderRequirement,
   type TenderRequirement,
+  type InsertTenderScoringCriteria,
+  type TenderScoringCriteria,
   type InsertBidSubmission,
   type BidSubmission,
   type InsertSubmissionDocument,
@@ -117,6 +120,15 @@ export interface IStorage {
   updateTenderRequirement(id: string, data: Partial<InsertTenderRequirement>): Promise<TenderRequirement | undefined>;
   deleteTenderRequirement(id: string): Promise<boolean>;
   createBulkTenderRequirements(data: InsertTenderRequirement[]): Promise<TenderRequirement[]>;
+
+  // Tender Scoring Criteria
+  getTenderScoringCriteria(tenderId: string): Promise<TenderScoringCriteria[]>;
+  getTenderScoringCriteriaById(id: string): Promise<TenderScoringCriteria | undefined>;
+  createTenderScoringCriteria(data: InsertTenderScoringCriteria): Promise<TenderScoringCriteria>;
+  updateTenderScoringCriteria(id: string, data: Partial<InsertTenderScoringCriteria>): Promise<TenderScoringCriteria | undefined>;
+  deleteTenderScoringCriteria(id: string): Promise<boolean>;
+  createBulkTenderScoringCriteria(data: InsertTenderScoringCriteria[]): Promise<TenderScoringCriteria[]>;
+  deleteTenderScoringCriteriaByTender(tenderId: string): Promise<boolean>;
 
   // Bid Submissions
   getBidSubmissions(tenderId?: string): Promise<BidSubmission[]>;
@@ -549,6 +561,45 @@ export class DatabaseStorage implements IStorage {
   async createBulkTenderRequirements(data: InsertTenderRequirement[]): Promise<TenderRequirement[]> {
     if (data.length === 0) return [];
     return await db.insert(tenderRequirements).values(data).returning();
+  }
+
+  // Tender Scoring Criteria
+  async getTenderScoringCriteria(tenderId: string): Promise<TenderScoringCriteria[]> {
+    return await db.select().from(tenderScoringCriteria).where(eq(tenderScoringCriteria.tenderId, tenderId)).orderBy(tenderScoringCriteria.sortOrder);
+  }
+
+  async getTenderScoringCriteriaById(id: string): Promise<TenderScoringCriteria | undefined> {
+    const [result] = await db.select().from(tenderScoringCriteria).where(eq(tenderScoringCriteria.id, id));
+    return result;
+  }
+
+  async createTenderScoringCriteria(data: InsertTenderScoringCriteria): Promise<TenderScoringCriteria> {
+    const [result] = await db.insert(tenderScoringCriteria).values(data).returning();
+    return result;
+  }
+
+  async updateTenderScoringCriteria(id: string, data: Partial<InsertTenderScoringCriteria>): Promise<TenderScoringCriteria | undefined> {
+    const [result] = await db
+      .update(tenderScoringCriteria)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tenderScoringCriteria.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteTenderScoringCriteria(id: string): Promise<boolean> {
+    const result = await db.delete(tenderScoringCriteria).where(eq(tenderScoringCriteria.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async createBulkTenderScoringCriteria(data: InsertTenderScoringCriteria[]): Promise<TenderScoringCriteria[]> {
+    if (data.length === 0) return [];
+    return await db.insert(tenderScoringCriteria).values(data).returning();
+  }
+
+  async deleteTenderScoringCriteriaByTender(tenderId: string): Promise<boolean> {
+    const result = await db.delete(tenderScoringCriteria).where(eq(tenderScoringCriteria.tenderId, tenderId));
+    return (result.rowCount ?? 0) >= 0;
   }
 
   // Bid Submissions

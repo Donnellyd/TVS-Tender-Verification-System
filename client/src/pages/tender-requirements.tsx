@@ -139,6 +139,21 @@ export default function TenderRequirements() {
     },
   });
 
+  const extractScoringMutation = useMutation({
+    mutationFn: (content: string) => 
+      apiRequest("POST", `/api/tenders/${tenderId}/extract-scoring-criteria`, { pdfContent: content }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tenders", tenderId, "scoring-criteria"] });
+      toast({ 
+        title: "Scoring Criteria Saved!", 
+        description: `Successfully extracted ${data.scoringCriteria?.length || 0} scoring criteria` 
+      });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to extract scoring criteria", variant: "destructive" });
+    },
+  });
+
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingRequirement(null);
@@ -232,8 +247,11 @@ export default function TenderRequirements() {
         });
       }
 
-      // Now extract requirements using AI
+      // Now extract requirements and scoring criteria using AI
       extractMutation.mutate(textContent);
+      
+      // Also extract scoring criteria in parallel
+      extractScoringMutation.mutate(textContent);
     } catch (error: any) {
       setIsUploading(false);
       toast({ title: "Error", description: error.message || "Failed to process PDF", variant: "destructive" });

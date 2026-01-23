@@ -38,10 +38,10 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { 
   Plus, Search, FileText, Trash2, CheckCircle, XCircle, AlertCircle, 
-  Clock, Send, Eye, Download, RefreshCw, Mail, FileCheck, Building2, Upload, Loader2
+  Clock, Send, Eye, Download, RefreshCw, Mail, FileCheck, Building2, Upload, Loader2, BarChart3, Sparkles
 } from "lucide-react";
 import { format } from "date-fns";
-import type { BidSubmission, Tender, Vendor, TenderRequirement, SubmissionDocument } from "@shared/schema";
+import type { BidSubmission, Tender, Vendor, TenderRequirement, SubmissionDocument, EvaluationScore, TenderScoringCriteria } from "@shared/schema";
 
 const submissionStatuses = ["draft", "submitted", "auto_checking", "manual_review", "passed", "failed", "awarded", "rejected"];
 const requirementTypes = ["CSD Registration", "Tax Clearance", "BBBEE Certificate", "Company Registration", "COIDA Certificate", "Public Liability Insurance", "Municipal Rates Clearance", "Audited Financials", "Declaration of Interest", "Bid Defaulters Check", "Professional Registration", "Safety Certification", "Other"];
@@ -64,6 +64,9 @@ export default function Submissions() {
   const [expiryDate, setExpiryDate] = useState("");
   const [editingBidAmount, setEditingBidAmount] = useState(false);
   const [bidAmountValue, setBidAmountValue] = useState("");
+  const [scoringDialogOpen, setScoringDialogOpen] = useState(false);
+  const [isAutoScoring, setIsAutoScoring] = useState(false);
+  const [autoScoreResults, setAutoScoreResults] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     tenderId: "",
@@ -95,6 +98,18 @@ export default function Submissions() {
 
   const { data: submissionDocuments } = useQuery<SubmissionDocument[]>({
     queryKey: ["/api/submissions", selectedSubmission?.id, "documents"],
+    enabled: !!selectedSubmission?.id,
+  });
+
+  // Query for scoring criteria when viewing a submission
+  const { data: scoringCriteria } = useQuery<TenderScoringCriteria[]>({
+    queryKey: ["/api/tenders", selectedSubmission?.tenderId, "scoring-criteria"],
+    enabled: !!selectedSubmission?.tenderId,
+  });
+
+  // Query for evaluation scores for selected submission
+  const { data: evaluationScores, refetch: refetchScores } = useQuery<EvaluationScore[]>({
+    queryKey: ["/api/submissions", selectedSubmission?.id, "scores"],
     enabled: !!selectedSubmission?.id,
   });
 
@@ -296,6 +311,43 @@ export default function Submissions() {
 
   const handleStatusChange = (submission: BidSubmission, newStatus: string) => {
     updateMutation.mutate({ id: submission.id, data: { status: newStatus } });
+  };
+
+  const handleAutoScore = async () => {
+    if (!selectedSubmission) return;
+    
+    setIsAutoScoring(true);
+    setAutoScoreResults(null);
+    
+    try {
+      const response = await fetch(`/api/submissions/${selectedSubmission.id}/auto-score`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to auto-score submission');
+      }
+      
+      const results = await response.json();
+      setAutoScoreResults(results);
+      refetchScores();
+      queryClient.invalidateQueries({ queryKey: ["/api/submissions"] });
+      toast({ 
+        title: "Scoring Complete!", 
+        description: `Tentative score: ${results.totalScore}/${results.maxPossibleScore} points` 
+      });
+    } catch (error: any) {
+      toast({ 
+        title: "Scoring Failed", 
+        description: error.message || "Could not score the submission",
+        variant: "destructive" 
+      });
+    } finally {
+      setIsAutoScoring(false);
+    }
   };
 
   const filteredSubmissions = submissions?.filter((submission) => {
@@ -581,11 +633,12 @@ export default function Submissions() {
           
           {selectedSubmission && (
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="documents">Documents</TabsTrigger>
-                <TabsTrigger value="compliance">Compliance</TabsTrigger>
-                <TabsTrigger value="actions">Actions</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+                <TabsTrigger value="documents" data-testid="tab-documents">Documents</TabsTrigger>
+                <TabsTrigger value="scoring" data-testid="tab-scoring">Scoring</TabsTrigger>
+                <TabsTrigger value="compliance" data-testid="tab-compliance">Compliance</TabsTrigger>
+                <TabsTrigger value="actions" data-testid="tab-actions">Actions</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4">
@@ -806,6 +859,152 @@ export default function Submissions() {
                     title="No requirements defined"
                     description="Add requirements to the tender first"
                   />
+                )}
+              </TabsContent>
+
+              <TabsContent value="scoring" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-blue-600" />
+                      Tentative Scoring
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      AI-powered evaluation based on tender scoring criteria
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleAutoScore}
+                    disabled={isAutoScoring || !scoringCriteria?.length}
+                    className="gap-2"
+                    data-testid="button-auto-score"
+                  >
+                    {isAutoScoring ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    {isAutoScoring ? "Scoring..." : "Auto Score Submission"}
+                  </Button>
+                </div>
+
+                {!scoringCriteria?.length ? (
+                  <EmptyState
+                    icon={BarChart3}
+                    title="No scoring criteria"
+                    description="The tender doesn't have scoring criteria defined. Upload a tender PDF and extract scoring criteria first."
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {/* Scoring Summary */}
+                    {(evaluationScores?.length || autoScoreResults) && (
+                      <Card className="border-blue-200 dark:border-blue-900" data-testid="card-score-summary">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base flex items-center justify-between">
+                            <span>Current Score</span>
+                            <span className="text-2xl text-blue-600" data-testid="text-total-score">
+                              {evaluationScores?.reduce((sum, s) => sum + s.score, 0) || autoScoreResults?.totalScore || 0}
+                              <span className="text-sm text-muted-foreground font-normal">
+                                / {scoringCriteria.reduce((sum, c) => sum + (c.maxScore || 0), 0)}
+                              </span>
+                            </span>
+                          </CardTitle>
+                        </CardHeader>
+                        {autoScoreResults?.overallAssessment && (
+                          <CardContent>
+                            <p className="text-sm text-muted-foreground">
+                              {autoScoreResults.overallAssessment}
+                            </p>
+                          </CardContent>
+                        )}
+                      </Card>
+                    )}
+
+                    {/* Scoring Grid */}
+                    <Table data-testid="table-scoring-grid">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Criteria</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead className="text-right">Max</TableHead>
+                          <TableHead className="text-right">Score</TableHead>
+                          <TableHead>Comments</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {scoringCriteria.map((criterion) => {
+                          const score = evaluationScores?.find(s => s.criteriaName === criterion.criteriaName);
+                          return (
+                            <TableRow key={criterion.id} data-testid={`row-criterion-${criterion.id}`}>
+                              <TableCell>
+                                <div className="font-medium" data-testid={`text-criterion-name-${criterion.id}`}>{criterion.criteriaName}</div>
+                                {criterion.description && (
+                                  <div className="text-xs text-muted-foreground max-w-xs truncate">
+                                    {criterion.description}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                  criterion.criteriaCategory === 'Technical' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                                  criterion.criteriaCategory === 'Price' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                                  criterion.criteriaCategory === 'BBBEE' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
+                                  criterion.criteriaCategory === 'Experience' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' :
+                                  'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                                }`}>
+                                  {criterion.criteriaCategory}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right font-medium">{criterion.maxScore}</TableCell>
+                              <TableCell className="text-right">
+                                {score ? (
+                                  <span className={`font-semibold ${score.score >= (criterion.maxScore || 0) * 0.7 ? 'text-green-600' : score.score >= (criterion.maxScore || 0) * 0.5 ? 'text-yellow-600' : 'text-red-600'}`} data-testid={`text-score-${criterion.id}`}>
+                                    {score.score}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground" data-testid={`text-score-${criterion.id}`}>-</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="max-w-xs">
+                                <span className="text-sm text-muted-foreground truncate">
+                                  {score?.comments || "-"}
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+
+                    {/* Category Breakdown */}
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2" data-testid="section-category-breakdown">
+                      <div className="font-medium text-sm">Score by Category</div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {Object.entries(
+                          scoringCriteria.reduce((acc, c) => {
+                            const score = evaluationScores?.find(s => s.criteriaName === c.criteriaName);
+                            if (!acc[c.criteriaCategory]) {
+                              acc[c.criteriaCategory] = { score: 0, max: 0 };
+                            }
+                            acc[c.criteriaCategory].max += c.maxScore || 0;
+                            acc[c.criteriaCategory].score += score?.score || 0;
+                            return acc;
+                          }, {} as Record<string, { score: number; max: number }>)
+                        ).map(([category, data]) => (
+                          <div key={category} className="bg-background rounded p-2 text-center" data-testid={`card-category-${category.toLowerCase().replace(/\s+/g, '-')}`}>
+                            <div className="text-xs text-muted-foreground">{category}</div>
+                            <div className="text-lg font-semibold" data-testid={`text-category-score-${category.toLowerCase().replace(/\s+/g, '-')}`}>
+                              {data.score}<span className="text-sm text-muted-foreground font-normal">/{data.max}</span>
+                            </div>
+                            <Progress 
+                              value={(data.score / data.max) * 100} 
+                              className="h-1 mt-1" 
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 )}
               </TabsContent>
 

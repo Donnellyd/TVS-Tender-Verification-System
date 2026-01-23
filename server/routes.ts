@@ -779,6 +779,324 @@ Return a JSON array of requirements with this structure:
     }
   });
 
+  // AI-powered scoring criteria extraction from tender PDF
+  app.post("/api/tenders/:tenderId/extract-scoring-criteria", async (req, res) => {
+    try {
+      const { pdfContent } = req.body;
+      if (!pdfContent) {
+        return res.status(400).json({ error: "PDF content is required" });
+      }
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const prompt = `Analyze this South African municipal tender document and extract ALL evaluation/scoring criteria used to assess bids. For each criterion, identify:
+
+1. Criteria Name - The name of the scoring criterion
+2. Criteria Category - One of: Technical, Price, BBBEE, Experience, Functionality, Quality, Local Content, Other
+3. Description - What is being evaluated and how
+4. Max Score - The maximum points available for this criterion
+5. Weight - The weighting factor (if specified, otherwise use 1)
+
+Look for typical SA tender evaluation criteria:
+- Technical capability and methodology (usually 60-80 points)
+- Price/financial proposal (usually weighted 80/20 or 90/10)
+- B-BBEE scoring (based on preferential procurement points)
+- Experience and track record (references, similar projects)
+- Functionality thresholds
+- Skills transfer and local content
+- Project approach and understanding
+- Team qualifications
+- Management and quality assurance
+
+Also look for:
+- Evaluation matrices and scoring tables
+- Point allocations and weightings
+- Minimum qualifying scores
+- Preferential procurement points (80/20 or 90/10 system)
+
+Tender Document Content:
+${pdfContent}
+
+Return a JSON object with this structure:
+{
+  "scoringCriteria": [
+    {
+      "criteriaName": "Technical Proposal",
+      "criteriaCategory": "Technical",
+      "description": "Assessment of methodology, project approach, and technical solution",
+      "maxScore": 80,
+      "weight": 1
+    },
+    {
+      "criteriaName": "B-BBEE Points",
+      "criteriaCategory": "BBBEE",
+      "description": "Preferential procurement points based on B-BBEE level",
+      "maxScore": 20,
+      "weight": 1
+    }
+  ],
+  "scoringSystem": "80/20",
+  "minimumQualifyingScore": 70
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      const responseText = completion.choices[0]?.message?.content || "{}";
+      let scoringData;
+      try {
+        scoringData = JSON.parse(responseText);
+      } catch {
+        scoringData = { scoringCriteria: [] };
+      }
+
+      const scoringCriteria = scoringData.scoringCriteria || [];
+      
+      // Delete existing AI-extracted scoring criteria for this tender
+      const tenderId = req.params.tenderId;
+      await storage.deleteTenderScoringCriteriaByTender(tenderId);
+
+      // Save extracted scoring criteria to database
+      const savedCriteria = [];
+      for (let i = 0; i < scoringCriteria.length; i++) {
+        const criterion = scoringCriteria[i];
+        const criteriaData = {
+          tenderId,
+          criteriaName: criterion.criteriaName || "Evaluation Criterion",
+          criteriaCategory: criterion.criteriaCategory || "Other",
+          description: criterion.description || null,
+          maxScore: criterion.maxScore || 10,
+          weight: criterion.weight || 1,
+          sortOrder: i,
+          aiExtracted: true,
+        };
+        
+        try {
+          const saved = await storage.createTenderScoringCriteria(criteriaData as any);
+          savedCriteria.push(saved);
+        } catch (e) {
+          console.error("Failed to save scoring criteria:", e);
+        }
+      }
+
+      await storage.createAuditLog({
+        userId: (req as any).user?.id,
+        action: "extract_scoring_criteria",
+        entityType: "tender",
+        entityId: tenderId,
+        details: { 
+          extractedCount: savedCriteria.length,
+          scoringSystem: scoringData.scoringSystem,
+          minimumQualifyingScore: scoringData.minimumQualifyingScore,
+        },
+      });
+
+      res.json({ 
+        scoringCriteria: savedCriteria, 
+        scoringSystem: scoringData.scoringSystem || null,
+        minimumQualifyingScore: scoringData.minimumQualifyingScore || null,
+      });
+    } catch (error) {
+      console.error("Error extracting scoring criteria:", error);
+      res.status(500).json({ error: "Failed to extract scoring criteria" });
+    }
+  });
+
+  // Tender Scoring Criteria CRUD endpoints
+  app.get("/api/tenders/:tenderId/scoring-criteria", async (req, res) => {
+    try {
+      const criteria = await storage.getTenderScoringCriteria(req.params.tenderId);
+      res.json(criteria);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch scoring criteria" });
+    }
+  });
+
+  app.post("/api/tenders/:tenderId/scoring-criteria", async (req, res) => {
+    try {
+      const criteriaData = {
+        ...req.body,
+        tenderId: req.params.tenderId,
+      };
+      const criteria = await storage.createTenderScoringCriteria(criteriaData);
+      await storage.createAuditLog({
+        userId: (req as any).user?.id,
+        action: "create_scoring_criteria",
+        entityType: "scoring_criteria",
+        entityId: criteria.id,
+        details: { tenderId: req.params.tenderId },
+      });
+      res.status(201).json(criteria);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create scoring criteria" });
+    }
+  });
+
+  app.patch("/api/scoring-criteria/:id", async (req, res) => {
+    try {
+      const criteria = await storage.updateTenderScoringCriteria(req.params.id, req.body);
+      if (!criteria) {
+        return res.status(404).json({ error: "Scoring criteria not found" });
+      }
+      res.json(criteria);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update scoring criteria" });
+    }
+  });
+
+  app.delete("/api/scoring-criteria/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteTenderScoringCriteria(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Scoring criteria not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete scoring criteria" });
+    }
+  });
+
+  // AI-powered submission scoring against tender criteria
+  app.post("/api/submissions/:submissionId/auto-score", async (req, res) => {
+    try {
+      const { submissionId } = req.params;
+      
+      // Get submission details
+      const submission = await storage.getBidSubmission(submissionId);
+      if (!submission) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+
+      // Get scoring criteria for the tender
+      const scoringCriteria = await storage.getTenderScoringCriteria(submission.tenderId);
+      if (scoringCriteria.length === 0) {
+        return res.status(400).json({ error: "No scoring criteria defined for this tender" });
+      }
+
+      // Get submission documents
+      const submissionDocs = await storage.getSubmissionDocuments(submissionId);
+      
+      // Get vendor info
+      const vendor = await storage.getVendor(submission.vendorId);
+      
+      // Get tender info
+      const tender = await storage.getTender(submission.tenderId);
+
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
+
+      const criteriaList = scoringCriteria.map(c => 
+        `- ${c.criteriaName} (Category: ${c.criteriaCategory}, Max Score: ${c.maxScore}): ${c.description || 'No description'}`
+      ).join('\n');
+
+      const documentsList = submissionDocs.map(d => 
+        `- ${d.documentType}: ${d.documentName} (Status: ${d.verificationStatus})`
+      ).join('\n') || 'No documents submitted';
+
+      const prompt = `Evaluate this bid submission against the tender's scoring criteria. Provide tentative scores based on the available information.
+
+TENDER: ${tender?.title || 'Unknown'}
+VENDOR: ${vendor?.companyName || 'Unknown'} (B-BBEE Level: ${vendor?.bbbeeLevel || 'Unknown'})
+BID AMOUNT: R${submission.bidAmount || 0}
+
+SUBMITTED DOCUMENTS:
+${documentsList}
+
+SCORING CRITERIA TO EVALUATE:
+${criteriaList}
+
+Based on the available information, provide a tentative score for each criterion. Consider:
+- Document completeness and verification status
+- B-BBEE level for preferential scoring
+- Compliance with tender requirements
+
+Return a JSON object with scores for each criterion:
+{
+  "scores": [
+    {
+      "criteriaName": "Technical Proposal",
+      "score": 65,
+      "maxScore": 80,
+      "reasoning": "Documents submitted but not verified"
+    }
+  ],
+  "totalScore": 85,
+  "maxPossibleScore": 100,
+  "overallAssessment": "Submission appears compliant pending document verification"
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      const responseText = completion.choices[0]?.message?.content || "{}";
+      let scoreData;
+      try {
+        scoreData = JSON.parse(responseText);
+      } catch {
+        scoreData = { scores: [], totalScore: 0 };
+      }
+
+      // Save evaluation scores
+      const savedScores = [];
+      for (const score of scoreData.scores || []) {
+        const matchingCriteria = scoringCriteria.find(c => c.criteriaName === score.criteriaName);
+        if (matchingCriteria) {
+          try {
+            const evaluationScore = await storage.createEvaluationScore({
+              submissionId,
+              criteriaName: score.criteriaName,
+              criteriaCategory: matchingCriteria.criteriaCategory,
+              maxScore: score.maxScore || matchingCriteria.maxScore,
+              score: Math.min(score.score || 0, matchingCriteria.maxScore),
+              weight: matchingCriteria.weight || 1,
+              comments: score.reasoning || null,
+            });
+            savedScores.push(evaluationScore);
+          } catch (e) {
+            console.error("Failed to save evaluation score:", e);
+          }
+        }
+      }
+
+      // Update submission with total score
+      await storage.updateBidSubmission(submissionId, {
+        technicalScore: scoreData.totalScore || 0,
+      });
+
+      await storage.createAuditLog({
+        userId: (req as any).user?.id,
+        action: "auto_score_submission",
+        entityType: "submission",
+        entityId: submissionId,
+        details: { 
+          totalScore: scoreData.totalScore,
+          criteriaScored: savedScores.length,
+        },
+      });
+
+      res.json({
+        scores: savedScores,
+        totalScore: scoreData.totalScore,
+        maxPossibleScore: scoreData.maxPossibleScore,
+        overallAssessment: scoreData.overallAssessment,
+      });
+    } catch (error) {
+      console.error("Error auto-scoring submission:", error);
+      res.status(500).json({ error: "Failed to auto-score submission" });
+    }
+  });
+
   // Bid Submissions
   app.get("/api/submissions", async (req, res) => {
     try {

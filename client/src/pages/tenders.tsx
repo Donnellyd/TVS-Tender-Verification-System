@@ -35,10 +35,10 @@ import { EmptyState } from "@/components/EmptyState";
 import { DataTableSkeleton } from "@/components/DataTableSkeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Search, Filter, X, FileText, Trash2, Calendar, ClipboardList } from "lucide-react";
+import { Plus, Search, Filter, X, FileText, Trash2, Calendar, ClipboardList, BarChart3, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { format, isValid } from "date-fns";
-import type { Tender, InsertTender, Municipality, Vendor } from "@shared/schema";
+import type { Tender, InsertTender, Municipality, Vendor, TenderScoringCriteria } from "@shared/schema";
 
 const formatDateForInput = (date: Date | string | null | undefined): string => {
   if (!date) return "";
@@ -62,6 +62,8 @@ export default function Tenders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
+  const [scoringDialogOpen, setScoringDialogOpen] = useState(false);
+  const [selectedTenderForScoring, setSelectedTenderForScoring] = useState<Tender | null>(null);
 
   const [formData, setFormData] = useState<Partial<InsertTender>>({
     tenderNumber: "",
@@ -87,6 +89,12 @@ export default function Tenders() {
 
   const { data: vendors } = useQuery<Vendor[]>({
     queryKey: ["/api/vendors"],
+  });
+
+  // Query for scoring criteria when a tender is selected
+  const { data: scoringCriteria, isLoading: scoringLoading } = useQuery<TenderScoringCriteria[]>({
+    queryKey: ["/api/tenders", selectedTenderForScoring?.id, "scoring-criteria"],
+    enabled: !!selectedTenderForScoring?.id,
   });
 
   const createMutation = useMutation({
@@ -369,6 +377,18 @@ export default function Tenders() {
                           variant="ghost"
                           size="icon"
                           onClick={() => {
+                            setSelectedTenderForScoring(tender);
+                            setScoringDialogOpen(true);
+                          }}
+                          data-testid={`button-scoring-grid-${tender.id}`}
+                          title="Scoring Grid"
+                        >
+                          <BarChart3 className="h-4 w-4 text-blue-600" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
                             setTenderToDelete(tender);
                             setDeleteDialogOpen(true);
                           }}
@@ -610,6 +630,114 @@ export default function Tenders() {
               data-testid="button-confirm-delete-tender"
             >
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Scoring Grid Dialog */}
+      <Dialog open={scoringDialogOpen} onOpenChange={(open) => {
+        setScoringDialogOpen(open);
+        if (!open) setSelectedTenderForScoring(null);
+      }}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-blue-600" />
+              Scoring Grid
+            </DialogTitle>
+            <DialogDescription>
+              {selectedTenderForScoring?.tenderNumber} - {selectedTenderForScoring?.title}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto">
+            {scoringLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : !scoringCriteria || scoringCriteria.length === 0 ? (
+              <div className="text-center py-8">
+                <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground mb-4">No scoring criteria extracted yet.</p>
+                <p className="text-sm text-muted-foreground">
+                  Upload a tender PDF and extract scoring criteria from the Requirements page.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    Total Maximum Score: <span className="font-medium text-foreground">
+                      {scoringCriteria.reduce((sum, c) => sum + (c.maxScore || 0), 0)} points
+                    </span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {scoringCriteria.length} criteria
+                  </div>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Criteria</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead className="text-right">Max Score</TableHead>
+                      <TableHead className="text-right">Weight</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {scoringCriteria.map((criterion) => (
+                      <TableRow key={criterion.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{criterion.criteriaName}</div>
+                            {criterion.description && (
+                              <div className="text-sm text-muted-foreground">{criterion.description}</div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            criterion.criteriaCategory === 'Technical' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                            criterion.criteriaCategory === 'Price' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                            criterion.criteriaCategory === 'BBBEE' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
+                            criterion.criteriaCategory === 'Experience' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' :
+                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                          }`}>
+                            {criterion.criteriaCategory}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {criterion.maxScore}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {criterion.weight}x
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                  <div className="font-medium text-sm">Score Breakdown by Category</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {Object.entries(
+                      scoringCriteria.reduce((acc, c) => {
+                        acc[c.criteriaCategory] = (acc[c.criteriaCategory] || 0) + (c.maxScore || 0);
+                        return acc;
+                      }, {} as Record<string, number>)
+                    ).map(([category, total]) => (
+                      <div key={category} className="bg-background rounded p-2 text-center">
+                        <div className="text-xs text-muted-foreground">{category}</div>
+                        <div className="text-lg font-semibold">{total}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="border-t pt-4">
+            <Button variant="outline" onClick={() => setScoringDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -353,6 +353,45 @@ export const insertTenderRequirementSchema = createInsertSchema(tenderRequiremen
 export type InsertTenderRequirement = z.infer<typeof insertTenderRequirementSchema>;
 export type TenderRequirement = typeof tenderRequirements.$inferSelect;
 
+// Tender Scoring Criteria table - AI-extracted scoring grid from tender PDFs
+export const scoringCriteriaCategories = z.enum(["Technical", "Price", "BBBEE", "Experience", "Functionality", "Quality", "Local Content", "Other"]);
+
+export const tenderScoringCriteria = pgTable("tender_scoring_criteria", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenderId: varchar("tender_id").notNull().references(() => tenders.id),
+  criteriaName: text("criteria_name").notNull(),
+  criteriaCategory: text("criteria_category").notNull(),
+  description: text("description"),
+  maxScore: integer("max_score").notNull(),
+  weight: integer("weight").default(1),
+  sortOrder: integer("sort_order").default(0),
+  aiExtracted: boolean("ai_extracted").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_scoring_criteria_tender").on(table.tenderId),
+]);
+
+export const tenderScoringCriteriaRelations = relations(tenderScoringCriteria, ({ one }) => ({
+  tender: one(tenders, {
+    fields: [tenderScoringCriteria.tenderId],
+    references: [tenders.id],
+  }),
+}));
+
+export const insertTenderScoringCriteriaSchema = createInsertSchema(tenderScoringCriteria).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  criteriaName: z.string().min(1, "Criteria name is required"),
+  criteriaCategory: scoringCriteriaCategories,
+  maxScore: z.number().min(1, "Max score must be at least 1"),
+});
+
+export type InsertTenderScoringCriteria = z.infer<typeof insertTenderScoringCriteriaSchema>;
+export type TenderScoringCriteria = typeof tenderScoringCriteria.$inferSelect;
+
 // Bid Submissions table - vendor submissions per tender
 export const bidSubmissions = pgTable("bid_submissions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
