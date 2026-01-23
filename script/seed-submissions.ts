@@ -6,9 +6,11 @@ import {
   tenderRequirements,
   bidSubmissions,
   submissionDocuments,
-  letterTemplates 
+  letterTemplates,
+  tenderScoringCriteria,
+  evaluationScores
 } from "../shared/schema";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 
 async function seed() {
   console.log("Starting seed for submission workflow...");
@@ -80,7 +82,7 @@ async function seed() {
     },
   ];
 
-  const createdVendors = [];
+  const createdVendors: any[] = [];
   for (const vendor of vendorData) {
     const [existingVendor] = await db.select().from(vendors).where(sql`${vendors.registrationNumber} = ${vendor.registrationNumber}`);
     if (!existingVendor) {
@@ -230,13 +232,258 @@ async function seed() {
       },
     ];
 
+    const createdSubmissions: any[] = [];
     for (const sub of submissionsData) {
       const [existingSub] = await db.select().from(bidSubmissions)
         .where(sql`${bidSubmissions.tenderId} = ${sub.tenderId} AND ${bidSubmissions.vendorId} = ${sub.vendorId}`);
       if (!existingSub) {
-        await db.insert(bidSubmissions).values(sub);
+        const [newSub] = await db.insert(bidSubmissions).values(sub).returning();
+        createdSubmissions.push(newSub);
         console.log("Created submission for vendor:", sub.vendorId);
+      } else {
+        createdSubmissions.push(existingSub);
       }
+    }
+
+    // Create scoring criteria for the tender (SA preferential procurement standard)
+    const scoringCriteriaData = [
+      {
+        tenderId: tender.id,
+        criteriaName: "Price",
+        criteriaCategory: "Price",
+        description: "Price points calculated using 80/20 formula: Ps = 80(1 - (Pt - Pmin)/Pmin) where Pt is bid price and Pmin is lowest acceptable bid",
+        maxScore: 80,
+        weight: 1,
+        sortOrder: 1,
+        aiExtracted: false,
+      },
+      {
+        tenderId: tender.id,
+        criteriaName: "B-BBEE Status Level",
+        criteriaCategory: "BBBEE",
+        description: "B-BBEE preference points as per Preferential Procurement Regulations: Level 1 = 20pts, Level 2 = 18pts, Level 3 = 14pts, Level 4 = 12pts, etc.",
+        maxScore: 20,
+        weight: 1,
+        sortOrder: 2,
+        aiExtracted: false,
+      },
+      {
+        tenderId: tender.id,
+        criteriaName: "Technical Capability",
+        criteriaCategory: "Technical",
+        description: "Demonstrated experience and technical capacity to deliver the required goods/services",
+        maxScore: 30,
+        weight: 1,
+        sortOrder: 3,
+        aiExtracted: false,
+      },
+      {
+        tenderId: tender.id,
+        criteriaName: "Previous Experience",
+        criteriaCategory: "Experience",
+        description: "Proven track record with similar projects in the past 5 years",
+        maxScore: 25,
+        weight: 1,
+        sortOrder: 4,
+        aiExtracted: false,
+      },
+      {
+        tenderId: tender.id,
+        criteriaName: "Local Content",
+        criteriaCategory: "Local Content",
+        description: "Percentage of local content in goods/services as per designated sectors",
+        maxScore: 15,
+        weight: 1,
+        sortOrder: 5,
+        aiExtracted: false,
+      },
+      {
+        tenderId: tender.id,
+        criteriaName: "Quality Management",
+        criteriaCategory: "Quality",
+        description: "ISO certification or equivalent quality management systems in place",
+        maxScore: 10,
+        weight: 1,
+        sortOrder: 6,
+        aiExtracted: false,
+      },
+    ];
+
+    for (const criteria of scoringCriteriaData) {
+      const [existingCriteria] = await db.select().from(tenderScoringCriteria)
+        .where(sql`${tenderScoringCriteria.tenderId} = ${criteria.tenderId} AND ${tenderScoringCriteria.criteriaName} = ${criteria.criteriaName}`);
+      if (!existingCriteria) {
+        await db.insert(tenderScoringCriteria).values(criteria);
+        console.log("Created scoring criteria:", criteria.criteriaName);
+      }
+    }
+
+    // Create evaluation scores for the first submission (ABC Construction - Level 1 B-BBEE)
+    if (createdSubmissions.length > 0) {
+      const submission1 = createdSubmissions[0];
+      const submission1Scores = [
+        {
+          submissionId: submission1.id,
+          criteriaName: "Price",
+          criteriaCategory: "Price",
+          maxScore: 80,
+          score: 80, // Lowest price gets max points
+          weight: 1,
+          comments: "Lowest acceptable bid - full price points awarded. Ps = 80(1 - (22,500,000 - 22,500,000)/22,500,000) = 80",
+        },
+        {
+          submissionId: submission1.id,
+          criteriaName: "B-BBEE Status Level",
+          criteriaCategory: "BBBEE",
+          maxScore: 20,
+          score: 20, // Level 1 = 20 points
+          weight: 1,
+          comments: "Level 1 B-BBEE contributor - maximum preference points",
+        },
+        {
+          submissionId: submission1.id,
+          criteriaName: "Technical Capability",
+          criteriaCategory: "Technical",
+          maxScore: 30,
+          score: 26,
+          weight: 1,
+          comments: "Strong technical capability demonstrated with relevant equipment and skilled workforce",
+        },
+        {
+          submissionId: submission1.id,
+          criteriaName: "Previous Experience",
+          criteriaCategory: "Experience",
+          maxScore: 25,
+          score: 22,
+          weight: 1,
+          comments: "5+ years experience with 3 similar municipal road projects completed",
+        },
+        {
+          submissionId: submission1.id,
+          criteriaName: "Local Content",
+          criteriaCategory: "Local Content",
+          maxScore: 15,
+          score: 12,
+          weight: 1,
+          comments: "Local content of 85% - exceeds minimum requirement of 30%",
+        },
+        {
+          submissionId: submission1.id,
+          criteriaName: "Quality Management",
+          criteriaCategory: "Quality",
+          maxScore: 10,
+          score: 8,
+          weight: 1,
+          comments: "ISO 9001:2015 certified quality management system",
+        },
+      ];
+
+      for (const evalScore of submission1Scores) {
+        const [existingScore] = await db.select().from(evaluationScores)
+          .where(sql`${evaluationScores.submissionId} = ${evalScore.submissionId} AND ${evaluationScores.criteriaName} = ${evalScore.criteriaName}`);
+        if (!existingScore) {
+          await db.insert(evaluationScores).values(evalScore);
+          console.log("Created evaluation score:", evalScore.criteriaName, "for submission", submission1.id);
+        }
+      }
+
+      // Update submission 1 with calculated totals
+      const totalScore1 = submission1Scores.reduce((sum, s) => sum + s.score, 0);
+      await db.update(bidSubmissions)
+        .set({ 
+          priceScore: 80, 
+          bbbeePoints: 20, 
+          technicalScore: 26 + 22 + 12 + 8,
+          totalScore: totalScore1,
+          status: "passed",
+          complianceResult: "passed"
+        })
+        .where(eq(bidSubmissions.id, submission1.id));
+      console.log("Updated submission 1 with total score:", totalScore1);
+    }
+
+    // Create evaluation scores for the second submission (XYZ Services - Level 3 B-BBEE)
+    if (createdSubmissions.length > 1) {
+      const submission2 = createdSubmissions[1];
+      const submission2Scores = [
+        {
+          submissionId: submission2.id,
+          criteriaName: "Price",
+          criteriaCategory: "Price",
+          maxScore: 80,
+          score: 73, // Higher price = fewer points: Ps = 80(1 - (24,800,000 - 22,500,000)/22,500,000) = 80(1 - 0.102) = 71.8
+          weight: 1,
+          comments: "Price points: Ps = 80(1 - (24,800,000 - 22,500,000)/22,500,000) = 72 points",
+        },
+        {
+          submissionId: submission2.id,
+          criteriaName: "B-BBEE Status Level",
+          criteriaCategory: "BBBEE",
+          maxScore: 20,
+          score: 14, // Level 3 = 14 points
+          weight: 1,
+          comments: "Level 3 B-BBEE contributor - 14 preference points",
+        },
+        {
+          submissionId: submission2.id,
+          criteriaName: "Technical Capability",
+          criteriaCategory: "Technical",
+          maxScore: 30,
+          score: 20,
+          weight: 1,
+          comments: "Adequate technical capability, smaller team and equipment inventory",
+        },
+        {
+          submissionId: submission2.id,
+          criteriaName: "Previous Experience",
+          criteriaCategory: "Experience",
+          maxScore: 25,
+          score: 15,
+          weight: 1,
+          comments: "3 years experience with 1 similar project completed",
+        },
+        {
+          submissionId: submission2.id,
+          criteriaName: "Local Content",
+          criteriaCategory: "Local Content",
+          maxScore: 15,
+          score: 9,
+          weight: 1,
+          comments: "Local content of 60% - meets minimum requirement",
+        },
+        {
+          submissionId: submission2.id,
+          criteriaName: "Quality Management",
+          criteriaCategory: "Quality",
+          maxScore: 10,
+          score: 5,
+          weight: 1,
+          comments: "Quality procedures in place but no ISO certification",
+        },
+      ];
+
+      for (const evalScore of submission2Scores) {
+        const [existingScore] = await db.select().from(evaluationScores)
+          .where(sql`${evaluationScores.submissionId} = ${evalScore.submissionId} AND ${evaluationScores.criteriaName} = ${evalScore.criteriaName}`);
+        if (!existingScore) {
+          await db.insert(evaluationScores).values(evalScore);
+          console.log("Created evaluation score:", evalScore.criteriaName, "for submission", submission2.id);
+        }
+      }
+
+      // Update submission 2 with calculated totals
+      const totalScore2 = submission2Scores.reduce((sum, s) => sum + s.score, 0);
+      await db.update(bidSubmissions)
+        .set({ 
+          priceScore: 73, 
+          bbbeePoints: 14, 
+          technicalScore: 20 + 15 + 9 + 5,
+          totalScore: totalScore2,
+          status: "manual_review",
+          complianceResult: "passed"
+        })
+        .where(eq(bidSubmissions.id, submission2.id));
+      console.log("Updated submission 2 with total score:", totalScore2);
     }
   }
 
