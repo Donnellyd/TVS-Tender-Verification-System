@@ -21,8 +21,7 @@ import OpenAI from "openai";
 import multer from "multer";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const pdfParseModule = require("pdf-parse");
-const pdfParse = pdfParseModule.PDFParse || pdfParseModule.default || pdfParseModule;
+const { PDFParse } = require("pdf-parse");
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -648,9 +647,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ error: "PDF file is required" });
       }
 
-      // Parse PDF to extract text
-      const pdfData = await pdfParse(req.file.buffer);
-      const extractedText = pdfData.text;
+      // Parse PDF to extract text using pdf-parse v2 API
+      const parser = new PDFParse({ data: req.file.buffer });
+      const result = await parser.getText();
+      const extractedText = result.text;
 
       if (!extractedText || extractedText.trim().length === 0) {
         return res.status(400).json({ error: "Could not extract text from PDF. The PDF may be image-based or protected." });
@@ -659,8 +659,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.json({ 
         success: true, 
         text: extractedText,
-        pages: pdfData.numpages,
-        info: pdfData.info
+        pages: result.pages?.length || 1,
+        info: result.info || {}
       });
     } catch (error) {
       console.error("PDF upload error:", error);
