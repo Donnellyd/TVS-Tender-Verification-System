@@ -655,81 +655,178 @@ export default function Tenders() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-            ) : !scoringCriteria || scoringCriteria.length === 0 ? (
-              <div className="text-center py-8">
-                <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">No scoring criteria extracted yet.</p>
-                <p className="text-sm text-muted-foreground">
-                  Upload a tender PDF and extract scoring criteria from the Requirements page.
-                </p>
-              </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    Total Maximum Score: <span className="font-medium text-foreground">
-                      {scoringCriteria.reduce((sum, c) => sum + (c.maxScore || 0), 0)} points
-                    </span>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {scoringCriteria.length} criteria
-                  </div>
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Criteria</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead className="text-right">Max Score</TableHead>
-                      <TableHead className="text-right">Weight</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {scoringCriteria.map((criterion) => (
-                      <TableRow key={criterion.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{criterion.criteriaName}</div>
-                            {criterion.description && (
-                              <div className="text-sm text-muted-foreground">{criterion.description}</div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                            criterion.criteriaCategory === 'Technical' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                            criterion.criteriaCategory === 'Price' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                            criterion.criteriaCategory === 'BBBEE' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
-                            criterion.criteriaCategory === 'Experience' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' :
-                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                          }`}>
-                            {criterion.criteriaCategory}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {criterion.maxScore}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {criterion.weight}x
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                  <div className="font-medium text-sm">Score Breakdown by Category</div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {Object.entries(
-                      scoringCriteria.reduce((acc, c) => {
-                        acc[c.criteriaCategory] = (acc[c.criteriaCategory] || 0) + (c.maxScore || 0);
-                        return acc;
-                      }, {} as Record<string, number>)
-                    ).map(([category, total]) => (
-                      <div key={category} className="bg-background rounded p-2 text-center">
-                        <div className="text-xs text-muted-foreground">{category}</div>
-                        <div className="text-lg font-semibold">{total}</div>
+                {/* Scoring Criteria Section - conditional */}
+                {scoringCriteria && scoringCriteria.length > 0 ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        Total Maximum Score: <span className="font-medium text-foreground">
+                          {scoringCriteria.reduce((sum, c) => sum + (c.maxScore || 0), 0)} points
+                        </span>
                       </div>
-                    ))}
+                      <div className="text-sm text-muted-foreground">
+                        {scoringCriteria.length} criteria
+                      </div>
+                    </div>
+                    <Table data-testid="table-scoring-grid">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Criteria</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead className="text-right">Max Score</TableHead>
+                          <TableHead className="text-right">Weight</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {scoringCriteria.map((criterion) => (
+                          <TableRow key={criterion.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{criterion.criteriaName}</div>
+                                {criterion.description && (
+                                  <div className="text-sm text-muted-foreground">{criterion.description}</div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                criterion.criteriaCategory === 'Technical' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                                criterion.criteriaCategory === 'Price' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                                criterion.criteriaCategory === 'BBBEE' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
+                                criterion.criteriaCategory === 'Experience' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' :
+                                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                              }`}>
+                                {criterion.criteriaCategory}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {criterion.maxScore}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {criterion.weight}x
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                      <div className="font-medium text-sm">Score Breakdown by Category</div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {Object.entries(
+                          scoringCriteria.reduce((acc, c) => {
+                            acc[c.criteriaCategory] = (acc[c.criteriaCategory] || 0) + (c.maxScore || 0);
+                            return acc;
+                          }, {} as Record<string, number>)
+                        ).map(([category, total]) => (
+                          <div key={category} className="bg-background rounded p-2 text-center">
+                            <div className="text-xs text-muted-foreground">{category}</div>
+                            <div className="text-lg font-semibold">{total}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-6">
+                    <BarChart3 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                    <p className="text-muted-foreground mb-2">No scoring criteria extracted yet.</p>
+                    <p className="text-sm text-muted-foreground">
+                      Upload a tender PDF and extract scoring criteria from the Requirements page.
+                    </p>
+                  </div>
+                )}
+
+                {/* SA Preferential Procurement Reference - always visible */}
+                <div className="mt-4 space-y-3">
+                  <div className="font-medium text-sm">SA Preferential Procurement Systems</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 80/20 System */}
+                    <div className="bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-950/30 dark:to-emerald-950/30 rounded-lg p-3 border border-teal-200 dark:border-teal-800" data-testid="section-80-20-system">
+                      <div className="font-semibold text-teal-800 dark:text-teal-200 text-sm mb-2">
+                        80/20 System (Under R50M)
+                      </div>
+                      <div className="text-xs text-teal-700 dark:text-teal-300 space-y-1">
+                        <p><strong>Price:</strong> 80 points max</p>
+                        <p><strong>B-BBEE:</strong> 20 points max</p>
+                        <p className="font-mono bg-white/50 dark:bg-black/20 rounded px-1 mt-1">
+                          Ps = 80(1 - (Pt - Pmin)/Pmin)
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* 90/10 System */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800" data-testid="section-90-10-system">
+                      <div className="font-semibold text-blue-800 dark:text-blue-200 text-sm mb-2">
+                        90/10 System (Over R50M)
+                      </div>
+                      <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                        <p><strong>Price:</strong> 90 points max</p>
+                        <p><strong>B-BBEE:</strong> 10 points max</p>
+                        <p className="font-mono bg-white/50 dark:bg-black/20 rounded px-1 mt-1">
+                          Ps = 90(1 - (Pt - Pmin)/Pmin)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* B-BBEE Points Table */}
+                  <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 rounded-lg p-3 border border-purple-200 dark:border-purple-800" data-testid="section-bbbee-points-reference">
+                    <div className="font-semibold text-purple-800 dark:text-purple-200 text-sm mb-2">
+                      B-BBEE Status Level Points
+                    </div>
+                    <div className="grid grid-cols-9 gap-1 text-xs">
+                      <div className="font-semibold text-center bg-purple-100 dark:bg-purple-900 rounded py-1">Level</div>
+                      <div className="text-center bg-purple-100 dark:bg-purple-900 rounded py-1">1</div>
+                      <div className="text-center bg-purple-100 dark:bg-purple-900 rounded py-1">2</div>
+                      <div className="text-center bg-purple-100 dark:bg-purple-900 rounded py-1">3</div>
+                      <div className="text-center bg-purple-100 dark:bg-purple-900 rounded py-1">4</div>
+                      <div className="text-center bg-purple-100 dark:bg-purple-900 rounded py-1">5</div>
+                      <div className="text-center bg-purple-100 dark:bg-purple-900 rounded py-1">6</div>
+                      <div className="text-center bg-purple-100 dark:bg-purple-900 rounded py-1">7</div>
+                      <div className="text-center bg-purple-100 dark:bg-purple-900 rounded py-1">8</div>
+                      
+                      <div className="font-semibold text-center bg-white/60 dark:bg-black/20 rounded py-1">80/20</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">20</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">18</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">14</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">12</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">8</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">6</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">4</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">2</div>
+                      
+                      <div className="font-semibold text-center bg-white/60 dark:bg-black/20 rounded py-1">90/10</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">10</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">9</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">6</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">5</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">4</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">3</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">2</div>
+                      <div className="text-center bg-white/60 dark:bg-black/20 rounded py-1">1</div>
+                    </div>
+                    <p className="text-xs text-purple-600 dark:text-purple-400 mt-2 italic">
+                      Non-Compliant bidders receive 0 points
+                    </p>
+                  </div>
+
+                  {/* Compliance Requirements */}
+                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 rounded-lg p-3 border border-orange-200 dark:border-orange-800" data-testid="section-compliance-requirements">
+                    <div className="font-semibold text-orange-800 dark:text-orange-200 text-sm mb-2">
+                      Mandatory Compliance Requirements
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-orange-700 dark:text-orange-300">
+                      <p>CSD Registration (max 10 days old)</p>
+                      <p>Tax Clearance (valid)</p>
+                      <p>B-BBEE Certificate (current)</p>
+                      <p>Company Registration</p>
+                      <p>COIDA Letter of Good Standing</p>
+                      <p>Municipal Rates Clearance (max 90 days)</p>
+                      <p>Public Liability Insurance (min R5M)</p>
+                      <p>Audited Financials (3 years)</p>
+                    </div>
                   </div>
                 </div>
               </div>

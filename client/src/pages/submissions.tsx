@@ -920,6 +920,132 @@ export default function Submissions() {
                       </Card>
                     )}
 
+                    {/* SA Preferential Procurement Scoring Reference */}
+                    <Card data-testid="card-sa-scoring-reference">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <FileCheck className="w-5 h-5 text-teal-600" />
+                          SA Preferential Procurement Scoring
+                        </CardTitle>
+                        <CardDescription>
+                          {selectedSubmission.scoringSystem === "90/10" ? 
+                            "90/10 System (Contracts over R50 Million)" : 
+                            "80/20 System (Contracts under R50 Million)"}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {/* Price Scoring Formula */}
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-lg p-4 border border-green-200 dark:border-green-800" data-testid="section-price-formula">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm font-bold text-green-700 dark:text-green-300">Ps</span>
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-green-800 dark:text-green-200 mb-1">Price Scoring Formula</div>
+                              <div className="font-mono text-sm bg-white/60 dark:bg-black/20 rounded px-2 py-1 mb-2" data-testid="text-price-formula">
+                                Ps = {selectedSubmission.scoringSystem === "90/10" ? "90" : "80"} × (1 - (Pt - Pmin) / Pmin)
+                              </div>
+                              <div className="text-xs text-green-700 dark:text-green-300 space-y-1">
+                                <p><strong>Ps</strong> = Points scored for price</p>
+                                <p><strong>Pt</strong> = Rand value of bid under consideration (R{selectedSubmission.bidAmount?.toLocaleString() || "N/A"})</p>
+                                <p><strong>Pmin</strong> = Lowest acceptable bid price</p>
+                              </div>
+                              <div className="mt-2 text-xs text-muted-foreground italic">
+                                For income-generating contracts: Ps = {selectedSubmission.scoringSystem === "90/10" ? "90" : "80"} × (1 + (Pt - Pmax) / Pmax)
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* B-BBEE Points Table */}
+                        <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 rounded-lg p-4 border border-purple-200 dark:border-purple-800" data-testid="section-bbbee-table">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm font-bold text-purple-700 dark:text-purple-300">B</span>
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-purple-800 dark:text-purple-200 mb-2">B-BBEE Status Level Points</div>
+                              
+                              {/* Points Table */}
+                              <div className="grid grid-cols-4 gap-1 text-xs">
+                                <div className="font-semibold text-center bg-purple-100 dark:bg-purple-900 rounded py-1">Level</div>
+                                <div className="font-semibold text-center bg-purple-100 dark:bg-purple-900 rounded py-1">80/20</div>
+                                <div className="font-semibold text-center bg-purple-100 dark:bg-purple-900 rounded py-1">90/10</div>
+                                <div className="font-semibold text-center bg-purple-100 dark:bg-purple-900 rounded py-1">Status</div>
+                                
+                                {/* Level 1 */}
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 1" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>1</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 1" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>20</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 1" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>10</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 1" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>{vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 1" ? "Current" : ""}</div>
+                                
+                                {/* Level 2 */}
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 2" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>2</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 2" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>18</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 2" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>9</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 2" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>{vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 2" ? "Current" : ""}</div>
+                                
+                                {/* Level 3 */}
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 3" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>3</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 3" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>14</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 3" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>6</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 3" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>{vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 3" ? "Current" : ""}</div>
+                                
+                                {/* Level 4 */}
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 4" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>4</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 4" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>12</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 4" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>5</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 4" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>{vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 4" ? "Current" : ""}</div>
+                                
+                                {/* Level 5 */}
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 5" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>5</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 5" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>8</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 5" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>4</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 5" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>{vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 5" ? "Current" : ""}</div>
+                                
+                                {/* Level 6 */}
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 6" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>6</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 6" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>6</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 6" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>3</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 6" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>{vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 6" ? "Current" : ""}</div>
+                                
+                                {/* Level 7 */}
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 7" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>7</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 7" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>4</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 7" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>2</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 7" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>{vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 7" ? "Current" : ""}</div>
+                                
+                                {/* Level 8 */}
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 8" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>8</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 8" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>2</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 8" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>1</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 8" ? "bg-purple-200 dark:bg-purple-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>{vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Level 8" ? "Current" : ""}</div>
+                                
+                                {/* Non-Compliant */}
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Non-Compliant" ? "bg-red-200 dark:bg-red-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>N/C</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Non-Compliant" ? "bg-red-200 dark:bg-red-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>0</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Non-Compliant" ? "bg-red-200 dark:bg-red-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>0</div>
+                                <div className={`text-center py-1 ${vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Non-Compliant" ? "bg-red-200 dark:bg-red-800 font-bold" : "bg-white/60 dark:bg-black/20"}`}>{vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel === "Non-Compliant" ? "Current" : ""}</div>
+                              </div>
+                              
+                              <div className="mt-3 text-xs text-purple-700 dark:text-purple-300">
+                                <p><strong>Current B-BBEE Level:</strong> {vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel || "Not specified"}</p>
+                                <p><strong>Points Awarded:</strong> {selectedSubmission.bbbeePoints ?? 
+                                  (() => {
+                                    const level = vendors?.find(v => v.id === selectedSubmission.vendorId)?.bbbeeLevel;
+                                    const is90_10 = selectedSubmission.scoringSystem === "90/10";
+                                    const points80_20: Record<string, number> = { "Level 1": 20, "Level 2": 18, "Level 3": 14, "Level 4": 12, "Level 5": 8, "Level 6": 6, "Level 7": 4, "Level 8": 2, "Non-Compliant": 0 };
+                                    const points90_10: Record<string, number> = { "Level 1": 10, "Level 2": 9, "Level 3": 6, "Level 4": 5, "Level 5": 4, "Level 6": 3, "Level 7": 2, "Level 8": 1, "Non-Compliant": 0 };
+                                    return level ? (is90_10 ? points90_10[level] : points80_20[level]) || 0 : 0;
+                                  })()
+                                }</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
                     {/* Scoring Grid */}
                     <Table data-testid="table-scoring-grid">
                       <TableHeader>
@@ -1166,36 +1292,67 @@ export default function Submissions() {
 
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base">Generate Letters</CardTitle>
-                      <CardDescription>Create award or rejection letters</CardDescription>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Mail className="w-5 h-5 text-blue-600" />
+                        Generate Letters
+                      </CardTitle>
+                      <CardDescription>Create award, rejection, or disqualification letters using AI or templates</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-2">
-                      <Button 
-                        variant="outline" 
-                        className="w-full gap-2"
-                        onClick={() => generateLetterMutation.mutate({ 
-                          submissionId: selectedSubmission.id, 
-                          letterType: "award" 
-                        })}
-                        disabled={generateLetterMutation.isPending}
-                        data-testid="button-generate-award"
-                      >
-                        <Mail className="w-4 h-4" />
-                        Generate Award Letter
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="w-full gap-2"
-                        onClick={() => generateLetterMutation.mutate({ 
-                          submissionId: selectedSubmission.id, 
-                          letterType: "rejection" 
-                        })}
-                        disabled={generateLetterMutation.isPending}
-                        data-testid="button-generate-rejection"
-                      >
-                        <Mail className="w-4 h-4" />
-                        Generate Rejection Letter
-                      </Button>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-1 gap-2">
+                        <div className="p-2 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                          <Button 
+                            variant="ghost" 
+                            className="w-full gap-2 justify-start text-green-700 dark:text-green-300"
+                            onClick={() => generateLetterMutation.mutate({ 
+                              submissionId: selectedSubmission.id, 
+                              letterType: "award" 
+                            })}
+                            disabled={generateLetterMutation.isPending}
+                            data-testid="button-generate-award"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Award Letter
+                            <Sparkles className="w-3 h-3 ml-auto text-yellow-500" />
+                          </Button>
+                        </div>
+                        <div className="p-2 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+                          <Button 
+                            variant="ghost" 
+                            className="w-full gap-2 justify-start text-red-700 dark:text-red-300"
+                            onClick={() => generateLetterMutation.mutate({ 
+                              submissionId: selectedSubmission.id, 
+                              letterType: "rejection" 
+                            })}
+                            disabled={generateLetterMutation.isPending}
+                            data-testid="button-generate-rejection"
+                          >
+                            <XCircle className="w-4 h-4" />
+                            Rejection Letter
+                            <Sparkles className="w-3 h-3 ml-auto text-yellow-500" />
+                          </Button>
+                        </div>
+                        <div className="p-2 rounded-md bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800">
+                          <Button 
+                            variant="ghost" 
+                            className="w-full gap-2 justify-start text-orange-700 dark:text-orange-300"
+                            onClick={() => generateLetterMutation.mutate({ 
+                              submissionId: selectedSubmission.id, 
+                              letterType: "disqualification" 
+                            })}
+                            disabled={generateLetterMutation.isPending}
+                            data-testid="button-generate-disqualification"
+                          >
+                            <AlertCircle className="w-4 h-4" />
+                            Disqualification Letter
+                            <Sparkles className="w-3 h-3 ml-auto text-yellow-500" />
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-yellow-500" />
+                        AI-powered letter generation with vendor and tender details
+                      </p>
                     </CardContent>
                   </Card>
                 </div>
