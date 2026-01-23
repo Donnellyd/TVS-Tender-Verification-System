@@ -62,6 +62,7 @@ export default function TenderRequirements() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<Partial<InsertTenderRequirement>>({
@@ -246,6 +247,44 @@ export default function TenderRequirements() {
     setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.type !== 'application/pdf') {
+        toast({ title: "Invalid File", description: "Please drop a PDF file", variant: "destructive" });
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast({ title: "File Too Large", description: "PDF file must be less than 10MB", variant: "destructive" });
+        return;
+      }
+      setSelectedFile(file);
+      setPdfContent("");
     }
   };
 
@@ -501,8 +540,8 @@ export default function TenderRequirements() {
           setPdfContent("");
         }
       }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-500" />
               AI-Powered Requirement Extraction
@@ -511,10 +550,21 @@ export default function TenderRequirements() {
               Upload a tender PDF document or paste the content below. The AI will automatically extract compliance requirements.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1">
             <div className="space-y-3">
               <Label>Upload Tender PDF</Label>
-              <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+              <div 
+                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                  isDragging 
+                    ? 'border-primary bg-primary/5' 
+                    : 'hover:border-primary/50'
+                }`}
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                data-testid="dropzone-pdf"
+              >
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -539,6 +589,11 @@ export default function TenderRequirements() {
                     >
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
+                  </div>
+                ) : isDragging ? (
+                  <div>
+                    <Upload className="w-10 h-10 mx-auto text-primary mb-2" />
+                    <p className="font-medium text-primary">Drop PDF here</p>
                   </div>
                 ) : (
                   <label htmlFor="pdf-upload" className="cursor-pointer">
@@ -587,7 +642,7 @@ export default function TenderRequirements() {
               </ul>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 border-t pt-4">
             <Button variant="outline" onClick={() => setExtractDialogOpen(false)}>Cancel</Button>
             <Button 
               onClick={handleExtract} 
