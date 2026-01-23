@@ -62,6 +62,8 @@ export default function Submissions() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [documentDate, setDocumentDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [editingBidAmount, setEditingBidAmount] = useState(false);
+  const [bidAmountValue, setBidAmountValue] = useState("");
 
   const [formData, setFormData] = useState({
     tenderId: "",
@@ -294,6 +296,8 @@ export default function Submissions() {
   const handleViewDetails = (submission: BidSubmission) => {
     setSelectedSubmission(submission);
     setComplianceResults(null);
+    setEditingBidAmount(false);
+    setBidAmountValue("");
     setDetailsDialogOpen(true);
   };
 
@@ -624,10 +628,68 @@ export default function Submissions() {
                 <div className="grid grid-cols-4 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardDescription>Bid Amount</CardDescription>
-                      <CardTitle className="text-lg">
-                        R {selectedSubmission.bidAmount?.toLocaleString() || "0"}
-                      </CardTitle>
+                      <CardDescription className="flex items-center justify-between">
+                        <span>Bid Amount</span>
+                        {selectedSubmission.status === "draft" && !editingBidAmount && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => {
+                              setBidAmountValue(selectedSubmission.bidAmount?.toString() || "");
+                              setEditingBidAmount(true);
+                            }}
+                            data-testid="button-edit-bid-amount"
+                          >
+                            Edit
+                          </Button>
+                        )}
+                      </CardDescription>
+                      {editingBidAmount ? (
+                        <div className="flex gap-2 mt-1">
+                          <Input
+                            type="number"
+                            value={bidAmountValue}
+                            onChange={(e) => setBidAmountValue(e.target.value)}
+                            placeholder="Enter amount"
+                            className="h-8"
+                            data-testid="input-edit-bid-amount"
+                          />
+                          <Button
+                            size="sm"
+                            className="h-8"
+                            onClick={() => {
+                              const newBidAmount = bidAmountValue ? parseInt(bidAmountValue) : null;
+                              updateMutation.mutate({
+                                id: selectedSubmission.id,
+                                data: { bidAmount: newBidAmount }
+                              }, {
+                                onSuccess: () => {
+                                  setEditingBidAmount(false);
+                                  setSelectedSubmission({ ...selectedSubmission, bidAmount: newBidAmount });
+                                  toast({ title: "Bid amount updated" });
+                                }
+                              });
+                            }}
+                            disabled={updateMutation.isPending}
+                            data-testid="button-save-bid-amount"
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8"
+                            onClick={() => setEditingBidAmount(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <CardTitle className="text-lg">
+                          {selectedSubmission.bidAmount ? `R ${selectedSubmission.bidAmount.toLocaleString()}` : "Not set"}
+                        </CardTitle>
+                      )}
                     </CardHeader>
                   </Card>
                   <Card>
