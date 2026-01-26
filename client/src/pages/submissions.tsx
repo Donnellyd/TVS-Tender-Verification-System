@@ -157,11 +157,15 @@ export default function Submissions() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/submissions"] });
       setComplianceResults(data);
-      toast({ 
-        title: data.summary.overallPassed ? "Compliance Passed" : "Compliance Failed", 
-        description: `${data.summary.passedCount}/${data.summary.totalRequirements} requirements met`,
-        variant: data.summary.overallPassed ? "default" : "destructive"
-      });
+      if (data?.summary) {
+        toast({ 
+          title: data.summary.overallPassed ? "Compliance Passed" : "Compliance Failed", 
+          description: `${data.summary.passedCount}/${data.summary.totalRequirements} requirements met`,
+          variant: data.summary.overallPassed ? "default" : "destructive"
+        });
+      } else {
+        toast({ title: "Compliance Check Complete", description: "Check completed" });
+      }
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to run compliance check", variant: "destructive" });
@@ -201,17 +205,19 @@ export default function Submissions() {
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/submissions-by-stage"] });
       setComplianceResults(data);
       
-      if (data.summary.overallPassed) {
+      if (data?.summary?.overallPassed) {
         toast({ 
           title: "Bid Submitted - Compliance Passed!", 
           description: `All ${data.summary.passedCount} requirements met. Ready for manual review.`,
         });
-      } else {
+      } else if (data?.summary) {
         toast({ 
           title: "Bid Submitted - Compliance Issues Found", 
           description: `${data.summary.failedCount} of ${data.summary.totalRequirements} requirements failed.`,
           variant: "destructive"
         });
+      } else {
+        toast({ title: "Bid Submitted", description: "Submission completed" });
       }
     },
     onError: () => {
@@ -1148,7 +1154,7 @@ export default function Submissions() {
                   </Button>
                 </div>
 
-                {complianceResults && (
+                {complianceResults && complianceResults.summary && (
                   <div className="space-y-4">
                     <Card>
                       <CardHeader>
@@ -1182,7 +1188,7 @@ export default function Submissions() {
                             </div>
                           </div>
                           <Progress 
-                            value={(complianceResults.summary.passedCount / complianceResults.summary.totalRequirements) * 100} 
+                            value={complianceResults.summary.totalRequirements > 0 ? (complianceResults.summary.passedCount / complianceResults.summary.totalRequirements) * 100 : 0} 
                           />
                         </div>
                       </CardContent>
