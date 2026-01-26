@@ -67,6 +67,11 @@ export default function Submissions() {
   const [scoringDialogOpen, setScoringDialogOpen] = useState(false);
   const [isAutoScoring, setIsAutoScoring] = useState(false);
   const [autoScoreResults, setAutoScoreResults] = useState<any>(null);
+  const [letterDialogOpen, setLetterDialogOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [generatedLetter, setGeneratedLetter] = useState<{ subject: string; body: string } | null>(null);
+  const [isGeneratingLetter, setIsGeneratingLetter] = useState(false);
+  const [letterPreview, setLetterPreview] = useState<string>("");
 
   const [formData, setFormData] = useState({
     tenderId: "",
@@ -119,6 +124,17 @@ export default function Submissions() {
   // Query for evaluation scores for selected submission
   const { data: evaluationScores, refetch: refetchScores } = useQuery<EvaluationScore[]>({
     queryKey: ["/api/submissions", selectedSubmission?.id, "scores"],
+    enabled: !!selectedSubmission?.id,
+  });
+
+  // Query for letter templates
+  const { data: letterTemplates } = useQuery<Array<{ id: string; name: string; letterType: string; subject: string; bodyTemplate: string }>>({
+    queryKey: ["/api/letter-templates"],
+  });
+
+  // Query for generated letters for selected submission
+  const { data: generatedLetters, refetch: refetchLetters } = useQuery<Array<{ id: string; letterType: string; subject: string; body: string; sentAt: string | null; createdAt: string }>>({
+    queryKey: ["/api/submissions", selectedSubmission?.id, "letters"],
     enabled: !!selectedSubmission?.id,
   });
 
@@ -326,6 +342,75 @@ export default function Submissions() {
 
   const handleStatusChange = (submission: BidSubmission, newStatus: string) => {
     updateMutation.mutate({ id: submission.id, data: { status: newStatus } });
+  };
+
+  const handleOpenLetterDialog = () => {
+    setLetterDialogOpen(true);
+    setSelectedTemplateId("");
+    setGeneratedLetter(null);
+    setLetterPreview("");
+  };
+
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    const template = letterTemplates?.find(t => t.id === templateId);
+    if (template && selectedSubmission) {
+      const vendor = vendors?.find(v => v.id === selectedSubmission.vendorId);
+      const tender = tenders?.find(t => t.id === selectedSubmission.tenderId);
+      
+      // Replace placeholders with actual data
+      let preview = template.bodyTemplate
+        .replace(/\[TenderNo\]/g, tender?.tenderNumber || "[TenderNo]")
+        .replace(/\[TenderTitle\]/g, tender?.title || "[TenderTitle]")
+        .replace(/\[BidderName\]/g, vendor?.companyName || "[BidderName]")
+        .replace(/\[ContractorName\]/g, vendor?.companyName || "[ContractorName]")
+        .replace(/\[Currency \+ Amount\]/g, selectedSubmission.bidAmount ? `R ${Number(selectedSubmission.bidAmount).toLocaleString()}` : "[Amount]")
+        .replace(/\[Amount\]/g, selectedSubmission.bidAmount ? `R ${Number(selectedSubmission.bidAmount).toLocaleString()}` : "[Amount]")
+        .replace(/\[Date\]/g, format(new Date(), "dd MMMM yyyy"))
+        .replace(/\[YourName\]/g, "[Your Name]")
+        .replace(/\[Position\]/g, "[Your Position]")
+        .replace(/\[Organisation\]/g, "[Your Organisation]")
+        .replace(/\[ContactDetails\]/g, "[Contact Details]");
+      
+      setLetterPreview(preview);
+    }
+  };
+
+  const handleGenerateLetter = async () => {
+    if (!selectedSubmission || !selectedTemplateId) return;
+    
+    setIsGeneratingLetter(true);
+    const template = letterTemplates?.find(t => t.id === selectedTemplateId);
+    
+    try {
+      const response = await fetch(`/api/submissions/${selectedSubmission.id}/generate-letter`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          letterType: template?.letterType || 'award',
+          templateId: selectedTemplateId
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate letter');
+      }
+      
+      const result = await response.json();
+      setGeneratedLetter({ subject: result.subject, body: result.body });
+      refetchLetters();
+      toast({ title: "Letter Generated", description: "Communication ready for review" });
+    } catch (error: any) {
+      toast({ 
+        title: "Generation Failed", 
+        description: error.message || "Could not generate letter",
+        variant: "destructive" 
+      });
+    } finally {
+      setIsGeneratingLetter(false);
+    }
   };
 
   const handleAutoScore = async () => {
@@ -1359,64 +1444,37 @@ export default function Submissions() {
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
                         <Mail className="w-5 h-5 text-blue-600" />
-                        Generate Letters
+                        Communications
                       </CardTitle>
-                      <CardDescription>Create award, rejection, or disqualification letters using AI or templates</CardDescription>
+                      <CardDescription>Generate letters from templates with auto-filled details</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="grid grid-cols-1 gap-2">
-                        <div className="p-2 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                          <Button 
-                            variant="ghost" 
-                            className="w-full gap-2 justify-start text-green-700 dark:text-green-300"
-                            onClick={() => generateLetterMutation.mutate({ 
-                              submissionId: selectedSubmission.id, 
-                              letterType: "award" 
-                            })}
-                            disabled={generateLetterMutation.isPending}
-                            data-testid="button-generate-award"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                            Award Letter
-                            <Sparkles className="w-3 h-3 ml-auto text-yellow-500" />
-                          </Button>
+                      <Button 
+                        className="w-full gap-2"
+                        onClick={handleOpenLetterDialog}
+                        data-testid="button-open-letter-dialog"
+                      >
+                        <Mail className="w-4 h-4" />
+                        Generate Communication
+                      </Button>
+                      
+                      {generatedLetters && generatedLetters.length > 0 && (
+                        <div className="space-y-2 pt-2 border-t">
+                          <p className="text-xs text-muted-foreground font-medium">Recent Letters</p>
+                          {generatedLetters.slice(0, 3).map((letter) => (
+                            <div key={letter.id} className="p-2 bg-muted rounded text-sm flex items-center justify-between">
+                              <span className="truncate">{letter.subject}</span>
+                              <Badge variant="outline" className="text-xs ml-2 shrink-0">
+                                {letter.letterType}
+                              </Badge>
+                            </div>
+                          ))}
                         </div>
-                        <div className="p-2 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
-                          <Button 
-                            variant="ghost" 
-                            className="w-full gap-2 justify-start text-red-700 dark:text-red-300"
-                            onClick={() => generateLetterMutation.mutate({ 
-                              submissionId: selectedSubmission.id, 
-                              letterType: "rejection" 
-                            })}
-                            disabled={generateLetterMutation.isPending}
-                            data-testid="button-generate-rejection"
-                          >
-                            <XCircle className="w-4 h-4" />
-                            Rejection Letter
-                            <Sparkles className="w-3 h-3 ml-auto text-yellow-500" />
-                          </Button>
-                        </div>
-                        <div className="p-2 rounded-md bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800">
-                          <Button 
-                            variant="ghost" 
-                            className="w-full gap-2 justify-start text-orange-700 dark:text-orange-300"
-                            onClick={() => generateLetterMutation.mutate({ 
-                              submissionId: selectedSubmission.id, 
-                              letterType: "disqualification" 
-                            })}
-                            disabled={generateLetterMutation.isPending}
-                            data-testid="button-generate-disqualification"
-                          >
-                            <AlertCircle className="w-4 h-4" />
-                            Disqualification Letter
-                            <Sparkles className="w-3 h-3 ml-auto text-yellow-500" />
-                          </Button>
-                        </div>
-                      </div>
+                      )}
+                      
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-yellow-500" />
-                        AI-powered letter generation with vendor and tender details
+                        <FileText className="w-3 h-3" />
+                        {letterTemplates?.length || 0} templates available
                       </p>
                     </CardContent>
                   </Card>
@@ -1496,6 +1554,114 @@ export default function Submissions() {
                 </>
               ) : (
                 "Upload Document"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={letterDialogOpen} onOpenChange={setLetterDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Generate Communication
+            </DialogTitle>
+            <DialogDescription>
+              Select a template and generate a communication letter for this submission
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Select Template</Label>
+              <Select value={selectedTemplateId} onValueChange={handleTemplateSelect}>
+                <SelectTrigger data-testid="select-letter-template">
+                  <SelectValue placeholder="Choose a template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {letterTemplates?.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {letterPreview && (
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Preview</Label>
+                <div className="p-4 bg-muted rounded-md whitespace-pre-wrap font-mono text-sm max-h-64 overflow-y-auto">
+                  {letterPreview}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Placeholders in [brackets] will be replaced with actual values when generated
+                </p>
+              </div>
+            )}
+
+            {generatedLetter && (
+              <div className="space-y-3 border rounded-lg p-4 bg-green-50 dark:bg-green-900/20">
+                <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="font-medium">Letter Generated Successfully</span>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Subject</Label>
+                  <div className="p-2 bg-background rounded border text-sm font-medium">
+                    {generatedLetter.subject}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Body</Label>
+                  <div className="p-3 bg-background rounded border whitespace-pre-wrap text-sm max-h-48 overflow-y-auto">
+                    {generatedLetter.body}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {generatedLetters && generatedLetters.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Previously Generated Letters</Label>
+                <div className="border rounded-lg divide-y">
+                  {generatedLetters.map((letter) => (
+                    <div key={letter.id} className="p-3 flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">{letter.subject}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {letter.createdAt ? format(new Date(letter.createdAt), "PPp") : "N/A"}
+                          {letter.sentAt && " • Sent"}
+                        </p>
+                      </div>
+                      <Badge variant="outline">{letter.letterType}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLetterDialogOpen(false)}>
+              Close
+            </Button>
+            <Button 
+              onClick={handleGenerateLetter}
+              disabled={!selectedTemplateId || isGeneratingLetter}
+              data-testid="button-generate-letter"
+            >
+              {isGeneratingLetter ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Letter
+                </>
               )}
             </Button>
           </DialogFooter>
