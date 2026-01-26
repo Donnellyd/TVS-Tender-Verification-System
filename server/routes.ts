@@ -2097,4 +2097,94 @@ Return a JSON object with scores for each criterion:
       res.status(500).json({ error: "Failed to calculate B-BBEE points" });
     }
   });
+
+  // WhatsApp Templates CRUD
+  app.get("/api/whatsapp-templates", async (req, res) => {
+    try {
+      const municipalityId = req.query.municipalityId as string | undefined;
+      const templates = await storage.getWhatsappTemplates(municipalityId);
+      res.json(templates);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch WhatsApp templates" });
+    }
+  });
+
+  app.get("/api/whatsapp-templates/:id", async (req, res) => {
+    try {
+      const template = await storage.getWhatsappTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: "WhatsApp template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch WhatsApp template" });
+    }
+  });
+
+  app.post("/api/whatsapp-templates", async (req, res) => {
+    try {
+      const template = await storage.createWhatsappTemplate(req.body);
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Failed to create WhatsApp template:", error);
+      res.status(500).json({ error: "Failed to create WhatsApp template" });
+    }
+  });
+
+  app.put("/api/whatsapp-templates/:id", async (req, res) => {
+    try {
+      const template = await storage.updateWhatsappTemplate(req.params.id, req.body);
+      if (!template) {
+        return res.status(404).json({ error: "WhatsApp template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update WhatsApp template" });
+    }
+  });
+
+  app.delete("/api/whatsapp-templates/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteWhatsappTemplate(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "WhatsApp template not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete WhatsApp template" });
+    }
+  });
+
+  // Notification Settings
+  app.get("/api/notification-settings/:channel", async (req, res) => {
+    try {
+      const settings = await storage.getNotificationSettings(req.params.channel);
+      res.json(settings || { channel: req.params.channel, triggerToggles: "{}", isActive: false });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notification settings" });
+    }
+  });
+
+  app.put("/api/notification-settings/:channel", async (req, res) => {
+    try {
+      const settings = await storage.upsertNotificationSettings({
+        ...req.body,
+        channel: req.params.channel,
+      });
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update notification settings" });
+    }
+  });
+
+  // Notification Logs
+  app.get("/api/notification-logs", async (req, res) => {
+    try {
+      const vendorId = req.query.vendorId as string | undefined;
+      const logs = await storage.getNotificationLogs(vendorId);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notification logs" });
+    }
+  });
 }

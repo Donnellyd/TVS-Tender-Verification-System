@@ -126,7 +126,7 @@ function getCategoryBadge(letterType: string) {
   );
 }
 
-export default function Templates() {
+export default function EmailTemplates() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("all");
@@ -258,8 +258,8 @@ export default function Templates() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Communication Templates"
-        description="Manage email templates for tender communications"
+        title="Email Templates"
+        description="Manage email templates for tender communications (award, rejection, clarification letters)"
         action={{
           label: "Add Template",
           icon: <Plus className="h-4 w-4 mr-2" />,

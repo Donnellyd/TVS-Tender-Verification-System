@@ -18,7 +18,8 @@ import Analytics from "@/pages/analytics";
 import Municipalities from "@/pages/municipalities";
 import Submissions from "@/pages/submissions";
 import TenderRequirements from "@/pages/tender-requirements";
-import Templates from "@/pages/templates";
+import EmailTemplates from "@/pages/email-templates";
+import WhatsappTemplates from "@/pages/whatsapp-templates";
 
 function LoadingScreen() {
   return (
@@ -53,7 +54,8 @@ function AuthenticatedApp() {
             <Route path="/compliance" component={Compliance} />
             <Route path="/analytics" component={Analytics} />
             <Route path="/municipalities" component={Municipalities} />
-            <Route path="/templates" component={Templates} />
+            <Route path="/email-templates" component={EmailTemplates} />
+            <Route path="/whatsapp-templates" component={WhatsappTemplates} />
             <Route path="/rules" component={Compliance} />
             <Route path="/notifications" component={Dashboard} />
             <Route path="/settings" component={Dashboard} />

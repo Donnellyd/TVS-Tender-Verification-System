@@ -16,6 +16,9 @@ import {
   evaluationScores,
   letterTemplates,
   generatedLetters,
+  whatsappTemplates,
+  notificationLogs,
+  notificationSettings,
   type InsertMunicipality,
   type Municipality,
   type InsertVendor,
@@ -53,6 +56,14 @@ import {
   type InsertGeneratedLetter,
   type GeneratedLetter,
   type SubmissionsByStage,
+  type InsertWhatsappTemplate,
+  type WhatsappTemplate,
+  type InsertNotificationLog,
+  type NotificationLog,
+  type InsertNotificationSettings,
+  type NotificationSettings,
+  type NotificationChannel,
+  type NotificationTrigger,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -170,6 +181,22 @@ export interface IStorage {
   deleteComplianceChecksByVendor(vendorId: string): Promise<boolean>;
   deleteDocumentsByTender(tenderId: string): Promise<boolean>;
   deleteDocumentsByVendor(vendorId: string): Promise<boolean>;
+
+  // WhatsApp Templates
+  getWhatsappTemplates(municipalityId?: string): Promise<WhatsappTemplate[]>;
+  getWhatsappTemplate(id: string): Promise<WhatsappTemplate | undefined>;
+  getWhatsappTemplateByTrigger(trigger: string): Promise<WhatsappTemplate | undefined>;
+  createWhatsappTemplate(data: InsertWhatsappTemplate): Promise<WhatsappTemplate>;
+  updateWhatsappTemplate(id: string, data: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate | undefined>;
+  deleteWhatsappTemplate(id: string): Promise<boolean>;
+
+  // Notification Settings
+  getNotificationSettings(channel: string): Promise<NotificationSettings | undefined>;
+  upsertNotificationSettings(data: InsertNotificationSettings): Promise<NotificationSettings>;
+
+  // Notification Logs
+  createNotificationLog(data: InsertNotificationLog): Promise<NotificationLog>;
+  getNotificationLogs(vendorId?: string): Promise<NotificationLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -790,6 +817,71 @@ export class DatabaseStorage implements IStorage {
   async deleteDocumentsByVendor(vendorId: string): Promise<boolean> {
     const result = await db.delete(documents).where(eq(documents.vendorId, vendorId));
     return (result.rowCount ?? 0) >= 0;
+  }
+
+  // WhatsApp Templates
+  async getWhatsappTemplates(municipalityId?: string): Promise<WhatsappTemplate[]> {
+    if (municipalityId) {
+      return await db.select().from(whatsappTemplates).where(eq(whatsappTemplates.municipalityId, municipalityId)).orderBy(desc(whatsappTemplates.createdAt));
+    }
+    return await db.select().from(whatsappTemplates).orderBy(desc(whatsappTemplates.createdAt));
+  }
+
+  async getWhatsappTemplate(id: string): Promise<WhatsappTemplate | undefined> {
+    const [result] = await db.select().from(whatsappTemplates).where(eq(whatsappTemplates.id, id)).limit(1);
+    return result;
+  }
+
+  async getWhatsappTemplateByTrigger(trigger: string): Promise<WhatsappTemplate | undefined> {
+    const [result] = await db.select().from(whatsappTemplates).where(and(
+      eq(whatsappTemplates.trigger, trigger),
+      eq(whatsappTemplates.isActive, true)
+    )).limit(1);
+    return result;
+  }
+
+  async createWhatsappTemplate(data: InsertWhatsappTemplate): Promise<WhatsappTemplate> {
+    const [result] = await db.insert(whatsappTemplates).values(data).returning();
+    return result;
+  }
+
+  async updateWhatsappTemplate(id: string, data: Partial<InsertWhatsappTemplate>): Promise<WhatsappTemplate | undefined> {
+    const [result] = await db.update(whatsappTemplates).set({ ...data, updatedAt: new Date() }).where(eq(whatsappTemplates.id, id)).returning();
+    return result;
+  }
+
+  async deleteWhatsappTemplate(id: string): Promise<boolean> {
+    const result = await db.delete(whatsappTemplates).where(eq(whatsappTemplates.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Notification Settings
+  async getNotificationSettings(channel: string): Promise<NotificationSettings | undefined> {
+    const [result] = await db.select().from(notificationSettings).where(eq(notificationSettings.channel, channel)).limit(1);
+    return result;
+  }
+
+  async upsertNotificationSettings(data: InsertNotificationSettings): Promise<NotificationSettings> {
+    const existing = await this.getNotificationSettings(data.channel);
+    if (existing) {
+      const [result] = await db.update(notificationSettings).set({ ...data, updatedAt: new Date() }).where(eq(notificationSettings.id, existing.id)).returning();
+      return result;
+    }
+    const [result] = await db.insert(notificationSettings).values(data).returning();
+    return result;
+  }
+
+  // Notification Logs
+  async createNotificationLog(data: InsertNotificationLog): Promise<NotificationLog> {
+    const [result] = await db.insert(notificationLogs).values(data).returning();
+    return result;
+  }
+
+  async getNotificationLogs(vendorId?: string): Promise<NotificationLog[]> {
+    if (vendorId) {
+      return await db.select().from(notificationLogs).where(eq(notificationLogs.vendorId, vendorId)).orderBy(desc(notificationLogs.createdAt));
+    }
+    return await db.select().from(notificationLogs).orderBy(desc(notificationLogs.createdAt)).limit(100);
   }
 }
 

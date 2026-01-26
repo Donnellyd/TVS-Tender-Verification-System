@@ -8,7 +8,38 @@ export * from "./models/auth";
 
 // SA-specific enums for validation
 export const vendorStatusEnum = z.enum(["pending", "approved", "suspended", "debarred"]);
-export const tenderStatusEnum = z.enum(["open", "closed", "under_review", "awarded", "cancelled"]);
+export const tenderStatusEnum = z.enum([
+  "draft",
+  "published", 
+  "closing_soon",
+  "closed",
+  "under_evaluation",
+  "clarification_requested",
+  "shortlisted",
+  "standstill_period",
+  "awarded",
+  "unsuccessful",
+  "cancelled",
+  "open",
+  "under_review"
+]);
+
+export const notificationChannelEnum = z.enum(["email", "whatsapp"]);
+export const notificationTriggerEnum = z.enum([
+  "tender_published",
+  "tender_closing_soon",
+  "tender_closed",
+  "under_evaluation",
+  "clarification_requested",
+  "shortlisted",
+  "standstill_period",
+  "awarded",
+  "unsuccessful",
+  "tender_cancelled",
+  "submission_received",
+  "document_verified",
+  "document_rejected"
+]);
 export const tenderTypeEnum = z.enum(["RFQ", "RFP", "RFT", "EOI"]);
 export const tenderCategoryEnum = z.enum(["Goods", "Services", "Works", "Consulting", "IT", "Construction", "Transport"]);
 export const priorityEnum = z.enum(["low", "medium", "high", "critical"]);
@@ -68,6 +99,8 @@ export const vendors = pgTable("vendors", {
   bankBranchCode: text("bank_branch_code"),
   status: text("status").notNull().default("pending"),
   debarmentStatus: text("debarment_status").default("clear"),
+  whatsappPhone: text("whatsapp_phone"),
+  whatsappOptIn: boolean("whatsapp_opt_in").default(false),
   municipalityId: varchar("municipality_id").references(() => municipalities.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -693,3 +726,105 @@ export type BBBEEPointsCalculation = {
   points: number;
   maxPoints: number;
 };
+
+// WhatsApp Templates table - for WhatsApp notification messages
+export const whatsappTemplates = pgTable("whatsapp_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  trigger: text("trigger").notNull(),
+  body: text("body").notNull(),
+  isActive: boolean("is_active").default(true),
+  municipalityId: varchar("municipality_id").references(() => municipalities.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const whatsappTemplatesRelations = relations(whatsappTemplates, ({ one }) => ({
+  municipality: one(municipalities, {
+    fields: [whatsappTemplates.municipalityId],
+    references: [municipalities.id],
+  }),
+}));
+
+export const insertWhatsappTemplateSchema = createInsertSchema(whatsappTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Template name is required"),
+  trigger: notificationTriggerEnum,
+  body: z.string().min(10, "Message body must be at least 10 characters"),
+});
+
+export type InsertWhatsappTemplate = z.infer<typeof insertWhatsappTemplateSchema>;
+export type WhatsappTemplate = typeof whatsappTemplates.$inferSelect;
+
+// Notification Settings table - global settings for notification behavior
+export const notificationSettings = pgTable("notification_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  channel: text("channel").notNull(),
+  triggerToggles: text("trigger_toggles").notNull().default('{}'),
+  channelConfig: text("channel_config").default('{}'),
+  isActive: boolean("is_active").default(true),
+  municipalityId: varchar("municipality_id").references(() => municipalities.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertNotificationSettingsSchema = createInsertSchema(notificationSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  channel: notificationChannelEnum,
+});
+
+export type InsertNotificationSettings = z.infer<typeof insertNotificationSettingsSchema>;
+export type NotificationSettings = typeof notificationSettings.$inferSelect;
+
+// Notification Logs table - track sent notifications for debugging and analytics
+export const notificationLogs = pgTable("notification_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  vendorId: varchar("vendor_id").references(() => vendors.id),
+  tenderId: varchar("tender_id").references(() => tenders.id),
+  submissionId: varchar("submission_id").references(() => bidSubmissions.id),
+  channel: text("channel").notNull(),
+  trigger: text("trigger").notNull(),
+  recipientPhone: text("recipient_phone"),
+  body: text("body").notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
+  deliveryStatus: text("delivery_status").default("pending"),
+  errorMessage: text("error_message"),
+  externalId: text("external_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const notificationLogsRelations = relations(notificationLogs, ({ one }) => ({
+  vendor: one(vendors, {
+    fields: [notificationLogs.vendorId],
+    references: [vendors.id],
+  }),
+  tender: one(tenders, {
+    fields: [notificationLogs.tenderId],
+    references: [tenders.id],
+  }),
+  submission: one(bidSubmissions, {
+    fields: [notificationLogs.submissionId],
+    references: [bidSubmissions.id],
+  }),
+}));
+
+export const insertNotificationLogSchema = createInsertSchema(notificationLogs).omit({
+  id: true,
+  sentAt: true,
+  createdAt: true,
+}).extend({
+  channel: notificationChannelEnum,
+  trigger: notificationTriggerEnum,
+});
+
+export type InsertNotificationLog = z.infer<typeof insertNotificationLogSchema>;
+export type NotificationLog = typeof notificationLogs.$inferSelect;
+
+export type NotificationChannel = z.infer<typeof notificationChannelEnum>;
+export type NotificationTrigger = z.infer<typeof notificationTriggerEnum>;

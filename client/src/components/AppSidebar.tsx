@@ -13,6 +13,7 @@ import {
   LogOut,
   Send,
   Mail,
+  MessageCircle,
 } from "lucide-react";
 import {
   Sidebar,
@@ -42,7 +43,8 @@ const mainNavItems = [
 
 const settingsNavItems = [
   { title: "Municipalities", url: "/municipalities", icon: Building2 },
-  { title: "Templates", url: "/templates", icon: Mail },
+  { title: "Email Templates", url: "/email-templates", icon: Mail },
+  { title: "WhatsApp Templates", url: "/whatsapp-templates", icon: MessageCircle },
   { title: "Compliance Rules", url: "/rules", icon: Shield },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Settings", url: "/settings", icon: Settings },
