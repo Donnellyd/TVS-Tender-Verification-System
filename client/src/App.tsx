@@ -18,6 +18,7 @@ import Analytics from "@/pages/analytics";
 import Municipalities from "@/pages/municipalities";
 import Submissions from "@/pages/submissions";
 import TenderRequirements from "@/pages/tender-requirements";
+import Templates from "@/pages/templates";
 
 function LoadingScreen() {
   return (
@@ -52,6 +53,7 @@ function AuthenticatedApp() {
             <Route path="/compliance" component={Compliance} />
             <Route path="/analytics" component={Analytics} />
             <Route path="/municipalities" component={Municipalities} />
+            <Route path="/templates" component={Templates} />
             <Route path="/rules" component={Compliance} />
             <Route path="/notifications" component={Dashboard} />
             <Route path="/settings" component={Dashboard} />

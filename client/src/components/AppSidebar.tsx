@@ -12,6 +12,7 @@ import {
   FolderOpen,
   LogOut,
   Send,
+  Mail,
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,6 +42,7 @@ const mainNavItems = [
 
 const settingsNavItems = [
   { title: "Municipalities", url: "/municipalities", icon: Building2 },
+  { title: "Templates", url: "/templates", icon: Mail },
   { title: "Compliance Rules", url: "/rules", icon: Shield },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Settings", url: "/settings", icon: Settings },
