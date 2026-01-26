@@ -222,8 +222,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         }
         // Delete evaluation scores
         await storage.deleteEvaluationScoresBySubmission(submission.id);
-        // Delete compliance checks for submission
-        await storage.deleteComplianceChecksBySubmission(submission.id);
         // Delete generated letters
         await storage.deleteGeneratedLettersBySubmission(submission.id);
         // Delete the submission
@@ -376,8 +374,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         }
         // Delete evaluation scores
         await storage.deleteEvaluationScoresBySubmission(submission.id);
-        // Delete compliance checks for submission
-        await storage.deleteComplianceChecksBySubmission(submission.id);
         // Delete generated letters
         await storage.deleteGeneratedLettersBySubmission(submission.id);
         // Delete the submission

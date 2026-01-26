@@ -166,7 +166,6 @@ export interface IStorage {
   deleteGeneratedLettersBySubmission(submissionId: string): Promise<boolean>;
 
   // Cascade delete helpers
-  deleteComplianceChecksBySubmission(submissionId: string): Promise<boolean>;
   deleteComplianceChecksByTender(tenderId: string): Promise<boolean>;
   deleteComplianceChecksByVendor(vendorId: string): Promise<boolean>;
   deleteDocumentsByTender(tenderId: string): Promise<boolean>;
@@ -770,11 +769,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEvaluationScoresBySubmission(submissionId: string): Promise<boolean> {
     const result = await db.delete(evaluationScores).where(eq(evaluationScores.submissionId, submissionId));
-    return (result.rowCount ?? 0) >= 0;
-  }
-
-  async deleteComplianceChecksBySubmission(submissionId: string): Promise<boolean> {
-    const result = await db.delete(complianceChecks).where(eq(complianceChecks.submissionId, submissionId));
     return (result.rowCount ?? 0) >= 0;
   }
 
