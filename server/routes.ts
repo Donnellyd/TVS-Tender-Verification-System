@@ -210,7 +210,35 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.delete("/api/vendors/:id", async (req, res) => {
     try {
-      const success = await storage.deleteVendor(req.params.id);
+      const vendorId = req.params.id;
+      
+      // First, delete all related bid submissions and their documents
+      const submissions = await storage.getBidSubmissionsByVendor(vendorId);
+      for (const submission of submissions) {
+        // Delete submission documents first
+        const submissionDocs = await storage.getSubmissionDocuments(submission.id);
+        for (const doc of submissionDocs) {
+          await storage.deleteSubmissionDocument(doc.id);
+        }
+        // Delete evaluation scores
+        await storage.deleteEvaluationScoresBySubmission(submission.id);
+        // Delete compliance checks for submission
+        await storage.deleteComplianceChecksBySubmission(submission.id);
+        // Delete generated letters
+        await storage.deleteGeneratedLettersBySubmission(submission.id);
+        // Delete the submission
+        await storage.deleteBidSubmission(submission.id);
+      }
+      
+      // Delete any documents associated with vendor
+      const documents = await storage.getDocuments();
+      const vendorDocs = documents.filter(d => d.vendorId === vendorId);
+      for (const doc of vendorDocs) {
+        await storage.deleteDocument(doc.id);
+      }
+      
+      // Now delete the vendor
+      const success = await storage.deleteVendor(vendorId);
       if (!success) {
         return res.status(404).json({ error: "Vendor not found" });
       }
@@ -218,10 +246,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         userId: (req as any).user?.id,
         action: "delete_vendor",
         entityType: "vendor",
-        entityId: req.params.id,
+        entityId: vendorId,
       });
       res.status(204).send();
     } catch (error) {
+      console.error("Failed to delete vendor:", error);
       res.status(500).json({ error: "Failed to delete vendor" });
     }
   });
@@ -280,6 +309,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
       res.status(201).json(tender);
     } catch (error) {
+      console.error("Failed to create tender:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
       }
@@ -335,7 +365,37 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.delete("/api/tenders/:id", async (req, res) => {
     try {
-      const success = await storage.deleteTender(req.params.id);
+      const tenderId = req.params.id;
+      
+      // Delete all related bid submissions and their documents first
+      const submissions = await storage.getBidSubmissions(tenderId);
+      for (const submission of submissions) {
+        // Delete submission documents first
+        const submissionDocs = await storage.getSubmissionDocuments(submission.id);
+        for (const doc of submissionDocs) {
+          await storage.deleteSubmissionDocument(doc.id);
+        }
+        // Delete evaluation scores
+        await storage.deleteEvaluationScoresBySubmission(submission.id);
+        // Delete compliance checks for submission
+        await storage.deleteComplianceChecksBySubmission(submission.id);
+        // Delete generated letters
+        await storage.deleteGeneratedLettersBySubmission(submission.id);
+        // Delete the submission
+        await storage.deleteBidSubmission(submission.id);
+      }
+      
+      // Delete tender requirements
+      const requirements = await storage.getTenderRequirements(tenderId);
+      for (const req of requirements) {
+        await storage.deleteTenderRequirement(req.id);
+      }
+      
+      // Delete tender scoring criteria
+      await storage.deleteTenderScoringCriteriaByTender(tenderId);
+      
+      // Now delete the tender
+      const success = await storage.deleteTender(tenderId);
       if (!success) {
         return res.status(404).json({ error: "Tender not found" });
       }
@@ -343,10 +403,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         userId: (req as any).user?.id,
         action: "delete_tender",
         entityType: "tender",
-        entityId: req.params.id,
+        entityId: tenderId,
       });
       res.status(204).send();
     } catch (error) {
+      console.error("Failed to delete tender:", error);
       res.status(500).json({ error: "Failed to delete tender" });
     }
   });

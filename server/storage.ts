@@ -151,6 +151,7 @@ export interface IStorage {
   createEvaluationScore(data: InsertEvaluationScore): Promise<EvaluationScore>;
   updateEvaluationScore(id: string, data: Partial<InsertEvaluationScore>): Promise<EvaluationScore | undefined>;
   deleteEvaluationScore(id: string): Promise<boolean>;
+  deleteEvaluationScoresBySubmission(submissionId: string): Promise<boolean>;
 
   // Letter Templates
   getLetterTemplates(municipalityId?: string): Promise<LetterTemplate[]>;
@@ -162,6 +163,10 @@ export interface IStorage {
   // Generated Letters
   getGeneratedLetters(submissionId: string): Promise<GeneratedLetter[]>;
   createGeneratedLetter(data: InsertGeneratedLetter): Promise<GeneratedLetter>;
+  deleteGeneratedLettersBySubmission(submissionId: string): Promise<boolean>;
+
+  // Compliance Checks - cascade delete
+  deleteComplianceChecksBySubmission(submissionId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -752,6 +757,21 @@ export class DatabaseStorage implements IStorage {
   async createGeneratedLetter(data: InsertGeneratedLetter): Promise<GeneratedLetter> {
     const [result] = await db.insert(generatedLetters).values(data).returning();
     return result;
+  }
+
+  async deleteGeneratedLettersBySubmission(submissionId: string): Promise<boolean> {
+    const result = await db.delete(generatedLetters).where(eq(generatedLetters.submissionId, submissionId));
+    return (result.rowCount ?? 0) >= 0;
+  }
+
+  async deleteEvaluationScoresBySubmission(submissionId: string): Promise<boolean> {
+    const result = await db.delete(evaluationScores).where(eq(evaluationScores.submissionId, submissionId));
+    return (result.rowCount ?? 0) >= 0;
+  }
+
+  async deleteComplianceChecksBySubmission(submissionId: string): Promise<boolean> {
+    const result = await db.delete(complianceChecks).where(eq(complianceChecks.submissionId, submissionId));
+    return (result.rowCount ?? 0) >= 0;
   }
 }
 
