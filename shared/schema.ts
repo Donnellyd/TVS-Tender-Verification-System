@@ -315,7 +315,26 @@ export type Notification = typeof notifications.$inferSelect;
 export const submissionStatusEnum = z.enum(["draft", "submitted", "auto_checking", "manual_review", "passed", "failed", "awarded", "rejected"]);
 export const requirementTypeEnum = z.enum(["CSD Registration", "Tax Clearance", "BBBEE Certificate", "Company Registration", "COIDA Certificate", "Public Liability Insurance", "Municipal Rates Clearance", "Audited Financials", "Declaration of Interest", "Bid Defaulters Check", "Professional Registration", "Safety Certification", "Other"]);
 export const scoringSystemEnum = z.enum(["80/20", "90/10"]);
-export const letterTypeEnum = z.enum(["award", "rejection", "regret", "disqualification"]);
+export const letterTypeEnum = z.enum([
+  "award",
+  "rejection", 
+  "regret",
+  "disqualification",
+  "not_shortlisted",
+  "shortlisted",
+  "request_clarification",
+  "request_information",
+  "addendum",
+  "extension",
+  "non_compliant",
+  "standstill_notice",
+  "standstill_expiry",
+  "debrief_invitation",
+  "debrief_response",
+  "tender_cancelled",
+  "correction_notice",
+  "re_tender"
+]);
 
 // Tender Requirements table - AI-extracted from tender PDFs
 export const tenderRequirements = pgTable("tender_requirements", {
