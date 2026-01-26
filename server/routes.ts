@@ -1063,11 +1063,30 @@ Return a JSON object with this structure:
         `- ${d.documentType}: ${d.documentName} (Status: ${d.verificationStatus})`
       ).join('\n') || 'No documents submitted';
 
+      // Official B-BBEE preference points tables
+      const bbbeePoints80_20: Record<string, number> = { 
+        "Level 1": 20, "Level 2": 18, "Level 3": 14, "Level 4": 12, 
+        "Level 5": 8, "Level 6": 6, "Level 7": 4, "Level 8": 2, "Non-Compliant": 0 
+      };
+      const bbbeePoints90_10: Record<string, number> = { 
+        "Level 1": 10, "Level 2": 9, "Level 3": 6, "Level 4": 5, 
+        "Level 5": 4, "Level 6": 3, "Level 7": 2, "Level 8": 1, "Non-Compliant": 0 
+      };
+      
+      // Calculate official B-BBEE points based on vendor's level and scoring system
+      const vendorBBBEELevel = vendor?.bbbeeLevel || "Non-Compliant";
+      const is90_10 = submission.scoringSystem === "90/10";
+      const officialBBBEEPoints = is90_10 
+        ? (bbbeePoints90_10[vendorBBBEELevel] || 0) 
+        : (bbbeePoints80_20[vendorBBBEELevel] || 0);
+      const maxBBBEEPoints = is90_10 ? 10 : 20;
+
       const prompt = `Evaluate this bid submission against the tender's scoring criteria. Provide tentative scores based on the available information.
 
 TENDER: ${tender?.title || 'Unknown'}
-VENDOR: ${vendor?.companyName || 'Unknown'} (B-BBEE Level: ${vendor?.bbbeeLevel || 'Unknown'})
+VENDOR: ${vendor?.companyName || 'Unknown'} (B-BBEE Level: ${vendorBBBEELevel})
 BID AMOUNT: R${submission.bidAmount || 0}
+SCORING SYSTEM: ${submission.scoringSystem || '80/20'}
 
 SUBMITTED DOCUMENTS:
 ${documentsList}
@@ -1075,9 +1094,14 @@ ${documentsList}
 SCORING CRITERIA TO EVALUATE:
 ${criteriaList}
 
+IMPORTANT B-BBEE SCORING RULES:
+For any criteria related to B-BBEE Status Level or B-BBEE points, you MUST use the official South African preferential procurement points:
+- This vendor is ${vendorBBBEELevel} which equals EXACTLY ${officialBBBEEPoints} points out of ${maxBBBEEPoints} maximum.
+- Do NOT use any other scoring for B-BBEE criteria.
+
 Based on the available information, provide a tentative score for each criterion. Consider:
 - Document completeness and verification status
-- B-BBEE level for preferential scoring
+- For B-BBEE criteria: Use EXACTLY ${officialBBBEEPoints} points (the official allocation for ${vendorBBBEELevel})
 - Compliance with tender requirements
 
 Return a JSON object with scores for each criterion:
@@ -1109,31 +1133,56 @@ Return a JSON object with scores for each criterion:
         scoreData = { scores: [], totalScore: 0 };
       }
 
-      // Save evaluation scores
+      // Save evaluation scores and recalculate total
       const savedScores = [];
+      let recalculatedTotal = 0;
+      
       for (const score of scoreData.scores || []) {
         const matchingCriteria = scoringCriteria.find(c => c.criteriaName === score.criteriaName);
         if (matchingCriteria) {
           try {
+            // Check if this is a B-BBEE criteria (only by category for deterministic matching)
+            const isBBBEECriteria = matchingCriteria.criteriaCategory === "BBBEE";
+            
+            let finalScore = Math.min(score.score || 0, matchingCriteria.maxScore);
+            let finalMaxScore = matchingCriteria.maxScore; // Keep tender's maxScore
+            let comments = score.reasoning || null;
+            
+            // For B-BBEE criteria, use official points but scale to tender's maxScore if different
+            if (isBBBEECriteria) {
+              // If tender maxScore matches official (20 for 80/20, 10 for 90/10), use official points directly
+              if (finalMaxScore === maxBBBEEPoints) {
+                finalScore = officialBBBEEPoints;
+                comments = `Official B-BBEE preference points for ${vendorBBBEELevel}: ${officialBBBEEPoints}/${maxBBBEEPoints} (${submission.scoringSystem || '80/20'} system)`;
+              } else {
+                // Scale official points to tender's maxScore proportionally
+                const scaledPoints = Math.round((officialBBBEEPoints / maxBBBEEPoints) * finalMaxScore);
+                finalScore = scaledPoints;
+                comments = `B-BBEE points for ${vendorBBBEELevel}: ${scaledPoints}/${finalMaxScore} (scaled from official ${officialBBBEEPoints}/${maxBBBEEPoints})`;
+              }
+            }
+            
             const evaluationScore = await storage.createEvaluationScore({
               submissionId,
               criteriaName: score.criteriaName,
               criteriaCategory: matchingCriteria.criteriaCategory,
-              maxScore: score.maxScore || matchingCriteria.maxScore,
-              score: Math.min(score.score || 0, matchingCriteria.maxScore),
+              maxScore: finalMaxScore,
+              score: finalScore,
               weight: matchingCriteria.weight || 1,
-              comments: score.reasoning || null,
+              comments,
             });
             savedScores.push(evaluationScore);
+            recalculatedTotal += finalScore * (matchingCriteria.weight || 1);
           } catch (e) {
             console.error("Failed to save evaluation score:", e);
           }
         }
       }
 
-      // Update submission with total score
+      // Update submission with recalculated total score and B-BBEE points
       await storage.updateBidSubmission(submissionId, {
-        technicalScore: scoreData.totalScore || 0,
+        technicalScore: recalculatedTotal,
+        bbbeePoints: officialBBBEEPoints,
       });
 
       await storage.createAuditLog({
@@ -1149,9 +1198,10 @@ Return a JSON object with scores for each criterion:
 
       res.json({
         scores: savedScores,
-        totalScore: scoreData.totalScore,
+        totalScore: recalculatedTotal,
         maxPossibleScore: scoreData.maxPossibleScore,
         overallAssessment: scoreData.overallAssessment,
+        bbbeePoints: officialBBBEEPoints,
       });
     } catch (error) {
       console.error("Error auto-scoring submission:", error);
