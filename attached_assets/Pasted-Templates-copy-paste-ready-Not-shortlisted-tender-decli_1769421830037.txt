@@ -1,0 +1,175 @@
+Templates (copy-paste-ready)
+
+Not shortlisted / tender declined Subject: [TenderNo] – Outcome of your tender submission
+Dear [BidderName],
+
+Thank you for your submission in response to [TenderTitle] [TenderNo]. After careful evaluation, your tender has not been shortlisted for the next stage.
+
+We appreciate your effort and encourage you to participate in future opportunities. If you would like feedback on your submission, you may request a debriefing within [X] days of this notice.
+
+Kind regards,
+[YourName]
+[Position]
+[Organisation]
+[ContactDetails]
+
+Shortlisted for evaluation (Stage 2) Subject: [TenderNo] – Shortlisted for Stage 2 – next steps
+Dear [BidderName],
+
+We are pleased to inform you that your tender for [TenderTitle] [TenderNo] has been shortlisted for the next stage of evaluation. Please provide any requested clarifications or additional information by [Date].
+
+Next steps will include [e.g., a site visit, presentations, or additional documentation]. We will confirm a schedule in due course.
+
+Best regards,
+[YourName]
+[Position]
+[Organisation]
+
+Request for clarification (RFC) Subject: [TenderNo] – Clarification required
+Dear [BidderName],
+
+To complete the evaluation of your tender for [TenderTitle] [TenderNo], please provide the following clarifications by [Date]:
+
+[Clarification item 1]
+[Clarification item 2]
+[Any supporting documents]
+Please submit in the format requested in the tender documents. Thank you for your prompt attention.
+
+Kind regards,
+[YourName]
+
+Request for additional information (RFI) Subject: [TenderNo] – Additional information required
+Dear [BidderName],
+
+As part of the evaluation process for [TenderTitle] [TenderNo], please supply the following information by [Date]:
+
+[Item 1]
+[Item 2]
+[Item 3]
+This information will assist us in completing the evaluation.
+
+Best regards,
+[YourName]
+
+Addendum or amendment to tender Subject: [TenderNo] – Addendum/Clarification issued
+Dear [BidderName],
+
+Please be advised of Addendum/Clarification No. [X] for [TenderTitle] [TenderNo]. The addendum contains [brief description of changes] and must be considered in your submission.
+
+Please acknowledge receipt and include any required adjustments in your proposal by [Date].
+
+Regards,
+[YourName]
+
+Extension of tender closing date Subject: [TenderNo] – Extension of closing date
+Dear [BidderName],
+
+In response to participant requests, the closing date for [TenderTitle] [TenderNo] has been extended to [NewDate]. Please ensure your submission is received by this new deadline.
+
+Best wishes,
+[YourName]
+
+Non-compliant bid (clear reason) Subject: [TenderNo] – Non-compliant bid status
+Dear [BidderName],
+
+After screening, your submission for [TenderTitle] [TenderNo] has been determined non-compliant due to [reason]. As a result, it will not proceed to the evaluation stage.
+
+If you believe this assessment is in error, you may request a formal reconsideration by [Date].
+
+Sincerely,
+[YourName]
+
+Standstill notification (informing about standstill period) Subject: [TenderNo] – Standstill period notice
+Dear [BidderName],
+
+Please be advised that a standstill period of [X] days applies to the award of [TenderTitle] [TenderNo]. No contract will be awarded during this period.
+
+If you wish to submit additional information or request a debrief, please do so within the standstill window.
+
+Regards,
+[YourName]
+
+Award notification Subject: [TenderNo] – Tender Award Notice
+Dear [BidderName],
+
+We are pleased to inform you that your tender for [TenderTitle] [TenderNo] has been awarded. The contract details are as follows:
+
+Contractor: [ContractorName]
+Contract value: [Currency + Amount]
+Start date: [Date]
+Standstill period: [Date] to [Date]
+Please review the attached contract and return acceptance by [Date]. If you wish to request a debrief or clarification, you may do so within [X] days.
+
+Congratulations,
+[YourName]
+
+Standstill expiry/debrief invitation (post-award) Subject: [TenderNo] – Standstill expiry and debrief invitation
+Dear [BidderName],
+
+The standstill period for [TenderTitle] [TenderNo] has ended. If you would like a debrief on the evaluation and award decision, we invite you to a debrief session on [Date/Time] at [Venue/Link]. Please confirm attendance by [Date].
+
+Kind regards,
+[YourName]
+
+Debrief invitation (vendor-initiated) Subject: Debrief request – [TenderTitle] [TenderNo]
+Dear [BidderName],
+
+You requested a debrief for [TenderTitle] [TenderNo]. We can provide feedback on evaluation criteria, scoring, and areas for improvement. Please propose preferred dates/times, and we’ll schedule a session.
+
+Best regards,
+[YourName]
+
+Debrief response (proactive feedback) Subject: Debrief for [TenderTitle] [TenderNo]
+Dear [BidderName],
+
+Thank you for attending the debrief session. Here are the key takeaways and suggestions for improvement:
+
+[Feedback point 1]
+[Feedback point 2]
+[Next steps or resources]
+If you’d like further assistance, please reach out.
+
+Best regards,
+[YourName]
+
+Tender cancellation Subject: [TenderNo] – Tender cancelled
+Dear [BidderName],
+
+We regret to inform you that [TenderTitle] [TenderNo] has been cancelled. This decision was made after careful consideration of [brief reason]. You may be notified if a new tender is issued for the same scope.
+
+Thank you for your interest.
+
+Kind regards,
+[YourName]
+
+Correction notice (tender documents) Subject: [TenderNo] – Correction to tender documents
+Dear [BidderName],
+
+Please note a correction to the tender documents for [TenderTitle] [TenderNo]: [Describe correction]. The closing date remains [Date] unless otherwise updated.
+
+Please acknowledge receipt and adjust your submission accordingly.
+
+Sincerely,
+[YourName]
+
+Re-tender (new tender following a cancellation) Subject: [TenderNo] – New tender issued for [scope] (re-bid)
+Dear [BidderName],
+
+A new tender for [scope] has been issued following the cancellation of [Previous TenderNo]. Details are available at [Link]. We invite you to submit proposals by the new closing date [Date].
+
+Best regards,
+[YourName]
+
+Tips for effective use
+
+Personalise with placeholders: [TenderNo], [TenderTitle], [BidderName], [Date], [Amount], [Link].
+Keep a consistent tone: formal, respectful, and clear about next steps.
+Include a clear call to action and a deadline for responses.
+Ensure compliance with local procurement rules (PFMA/MFMA/PPPFA) and standstill requirements where applicable.
+Maintain a repository of all templates in a central location for easy updates.
+If you’d like, I can convert these into a single document (Word or Google Docs) with placeholders and a version history, or tailor them to your exact tender processes (e.g., standstill periods per SA regulations). Also, tell me if you want templates for:
+
+RFQ, RFP, RFT (and incl. pre-qualification letters)
+Addenda/clarifications
+Debriefs (formal and informal)
+Shortlisting communications (with timelines) … and I’ll customise accordingly.
