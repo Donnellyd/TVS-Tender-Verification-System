@@ -1080,12 +1080,39 @@ Return a JSON object with this structure:
         ? (bbbeePoints90_10[vendorBBBEELevel] || 0) 
         : (bbbeePoints80_20[vendorBBBEELevel] || 0);
       const maxBBBEEPoints = is90_10 ? 10 : 20;
+      const maxPricePoints = is90_10 ? 90 : 80;
+
+      // Calculate price score using SA preferential procurement formula
+      // Ps = maxPoints × (1 - (Pt - Pmin) / Pmin)
+      // Get all submissions for this tender to find the lowest bid
+      const allSubmissions = await storage.getBidSubmissions(submission.tenderId);
+      const bidsWithAmounts = allSubmissions.filter(s => s.bidAmount && s.bidAmount > 0);
+      const lowestBid = bidsWithAmounts.length > 0 
+        ? Math.min(...bidsWithAmounts.map(s => s.bidAmount!)) 
+        : submission.bidAmount || 0;
+      
+      let priceScore = 0;
+      let priceScoreReasoning = "";
+      const thisBidAmount = submission.bidAmount || 0;
+      
+      if (thisBidAmount > 0 && lowestBid > 0) {
+        // SA Price formula: Ps = maxPoints × (1 - (Pt - Pmin) / Pmin)
+        priceScore = Math.round(maxPricePoints * (1 - (thisBidAmount - lowestBid) / lowestBid));
+        priceScore = Math.max(0, Math.min(priceScore, maxPricePoints)); // Clamp to valid range
+        priceScoreReasoning = `Price score calculated using SA formula: ${maxPricePoints} × (1 - (R${thisBidAmount.toLocaleString()} - R${lowestBid.toLocaleString()}) / R${lowestBid.toLocaleString()}) = ${priceScore} points. Lowest bid: R${lowestBid.toLocaleString()}.`;
+      } else if (thisBidAmount === 0) {
+        priceScore = 0;
+        priceScoreReasoning = "No bid amount provided - price evaluation not possible.";
+      } else {
+        priceScore = maxPricePoints; // If only one bidder with valid amount, they get max points
+        priceScoreReasoning = `Bid amount: R${thisBidAmount.toLocaleString()}. As the only/lowest bidder, awarded maximum ${maxPricePoints} points.`;
+      }
 
       const prompt = `Evaluate this bid submission against the tender's scoring criteria. Provide tentative scores based on the available information.
 
 TENDER: ${tender?.title || 'Unknown'}
 VENDOR: ${vendor?.companyName || 'Unknown'} (B-BBEE Level: ${vendorBBBEELevel})
-BID AMOUNT: R${submission.bidAmount || 0}
+BID AMOUNT: R${thisBidAmount.toLocaleString()} (Lowest bid in this tender: R${lowestBid.toLocaleString()})
 SCORING SYSTEM: ${submission.scoringSystem || '80/20'}
 
 SUBMITTED DOCUMENTS:
@@ -1094,14 +1121,24 @@ ${documentsList}
 SCORING CRITERIA TO EVALUATE:
 ${criteriaList}
 
-IMPORTANT B-BBEE SCORING RULES:
+IMPORTANT SCORING RULES:
+
+1. B-BBEE SCORING:
 For any criteria related to B-BBEE Status Level or B-BBEE points, you MUST use the official South African preferential procurement points:
 - This vendor is ${vendorBBBEELevel} which equals EXACTLY ${officialBBBEEPoints} points out of ${maxBBBEEPoints} maximum.
 - Do NOT use any other scoring for B-BBEE criteria.
 
+2. PRICE SCORING:
+For any criteria related to Price or Price Proposal, you MUST use the pre-calculated price score:
+- This vendor's bid: R${thisBidAmount.toLocaleString()}
+- Calculated price score: EXACTLY ${priceScore} points out of ${maxPricePoints} maximum
+- ${priceScoreReasoning}
+- Do NOT use any other scoring for Price criteria.
+
 Based on the available information, provide a tentative score for each criterion. Consider:
 - Document completeness and verification status
-- For B-BBEE criteria: Use EXACTLY ${officialBBBEEPoints} points (the official allocation for ${vendorBBBEELevel})
+- For B-BBEE criteria: Use EXACTLY ${officialBBBEEPoints} points
+- For Price criteria: Use EXACTLY ${priceScore} points
 - Compliance with tender requirements
 
 Return a JSON object with scores for each criterion:
@@ -1141,8 +1178,16 @@ Return a JSON object with scores for each criterion:
         const matchingCriteria = scoringCriteria.find(c => c.criteriaName === score.criteriaName);
         if (matchingCriteria) {
           try {
-            // Check if this is a B-BBEE criteria (only by category for deterministic matching)
+            // Check if this is a B-BBEE or Price criteria (by category for deterministic matching)
             const isBBBEECriteria = matchingCriteria.criteriaCategory === "BBBEE";
+            // Detect price criteria by category or name (covers "Price", "Price Proposal", "Financial", etc.)
+            const priceCategoryLower = (matchingCriteria.criteriaCategory || "").toLowerCase();
+            const priceNameLower = (matchingCriteria.criteriaName || "").toLowerCase();
+            const isPriceCriteria = priceCategoryLower === "price" || 
+              priceCategoryLower === "financial" ||
+              priceNameLower.includes("price proposal") ||
+              priceNameLower.includes("price points") ||
+              (priceNameLower.includes("price") && priceNameLower.includes("evaluation"));
             
             let finalScore = Math.min(score.score || 0, matchingCriteria.maxScore);
             let finalMaxScore = matchingCriteria.maxScore; // Keep tender's maxScore
@@ -1159,6 +1204,19 @@ Return a JSON object with scores for each criterion:
                 const scaledPoints = Math.round((officialBBBEEPoints / maxBBBEEPoints) * finalMaxScore);
                 finalScore = scaledPoints;
                 comments = `B-BBEE points for ${vendorBBBEELevel}: ${scaledPoints}/${finalMaxScore} (scaled from official ${officialBBBEEPoints}/${maxBBBEEPoints})`;
+              }
+            }
+            
+            // For Price criteria, use the calculated price score
+            if (isPriceCriteria) {
+              if (finalMaxScore === maxPricePoints) {
+                finalScore = priceScore;
+                comments = priceScoreReasoning;
+              } else {
+                // Scale price score to tender's maxScore proportionally
+                const scaledPriceScore = Math.round((priceScore / maxPricePoints) * finalMaxScore);
+                finalScore = scaledPriceScore;
+                comments = `Price score: ${scaledPriceScore}/${finalMaxScore} (scaled from ${priceScore}/${maxPricePoints}). ${priceScoreReasoning}`;
               }
             }
             
@@ -1179,10 +1237,11 @@ Return a JSON object with scores for each criterion:
         }
       }
 
-      // Update submission with recalculated total score and B-BBEE points
+      // Update submission with recalculated total score, B-BBEE points, and price score
       await storage.updateBidSubmission(submissionId, {
         technicalScore: recalculatedTotal,
         bbbeePoints: officialBBBEEPoints,
+        priceScore: priceScore,
       });
 
       await storage.createAuditLog({
@@ -1202,6 +1261,9 @@ Return a JSON object with scores for each criterion:
         maxPossibleScore: scoreData.maxPossibleScore,
         overallAssessment: scoreData.overallAssessment,
         bbbeePoints: officialBBBEEPoints,
+        priceScore: priceScore,
+        bidAmount: thisBidAmount,
+        lowestBid: lowestBid,
       });
     } catch (error) {
       console.error("Error auto-scoring submission:", error);
