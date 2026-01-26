@@ -230,12 +230,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         await storage.deleteBidSubmission(submission.id);
       }
       
-      // Delete any documents associated with vendor
-      const documents = await storage.getDocuments();
-      const vendorDocs = documents.filter(d => d.vendorId === vendorId);
-      for (const doc of vendorDocs) {
-        await storage.deleteDocument(doc.id);
-      }
+      // Delete documents directly associated with vendor
+      await storage.deleteDocumentsByVendor(vendorId);
+      
+      // Delete compliance checks directly associated with vendor (not via submission)
+      await storage.deleteComplianceChecksByVendor(vendorId);
       
       // Now delete the vendor
       const success = await storage.deleteVendor(vendorId);
@@ -387,12 +386,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       
       // Delete tender requirements
       const requirements = await storage.getTenderRequirements(tenderId);
-      for (const req of requirements) {
-        await storage.deleteTenderRequirement(req.id);
+      for (const reqItem of requirements) {
+        await storage.deleteTenderRequirement(reqItem.id);
       }
       
       // Delete tender scoring criteria
       await storage.deleteTenderScoringCriteriaByTender(tenderId);
+      
+      // Delete documents directly associated with tender
+      await storage.deleteDocumentsByTender(tenderId);
+      
+      // Delete compliance checks directly associated with tender (not via submission)
+      await storage.deleteComplianceChecksByTender(tenderId);
       
       // Now delete the tender
       const success = await storage.deleteTender(tenderId);

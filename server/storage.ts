@@ -165,8 +165,12 @@ export interface IStorage {
   createGeneratedLetter(data: InsertGeneratedLetter): Promise<GeneratedLetter>;
   deleteGeneratedLettersBySubmission(submissionId: string): Promise<boolean>;
 
-  // Compliance Checks - cascade delete
+  // Cascade delete helpers
   deleteComplianceChecksBySubmission(submissionId: string): Promise<boolean>;
+  deleteComplianceChecksByTender(tenderId: string): Promise<boolean>;
+  deleteComplianceChecksByVendor(vendorId: string): Promise<boolean>;
+  deleteDocumentsByTender(tenderId: string): Promise<boolean>;
+  deleteDocumentsByVendor(vendorId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -771,6 +775,26 @@ export class DatabaseStorage implements IStorage {
 
   async deleteComplianceChecksBySubmission(submissionId: string): Promise<boolean> {
     const result = await db.delete(complianceChecks).where(eq(complianceChecks.submissionId, submissionId));
+    return (result.rowCount ?? 0) >= 0;
+  }
+
+  async deleteComplianceChecksByTender(tenderId: string): Promise<boolean> {
+    const result = await db.delete(complianceChecks).where(eq(complianceChecks.tenderId, tenderId));
+    return (result.rowCount ?? 0) >= 0;
+  }
+
+  async deleteComplianceChecksByVendor(vendorId: string): Promise<boolean> {
+    const result = await db.delete(complianceChecks).where(eq(complianceChecks.vendorId, vendorId));
+    return (result.rowCount ?? 0) >= 0;
+  }
+
+  async deleteDocumentsByTender(tenderId: string): Promise<boolean> {
+    const result = await db.delete(documents).where(eq(documents.tenderId, tenderId));
+    return (result.rowCount ?? 0) >= 0;
+  }
+
+  async deleteDocumentsByVendor(vendorId: string): Promise<boolean> {
+    const result = await db.delete(documents).where(eq(documents.vendorId, vendorId));
     return (result.rowCount ?? 0) >= 0;
   }
 }
