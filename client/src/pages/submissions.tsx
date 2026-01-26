@@ -91,6 +91,15 @@ export default function Submissions() {
     queryKey: ["/api/analytics/submissions-by-stage"],
   });
 
+  const { data: submissionStats } = useQuery<Record<string, {
+    documentsMissing: number;
+    totalDocuments: number;
+    compliancePercentage: number;
+    daysInStage: number;
+  }>>({
+    queryKey: ["/api/submissions-stats"],
+  });
+
   const { data: requirements } = useQuery<TenderRequirement[]>({
     queryKey: ["/api/tenders", selectedSubmission?.tenderId, "requirements"],
     enabled: !!selectedSubmission?.tenderId,
@@ -498,6 +507,11 @@ export default function Submissions() {
                     <TableHead>Compliance</TableHead>
                     <TableHead>Submitted</TableHead>
                     <TableHead>Actions</TableHead>
+                    <TableHead className="text-center">Docs Missing</TableHead>
+                    <TableHead className="text-center">Total Score</TableHead>
+                    <TableHead className="text-center">B-BBEE</TableHead>
+                    <TableHead className="text-center">Compliance %</TableHead>
+                    <TableHead className="text-center">Days in Stage</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -545,6 +559,51 @@ export default function Submissions() {
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {(() => {
+                            const stats = submissionStats?.[submission.id];
+                            if (!stats) return "-";
+                            if (stats.documentsMissing === 0) {
+                              return <Badge variant="default" className="bg-green-600">0</Badge>;
+                            }
+                            return <Badge variant="destructive">{stats.documentsMissing}</Badge>;
+                          })()}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="font-medium">{submission.technicalScore || 0}</span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {vendor?.bbbeeLevel ? (
+                            <Badge variant="outline">{vendor.bbbeeLevel}</Badge>
+                          ) : "-"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {(() => {
+                            const stats = submissionStats?.[submission.id];
+                            if (!stats) return "-";
+                            const pct = stats.compliancePercentage;
+                            return (
+                              <Badge 
+                                variant={pct >= 80 ? "default" : pct >= 50 ? "secondary" : "destructive"}
+                                className={pct >= 80 ? "bg-green-600" : ""}
+                              >
+                                {pct}%
+                              </Badge>
+                            );
+                          })()}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {(() => {
+                            const stats = submissionStats?.[submission.id];
+                            if (!stats) return "-";
+                            const days = stats.daysInStage;
+                            return (
+                              <span className={days > 7 ? "text-amber-600 font-medium" : ""}>
+                                {days}d
+                              </span>
+                            );
+                          })()}
                         </TableCell>
                       </TableRow>
                     );

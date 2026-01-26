@@ -1232,6 +1232,53 @@ Return a JSON object with scores for each criterion:
     }
   });
 
+  // Get submission stats for all submissions (documents missing, compliance %, etc.)
+  app.get("/api/submissions-stats", async (req, res) => {
+    try {
+      const submissions = await storage.getBidSubmissions();
+      const stats: Record<string, {
+        documentsMissing: number;
+        totalDocuments: number;
+        compliancePercentage: number;
+        daysInStage: number;
+      }> = {};
+
+      for (const submission of submissions) {
+        // Get requirements for this tender
+        const requirements = await storage.getTenderRequirements(submission.tenderId);
+        const documents = await storage.getSubmissionDocuments(submission.id);
+        
+        // Count missing documents
+        const uploadedRequirementIds = new Set(documents.map(d => d.requirementId));
+        const documentsMissing = requirements.filter(r => !uploadedRequirementIds.has(r.id)).length;
+        
+        // Calculate compliance percentage
+        const passedDocs = documents.filter(d => d.verificationStatus === "verified").length;
+        const compliancePercentage = requirements.length > 0 
+          ? Math.round((passedDocs / requirements.length) * 100) 
+          : 0;
+        
+        // Calculate days in current stage (use updatedAt for last status change, fall back to submissionDate or createdAt)
+        const statusDate = submission.updatedAt || submission.submissionDate || submission.createdAt;
+        const daysInStage = statusDate 
+          ? Math.floor((Date.now() - new Date(statusDate).getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+
+        stats[submission.id] = {
+          documentsMissing,
+          totalDocuments: requirements.length,
+          compliancePercentage,
+          daysInStage,
+        };
+      }
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching submission stats:", error);
+      res.status(500).json({ error: "Failed to fetch submission stats" });
+    }
+  });
+
   app.get("/api/vendors/:vendorId/submissions", async (req, res) => {
     try {
       const submissions = await storage.getBidSubmissionsByVendor(req.params.vendorId);
