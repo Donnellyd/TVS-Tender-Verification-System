@@ -2275,4 +2275,121 @@ Return a JSON object with scores for each criterion:
       res.status(500).json({ success: false, error: "Failed to send tender status notifications" });
     }
   });
+
+  // Email notification endpoints (SendGrid)
+  app.get("/api/notifications/email/test", async (req, res) => {
+    try {
+      const { testSendGridConnection } = await import("./email-notifications");
+      const result = await testSendGridConnection();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to test SendGrid connection" });
+    }
+  });
+
+  const sendEmailSchema = z.object({
+    to: z.string().email(),
+    subject: z.string().min(1),
+    htmlContent: z.string().min(1),
+    textContent: z.string().optional(),
+  });
+
+  app.post("/api/notifications/email/send", async (req, res) => {
+    try {
+      const parsed = sendEmailSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.errors });
+      }
+
+      const { sendEmail } = await import("./email-notifications");
+      const { to, subject, htmlContent, textContent } = parsed.data;
+
+      const result = await sendEmail(to, subject, htmlContent, textContent);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to send email" });
+    }
+  });
+
+  const sendTemplatedEmailSchema = z.object({
+    templateId: z.string().min(1),
+    vendorId: z.string().min(1),
+    trigger: z.enum([
+      "tender_published", "tender_closing_soon", "tender_closed", "under_evaluation",
+      "clarification_requested", "shortlisted", "standstill_period", "awarded",
+      "unsuccessful", "tender_cancelled", "submission_received", "document_verified", "document_rejected"
+    ]).optional(),
+    context: z.object({
+      tender: z.object({
+        tenderNumber: z.string().optional(),
+        title: z.string().optional(),
+        closingDate: z.string().optional(),
+        estimatedValue: z.number().optional(),
+      }).optional(),
+      amount: z.number().optional(),
+      status: z.string().optional(),
+      senderName: z.string().optional(),
+      senderPosition: z.string().optional(),
+      senderOrganisation: z.string().optional(),
+      senderContactDetails: z.string().optional(),
+    }).optional(),
+  });
+
+  app.post("/api/notifications/email/send-templated", async (req, res) => {
+    try {
+      const parsed = sendTemplatedEmailSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.errors });
+      }
+
+      const { sendTemplatedEmail } = await import("./email-notifications");
+      const { templateId, vendorId, trigger, context } = parsed.data;
+
+      const result = await sendTemplatedEmail(templateId, vendorId, context || {}, trigger || 'tender_published');
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to send templated email" });
+    }
+  });
+
+  const sendBulkTemplatedEmailSchema = z.object({
+    templateId: z.string().min(1),
+    vendorIds: z.array(z.string().min(1)).min(1),
+    trigger: z.enum([
+      "tender_published", "tender_closing_soon", "tender_closed", "under_evaluation",
+      "clarification_requested", "shortlisted", "standstill_period", "awarded",
+      "unsuccessful", "tender_cancelled", "submission_received", "document_verified", "document_rejected"
+    ]).optional(),
+    context: z.object({
+      tender: z.object({
+        tenderNumber: z.string().optional(),
+        title: z.string().optional(),
+        closingDate: z.string().optional(),
+        estimatedValue: z.number().optional(),
+      }).optional(),
+      amount: z.number().optional(),
+      status: z.string().optional(),
+      senderName: z.string().optional(),
+      senderPosition: z.string().optional(),
+      senderOrganisation: z.string().optional(),
+      senderContactDetails: z.string().optional(),
+    }).optional(),
+  });
+
+  app.post("/api/notifications/email/send-bulk-templated", async (req, res) => {
+    try {
+      const parsed = sendBulkTemplatedEmailSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.errors });
+      }
+
+      const { sendBulkTemplatedEmail } = await import("./email-notifications");
+      const { templateId, vendorIds, context } = parsed.data;
+
+      const result = await sendBulkTemplatedEmail(templateId, vendorIds, context || {});
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to send bulk templated emails" });
+    }
+  });
 }

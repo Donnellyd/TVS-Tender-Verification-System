@@ -94,10 +94,21 @@ npm run db:push  # Push schema changes
 - **Database Tables**: whatsapp_templates, notification_settings, notification_logs
 - **Vendor Opt-in**: whatsappPhone, whatsappOptIn fields on vendors table
 
+### Email Notifications (SendGrid Integration)
+- **Service**: `server/email-notifications.ts` - SendGrid email notification service
+- **Templates**: Uses existing letterTemplates for email content with placeholder replacement
+- **Placeholders**: [TenderNo], [TenderTitle], [BidderName], [Date], [Amount], [YourName], [Position], [Organisation], [ContactDetails]
+- **API Endpoints**:
+  - `GET /api/notifications/email/test` - Test SendGrid connection
+  - `POST /api/notifications/email/send` - Send raw email (to, subject, htmlContent)
+  - `POST /api/notifications/email/send-templated` - Send email using template
+  - `POST /api/notifications/email/send-bulk-templated` - Send bulk templated emails
+
 ### Environment Variables (Secrets)
 - `TWILIO_ACCOUNT_SID` - Twilio Account SID
 - `TWILIO_AUTH_TOKEN` - Twilio Auth Token
 - `TWILIO_WHATSAPP_NUMBER` - WhatsApp-enabled Twilio number
+- SendGrid API key managed via Replit Connectors (no manual secret needed)
 
 ## Recent Changes
 - Added WhatsApp notification system with Twilio integration
