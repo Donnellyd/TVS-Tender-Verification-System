@@ -48,10 +48,12 @@ import {
   XCircle,
   AlertTriangle,
   Clock,
-  FileText
+  FileText,
+  Send,
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
-import type { WhatsappTemplate, InsertWhatsappTemplate } from "@shared/schema";
+import type { WhatsappTemplate, InsertWhatsappTemplate, Vendor } from "@shared/schema";
 
 const triggerLabels: Record<string, string> = {
   tender_published: "Tender Published",
@@ -101,8 +103,11 @@ export default function WhatsappTemplates() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<WhatsappTemplate | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<WhatsappTemplate | null>(null);
+  const [sendTemplate, setSendTemplate] = useState<WhatsappTemplate | null>(null);
+  const [selectedVendorId, setSelectedVendorId] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
 
   const [formData, setFormData] = useState<Partial<InsertWhatsappTemplate>>({
@@ -114,6 +119,33 @@ export default function WhatsappTemplates() {
 
   const { data: templates, isLoading } = useQuery<WhatsappTemplate[]>({
     queryKey: ["/api/whatsapp-templates"],
+  });
+
+  const { data: vendors } = useQuery<Vendor[]>({
+    queryKey: ["/api/vendors"],
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: async ({ trigger, vendorId }: { trigger: string; vendorId: string }) => {
+      return apiRequest("POST", "/api/notifications/whatsapp/send", {
+        trigger,
+        vendorId,
+        context: {}
+      });
+    },
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast({ title: "WhatsApp message sent successfully" });
+      } else {
+        toast({ title: "Failed to send", description: data.error || "Unknown error", variant: "destructive" });
+      }
+      setSendDialogOpen(false);
+      setSendTemplate(null);
+      setSelectedVendorId("");
+    },
+    onError: () => {
+      toast({ title: "Failed to send WhatsApp message", variant: "destructive" });
+    },
   });
 
   const createMutation = useMutation({
@@ -307,6 +339,18 @@ export default function WhatsappTemplates() {
                               variant="ghost"
                               size="icon"
                               onClick={() => {
+                                setSendTemplate(template);
+                                setSendDialogOpen(true);
+                              }}
+                              title="Send Test Message"
+                              data-testid={`button-send-${template.id}`}
+                            >
+                              <Send className="h-4 w-4 text-green-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
                                 setPreviewTemplate(template);
                                 setPreviewOpen(true);
                               }}
@@ -489,6 +533,87 @@ export default function WhatsappTemplates() {
           </div>
           <DialogFooter>
             <Button onClick={() => setPreviewOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={sendDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setSendTemplate(null);
+          setSelectedVendorId("");
+        }
+        setSendDialogOpen(open);
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-green-500" />
+              Send WhatsApp Message
+            </DialogTitle>
+            <DialogDescription>
+              Send a test message using the "{sendTemplate?.name}" template
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="vendor">Select Vendor</Label>
+              <Select value={selectedVendorId} onValueChange={setSelectedVendorId}>
+                <SelectTrigger data-testid="select-send-vendor">
+                  <SelectValue placeholder="Choose a vendor..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendors?.filter(v => v.whatsappPhone && v.whatsappOptIn).map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.companyName} ({vendor.whatsappPhone})
+                    </SelectItem>
+                  ))}
+                  {vendors?.filter(v => v.whatsappPhone && v.whatsappOptIn).length === 0 && (
+                    <div className="p-2 text-sm text-muted-foreground">
+                      No vendors with WhatsApp opt-in found
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Only vendors with WhatsApp opt-in are shown
+              </p>
+            </div>
+
+            {sendTemplate && (
+              <div className="p-3 bg-muted rounded-md">
+                <p className="text-xs font-medium mb-1">Message Preview:</p>
+                <p className="text-sm whitespace-pre-wrap">{sendTemplate.body}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSendDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (sendTemplate && selectedVendorId) {
+                  sendMutation.mutate({
+                    trigger: sendTemplate.trigger,
+                    vendorId: selectedVendorId
+                  });
+                }
+              }}
+              disabled={!selectedVendorId || sendMutation.isPending}
+              data-testid="button-confirm-send"
+            >
+              {sendMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Message
+                </>
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

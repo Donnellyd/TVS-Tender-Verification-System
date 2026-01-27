@@ -48,10 +48,11 @@ import {
   XCircle,
   AlertTriangle,
   Clock,
-  Send
+  Send,
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
-import type { LetterTemplate, InsertLetterTemplate } from "@shared/schema";
+import type { LetterTemplate, InsertLetterTemplate, Vendor } from "@shared/schema";
 
 const letterTypeCategories = {
   outcome: {
@@ -132,8 +133,11 @@ export default function EmailTemplates() {
   const [activeTab, setActiveTab] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<LetterTemplate | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<LetterTemplate | null>(null);
+  const [sendTemplate, setSendTemplate] = useState<LetterTemplate | null>(null);
+  const [selectedVendorId, setSelectedVendorId] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
 
   const [formData, setFormData] = useState<Partial<InsertLetterTemplate>>({
@@ -146,6 +150,34 @@ export default function EmailTemplates() {
 
   const { data: templates, isLoading } = useQuery<LetterTemplate[]>({
     queryKey: ["/api/letter-templates"],
+  });
+
+  const { data: vendors } = useQuery<Vendor[]>({
+    queryKey: ["/api/vendors"],
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: async ({ templateId, vendorId }: { templateId: string; vendorId: string }) => {
+      return apiRequest("POST", "/api/notifications/email/send-templated", {
+        templateId,
+        vendorId,
+        trigger: "tender_published",
+        context: {}
+      });
+    },
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast({ title: "Email sent successfully" });
+      } else {
+        toast({ title: "Failed to send", description: data.error || "Unknown error", variant: "destructive" });
+      }
+      setSendDialogOpen(false);
+      setSendTemplate(null);
+      setSelectedVendorId("");
+    },
+    onError: () => {
+      toast({ title: "Failed to send email", variant: "destructive" });
+    },
   });
 
   const createMutation = useMutation({
@@ -360,6 +392,18 @@ export default function EmailTemplates() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => {
+                              setSendTemplate(template);
+                              setSendDialogOpen(true);
+                            }}
+                            title="Send Test Email"
+                            data-testid={`button-send-${template.id}`}
+                          >
+                            <Send className="h-4 w-4 text-blue-600" />
+                          </Button>
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -603,6 +647,86 @@ export default function EmailTemplates() {
             }}>
               <Edit className="h-4 w-4 mr-2" />
               Edit Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={sendDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setSendTemplate(null);
+          setSelectedVendorId("");
+        }
+        setSendDialogOpen(open);
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-blue-500" />
+              Send Test Email
+            </DialogTitle>
+            <DialogDescription>
+              Send a test email using the "{sendTemplate?.name}" template
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="vendor">Select Vendor</Label>
+              <Select value={selectedVendorId} onValueChange={setSelectedVendorId}>
+                <SelectTrigger data-testid="select-send-vendor">
+                  <SelectValue placeholder="Choose a vendor..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendors?.filter(v => v.contactEmail).map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.companyName} ({vendor.contactEmail})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                The email will be sent to the vendor's contact email
+              </p>
+            </div>
+
+            {sendTemplate && (
+              <div className="p-3 bg-muted rounded-md space-y-2">
+                <p className="text-xs font-medium">Subject:</p>
+                <p className="text-sm">{sendTemplate.subject}</p>
+                <p className="text-xs font-medium mt-2">Preview:</p>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-4">
+                  {sendTemplate.bodyTemplate}
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSendDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (sendTemplate && selectedVendorId) {
+                  sendMutation.mutate({
+                    templateId: sendTemplate.id,
+                    vendorId: selectedVendorId
+                  });
+                }
+              }}
+              disabled={!selectedVendorId || sendMutation.isPending}
+              data-testid="button-confirm-send-email"
+            >
+              {sendMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Email
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
