@@ -2187,4 +2187,92 @@ Return a JSON object with scores for each criterion:
       res.status(500).json({ error: "Failed to fetch notification logs" });
     }
   });
+
+  // WhatsApp Notification Endpoints
+  app.get("/api/notifications/whatsapp/test", async (req, res) => {
+    try {
+      const { testWhatsAppConnection } = await import("./notifications");
+      const result = await testWhatsAppConnection();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to test WhatsApp connection" });
+    }
+  });
+
+  const sendNotificationSchema = z.object({
+    trigger: z.enum([
+      "tender_published", "tender_closing_soon", "tender_closed", "under_evaluation",
+      "clarification_requested", "shortlisted", "standstill_period", "awarded",
+      "unsuccessful", "tender_cancelled", "submission_received", "document_verified", "document_rejected"
+    ]),
+    vendorId: z.string().min(1),
+    context: z.object({}).passthrough().optional(),
+  });
+
+  app.post("/api/notifications/whatsapp/send", async (req, res) => {
+    try {
+      const parsed = sendNotificationSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.errors });
+      }
+      
+      const { sendWhatsAppNotification } = await import("./notifications");
+      const { trigger, vendorId, context } = parsed.data;
+      
+      const result = await sendWhatsAppNotification(trigger, vendorId, context || {});
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to send WhatsApp notification" });
+    }
+  });
+
+  const sendBulkNotificationSchema = z.object({
+    trigger: z.enum([
+      "tender_published", "tender_closing_soon", "tender_closed", "under_evaluation",
+      "clarification_requested", "shortlisted", "standstill_period", "awarded",
+      "unsuccessful", "tender_cancelled", "submission_received", "document_verified", "document_rejected"
+    ]),
+    vendorIds: z.array(z.string().min(1)).min(1),
+    context: z.object({}).passthrough().optional(),
+  });
+
+  app.post("/api/notifications/whatsapp/send-bulk", async (req, res) => {
+    try {
+      const parsed = sendBulkNotificationSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.errors });
+      }
+      
+      const { sendBulkWhatsAppNotification } = await import("./notifications");
+      const { trigger, vendorIds, context } = parsed.data;
+      
+      const result = await sendBulkWhatsAppNotification(trigger, vendorIds, context || {});
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to send bulk WhatsApp notifications" });
+    }
+  });
+
+  const tenderStatusChangeSchema = z.object({
+    tenderId: z.string().min(1),
+    newStatus: z.string().min(1),
+    vendorIds: z.array(z.string().min(1)).optional(),
+  });
+
+  app.post("/api/notifications/tender-status-change", async (req, res) => {
+    try {
+      const parsed = tenderStatusChangeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.errors });
+      }
+      
+      const { notifyTenderStatusChange } = await import("./notifications");
+      const { tenderId, newStatus, vendorIds } = parsed.data;
+      
+      await notifyTenderStatusChange(tenderId, newStatus, vendorIds);
+      res.json({ success: true, message: "Notifications queued" });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to send tender status notifications" });
+    }
+  });
 }

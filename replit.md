@@ -81,7 +81,30 @@ Starts Express backend and Vite frontend on port 5000.
 npm run db:push  # Push schema changes
 ```
 
+### WhatsApp Notifications (Twilio Integration)
+- **Service**: `server/notifications.ts` - Twilio WhatsApp notification service
+- **Templates**: CRUD for WhatsApp templates with trigger-based messaging
+- **Notification Triggers**: tender_published, tender_closing_soon, tender_closed, under_evaluation, clarification_requested, shortlisted, standstill_period, awarded, unsuccessful, tender_cancelled, submission_received, document_verified, document_rejected
+- **Placeholders**: [VendorName], [TenderNo], [TenderTitle], [ClosingDate], [Amount], [Status], [Municipality], [ContactPhone]
+- **API Endpoints**:
+  - `GET /api/notifications/whatsapp/test` - Test Twilio connection
+  - `POST /api/notifications/whatsapp/send` - Send single notification
+  - `POST /api/notifications/whatsapp/send-bulk` - Send bulk notifications
+  - `POST /api/notifications/tender-status-change` - Trigger notifications on status change
+- **Database Tables**: whatsapp_templates, notification_settings, notification_logs
+- **Vendor Opt-in**: whatsappPhone, whatsappOptIn fields on vendors table
+
+### Environment Variables (Secrets)
+- `TWILIO_ACCOUNT_SID` - Twilio Account SID
+- `TWILIO_AUTH_TOKEN` - Twilio Auth Token
+- `TWILIO_WHATSAPP_NUMBER` - WhatsApp-enabled Twilio number
+
 ## Recent Changes
+- Added WhatsApp notification system with Twilio integration
+- Created WhatsApp Templates page for managing notification templates
+- Implemented 13 notification triggers for tender lifecycle events
+- Added vendor WhatsApp opt-in fields for communication preferences
+- Added notification logging for delivery tracking and audit trail
 - Added AI-powered PDF parsing for automatic tender requirement extraction
 - Implemented bid submission tracking with workflow stages (draft → submitted → auto_checking → manual_review → passed/failed → awarded)
 - Created automated compliance checking engine with document verification
