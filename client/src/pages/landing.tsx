@@ -13,7 +13,7 @@ export default function Landing() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
                 <Shield className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-foreground">TVS</span>
+              <span className="text-xl font-bold text-foreground">GLOBAL - TVS</span>
             </div>
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
@@ -186,7 +186,7 @@ export default function Landing() {
             Ready to Transform Your Procurement?
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Join South African municipalities using TVS for compliant, efficient tender management.
+            Join South African municipalities using GLOBAL - TVS for compliant, efficient tender management.
           </p>
           <Button size="lg" asChild>
             <a href="/api/login">Get Started Now</a>
