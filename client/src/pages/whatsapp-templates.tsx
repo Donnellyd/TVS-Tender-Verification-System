@@ -514,8 +514,8 @@ export default function WhatsappTemplates() {
           <div className="py-4">
             <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-xs shrink-0">
-                  G-TVS
+                <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-[8px] shrink-0 leading-tight text-center">
+                  GLOBAL<br/>TVS
                 </div>
                 <div className="flex-1 space-y-1">
                   <div className="text-sm font-medium text-green-800 dark:text-green-200">
