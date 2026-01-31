@@ -34,16 +34,16 @@ export default function Landing() {
             <div className="space-y-8">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm text-primary border border-primary/20">
                 <Shield className="h-4 w-4" />
-                <span>PFMA/MFMA Compliant</span>
+                <span>Multi-Country Compliance</span>
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight font-serif">
-                Tender Vetting and{" "}
-                <span className="text-primary">Verification System</span>
+                AI-Powered Global{" "}
+                <span className="text-primary">Bid Evaluation Platform</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl">
-                Streamline municipal procurement with automated vendor verification, 
-                compliance checks, and audit-ready documentation. Built for South African 
-                municipalities aligned with POPIA, BBBEE, and CSD requirements.
+                Transform your procurement process with automated AI document verification, 
+                country-specific compliance rules, and enterprise-grade security. 
+                Built for governments and enterprises across Africa, Middle East, and beyond.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" asChild data-testid="button-get-started">
@@ -53,18 +53,18 @@ export default function Landing() {
                   <a href="#features">Learn More</a>
                 </Button>
               </div>
-              <div className="flex items-center gap-6 pt-4">
+              <div className="flex items-center gap-6 pt-4 flex-wrap">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>CSD Integration</span>
+                  <span>7+ Countries</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>BBBEE Verification</span>
+                  <span>AI-Powered OCR</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Audit Ready</span>
+                  <span>Fraud Detection</span>
                 </div>
               </div>
             </div>

@@ -20,6 +20,9 @@ import Submissions from "@/pages/submissions";
 import TenderRequirements from "@/pages/tender-requirements";
 import EmailTemplates from "@/pages/email-templates";
 import WhatsappTemplates from "@/pages/whatsapp-templates";
+import Billing from "@/pages/billing";
+import ComplianceRules from "@/pages/compliance-rules";
+import ApiSettings from "@/pages/api-settings";
 
 function LoadingScreen() {
   return (
@@ -56,7 +59,9 @@ function AuthenticatedApp() {
             <Route path="/municipalities" component={Municipalities} />
             <Route path="/email-templates" component={EmailTemplates} />
             <Route path="/whatsapp-templates" component={WhatsappTemplates} />
-            <Route path="/rules" component={Compliance} />
+            <Route path="/rules" component={ComplianceRules} />
+            <Route path="/billing" component={Billing} />
+            <Route path="/api-settings" component={ApiSettings} />
             <Route path="/notifications" component={Dashboard} />
             <Route path="/settings" component={Dashboard} />
             <Route component={NotFound} />

@@ -6,6 +6,15 @@ import { z } from "zod";
 // Re-export auth models
 export * from "./models/auth";
 
+// Re-export tenant and subscription models
+export * from "./models/tenant";
+
+// Re-export compliance rules engine models
+export * from "./models/compliance-rules";
+
+// Import tenants for foreign key references
+import { tenants } from "./models/tenant";
+
 // SA-specific enums for validation
 export const vendorStatusEnum = z.enum(["pending", "approved", "suspended", "debarred"]);
 export const tenderStatusEnum = z.enum([
@@ -58,16 +67,20 @@ export const csdIdRegex = /^[A-Z]{4}\d{10}$/;
 // Municipalities table
 export const municipalities = pgTable("municipalities", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
   name: text("name").notNull(),
-  code: text("code").notNull().unique(),
+  code: text("code").notNull(),
   province: text("province").notNull(),
+  country: text("country").default("ZA"),
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
   address: text("address"),
   status: text("status").notNull().default("active"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_municipality_tenant").on(table.tenantId),
+]);
 
 export const insertMunicipalitySchema = createInsertSchema(municipalities).omit({
   id: true,
@@ -81,11 +94,13 @@ export type Municipality = typeof municipalities.$inferSelect;
 // Vendors table
 export const vendors = pgTable("vendors", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
   companyName: text("company_name").notNull(),
   tradingName: text("trading_name"),
   registrationNumber: text("registration_number").notNull(),
   vatNumber: text("vat_number"),
   csdId: text("csd_id"),
+  country: text("country").default("ZA"),
   bbbeeLevel: text("bbbee_level"),
   bbbeeCertificateExpiry: timestamp("bbbee_certificate_expiry"),
   taxClearanceExpiry: timestamp("tax_clearance_expiry"),
@@ -99,12 +114,16 @@ export const vendors = pgTable("vendors", {
   bankBranchCode: text("bank_branch_code"),
   status: text("status").notNull().default("pending"),
   debarmentStatus: text("debarment_status").default("clear"),
+  riskScore: integer("risk_score"),
   whatsappPhone: text("whatsapp_phone"),
   whatsappOptIn: boolean("whatsapp_opt_in").default(false),
   municipalityId: varchar("municipality_id").references(() => municipalities.id),
+  metadata: jsonb("metadata").default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_vendor_tenant").on(table.tenantId),
+]);
 
 export const vendorsRelations = relations(vendors, ({ one, many }) => ({
   municipality: one(municipalities, {
@@ -137,26 +156,33 @@ export type Vendor = typeof vendors.$inferSelect;
 // Tenders table
 export const tenders = pgTable("tenders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenderNumber: text("tender_number").notNull().unique(),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  tenderNumber: text("tender_number").notNull(),
   title: text("title").notNull(),
   description: text("description"),
   tenderType: text("tender_type").notNull(),
   category: text("category").notNull(),
+  country: text("country").default("ZA"),
   estimatedValue: integer("estimated_value"),
+  currency: text("currency").default("ZAR"),
   closingDate: timestamp("closing_date").notNull(),
   openingDate: timestamp("opening_date"),
   awardDate: timestamp("award_date"),
   status: text("status").notNull().default("open"),
   priority: text("priority").default("medium"),
+  scoringSystem: text("scoring_system").default("80/20"),
   municipalityId: varchar("municipality_id").references(() => municipalities.id),
   vendorId: varchar("vendor_id").references(() => vendors.id),
   issuer: text("issuer"),
   requirements: text("requirements"),
   localContentRequirement: integer("local_content_requirement"),
   bbbeeRequirement: text("bbbee_requirement"),
+  ruleSetId: varchar("rule_set_id"),
+  metadata: jsonb("metadata").default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
+  index("idx_tender_tenant").on(table.tenantId),
   index("idx_tender_status").on(table.status),
   index("idx_tender_municipality").on(table.municipalityId),
 ]);
@@ -193,6 +219,7 @@ export type Tender = typeof tenders.$inferSelect;
 // Documents table
 export const documents = pgTable("documents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
   name: text("name").notNull(),
   documentType: text("document_type").notNull(),
   filePath: text("file_path"),
@@ -200,16 +227,22 @@ export const documents = pgTable("documents", {
   mimeType: text("mime_type"),
   version: integer("version").default(1),
   hash: text("hash"),
+  language: text("language").default("en"),
   expiryDate: timestamp("expiry_date"),
   verificationStatus: text("verification_status").default("pending"),
   verifiedBy: varchar("verified_by"),
   verifiedAt: timestamp("verified_at"),
+  aiVerified: boolean("ai_verified").default(false),
+  aiConfidenceScore: integer("ai_confidence_score"),
+  aiExtractedData: jsonb("ai_extracted_data").default({}),
   vendorId: varchar("vendor_id").references(() => vendors.id),
   tenderId: varchar("tender_id").references(() => tenders.id),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_document_tenant").on(table.tenantId),
+]);
 
 export const documentsRelations = relations(documents, ({ one }) => ({
   vendor: one(vendors, {
@@ -301,6 +334,7 @@ export type ComplianceCheck = typeof complianceChecks.$inferSelect;
 // Audit Logs table
 export const auditLogs = pgTable("audit_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
   userId: varchar("user_id"),
   action: text("action").notNull(),
   entityType: text("entity_type").notNull(),
@@ -308,8 +342,10 @@ export const auditLogs = pgTable("audit_logs", {
   details: jsonb("details"),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
+  isImmutable: boolean("is_immutable").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
+  index("idx_audit_tenant").on(table.tenantId),
   index("idx_audit_user").on(table.userId),
   index("idx_audit_entity").on(table.entityType, table.entityId),
 ]);
@@ -447,11 +483,13 @@ export type TenderScoringCriteria = typeof tenderScoringCriteria.$inferSelect;
 // Bid Submissions table - vendor submissions per tender
 export const bidSubmissions = pgTable("bid_submissions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
   tenderId: varchar("tender_id").notNull().references(() => tenders.id),
   vendorId: varchar("vendor_id").notNull().references(() => vendors.id),
   submissionDate: timestamp("submission_date"),
   status: text("status").notNull().default("draft"),
   bidAmount: integer("bid_amount"),
+  currency: text("currency").default("ZAR"),
   technicalScore: integer("technical_score"),
   bbbeePoints: integer("bbbee_points"),
   priceScore: integer("price_score"),
@@ -459,15 +497,18 @@ export const bidSubmissions = pgTable("bid_submissions", {
   scoringSystem: text("scoring_system"),
   complianceResult: text("compliance_result").default("pending"),
   complianceNotes: text("compliance_notes"),
+  riskScore: integer("risk_score"),
   autoCheckCompletedAt: timestamp("auto_check_completed_at"),
   manualReviewCompletedAt: timestamp("manual_review_completed_at"),
   reviewedBy: varchar("reviewed_by"),
   awardedAt: timestamp("awarded_at"),
   rejectedAt: timestamp("rejected_at"),
   rejectionReasons: jsonb("rejection_reasons"),
+  aiAnalysis: jsonb("ai_analysis").default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
+  index("idx_submission_tenant").on(table.tenantId),
   index("idx_submission_tender").on(table.tenderId),
   index("idx_submission_vendor").on(table.vendorId),
   index("idx_submission_status").on(table.status),

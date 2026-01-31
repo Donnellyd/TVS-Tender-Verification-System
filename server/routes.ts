@@ -2,6 +2,9 @@ import type { Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integrations/auth";
+import { tenantRouter } from "./tenant-routes";
+import { apiV1Router } from "./api-v1-routes";
+import { securityHeaders, createRateLimiter, auditLogger } from "./security-middleware";
 import {
   insertMunicipalitySchema,
   insertVendorSchema,
@@ -43,12 +46,28 @@ const documentUpload = multer({
 });
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<void> {
+  // Apply security headers to all requests
+  app.use(securityHeaders);
+
+  // Apply rate limiting to API routes
+  const apiRateLimiter = createRateLimiter({ windowMs: 60 * 1000, maxRequests: 100 });
+  app.use("/api", apiRateLimiter);
+
+  // Apply audit logging to API routes
+  app.use("/api", auditLogger("api_request"));
+
   // Setup authentication
   await setupAuth(app);
   registerAuthRoutes(app);
 
-  // Auth-protected API routes (except auth routes themselves)
-  app.use(/^\/api(?!\/auth|\/login|\/logout|\/callback)/, isAuthenticated);
+  // Register tenant and billing routes
+  app.use("/api", tenantRouter);
+
+  // Register API v1 routes (uses API key auth, not session auth)
+  app.use("/api/v1", apiV1Router);
+
+  // Auth-protected API routes (except auth routes themselves and API v1)
+  app.use(/^\/api(?!\/auth|\/login|\/logout|\/callback|\/subscription-tiers|\/compliance\/countries|\/v1)/, isAuthenticated);
 
   // Municipalities
   app.get("/api/municipalities", async (req, res) => {
