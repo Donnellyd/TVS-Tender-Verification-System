@@ -73,7 +73,7 @@ export function AppSidebar() {
             <Shield className="h-6 w-6 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-bold text-sidebar-foreground">TVS</span>
+            <span className="text-lg font-bold text-sidebar-foreground">GLOBAL - TVS</span>
             <span className="text-xs text-sidebar-foreground/70">Tender Vetting System</span>
           </div>
         </div>

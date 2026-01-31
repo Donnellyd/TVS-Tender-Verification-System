@@ -201,7 +201,7 @@ export default function Landing() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Shield className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-foreground">TVS</span>
+            <span className="font-semibold text-foreground">GLOBAL - TVS</span>
           </div>
           <p className="text-sm text-muted-foreground">
             Tender Vetting System. POPIA Compliant. Built for SA Municipalities.

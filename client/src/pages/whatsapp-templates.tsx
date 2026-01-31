@@ -514,12 +514,12 @@ export default function WhatsappTemplates() {
           <div className="py-4">
             <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                  TVS
+                <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                  G-TVS
                 </div>
                 <div className="flex-1 space-y-1">
                   <div className="text-sm font-medium text-green-800 dark:text-green-200">
-                    Tender Vetting System
+                    GLOBAL - Tender Vetting System
                   </div>
                   <div className="whitespace-pre-wrap text-sm bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
                     {previewTemplate?.body}
