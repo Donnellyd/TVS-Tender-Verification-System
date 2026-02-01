@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Shield, CheckCircle, BarChart3, Users, FileCheck, Lock, Globe, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { useEffect } from "react";
 import logoImage from "@/assets/logo.png";
 
 interface CountryComplianceInfo {
@@ -16,6 +17,26 @@ interface CountryComplianceInfo {
 }
 
 export default function Landing() {
+  useEffect(() => {
+    document.title = "VeritasAI - AI-Powered Bid Evaluation & Compliance Platform";
+    
+    const updateMeta = (name: string, content: string, property?: boolean) => {
+      const attr = property ? 'property' : 'name';
+      let meta = document.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement;
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute(attr, name);
+        document.head.appendChild(meta);
+      }
+      meta.content = content;
+    };
+    
+    updateMeta('description', 'VeritasAI transforms procurement with AI-powered document verification, country-specific compliance rules, and enterprise-grade security. Serving 54 African nations, Middle East, and expanding globally.');
+    updateMeta('og:title', 'VeritasAI - AI-Powered Bid Evaluation Platform', true);
+    updateMeta('og:description', 'Transform your procurement process with automated AI document verification and configurable compliance rules for 70+ countries.', true);
+    updateMeta('og:type', 'website', true);
+    updateMeta('og:site_name', 'VeritasAI', true);
+  }, []);
   const { data: countries } = useQuery<CountryComplianceInfo[]>({
     queryKey: ["/api/compliance/countries"],
   });

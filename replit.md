@@ -93,9 +93,31 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - `npm run db:push`: Push schema changes to database
 - `npm run db:push --force`: Force push schema changes
 
+### Email Notifications (SendGrid)
+- **Service**: `server/email-notifications.ts` - SendGrid integration via Replit connector
+- **Features**: Templated emails, bulk sending, notification logging
+- **Templates**: Award letters, rejection letters, document expiry alerts, bid received confirmations
+- **Monthly Limits**: Starter 500, Professional 3,000, Enterprise 15,000 emails (included free)
+
+### Payment Processing (Stripe)
+- **Service**: `server/stripeClient.ts`, `server/stripeService.ts` - Stripe integration via Replit connector
+- **Webhooks**: `server/webhookHandlers.ts` - Subscription lifecycle events (created, renewed, cancelled)
+- **Checkout**: Stripe Checkout for subscription purchases, Customer Portal for management
+- **Pricing**: Annual billing with monthly equivalent display ($49-$399/month, billed annually)
+- **Seed Script**: `server/seed-stripe-products.ts` - Creates products/prices in Stripe
+
+## Development Commands
+- `npm run dev`: Start development server
+- `npm run db:push`: Push schema changes to database
+- `npm run db:push --force`: Force push schema changes
+- `npx tsx server/seed-stripe-products.ts`: Seed Stripe products (run once per Stripe account)
+
 ## Recent Changes
+- Rebranded from GLOBAL-TVS to VeritasAI with Circuit V logo
+- Integrated Stripe payment processing with webhook handling
+- Implemented SendGrid email notifications with template support
 - Added multi-tenant architecture with complete tenant isolation
-- Implemented subscription billing with 4 tiers ($499-$4,999/year commercial, custom for Government)
+- Implemented subscription billing with 4 tiers ($49-$399/month, billed annually)
 - Changed Government tier to "Contact Us" with custom pricing (relationship-based enterprise sales)
 - Added country selector to Pricing page showing relevant compliance features for selected country
 - Created country-specific compliance modules (ZA, KE, NG, GH, AE, UK, US) with GLOBAL fallback
@@ -107,8 +129,4 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - Integrated AI Chatbot (GPT-4o) as floating widget on all pages for user assistance
 - Added Help link to landing page header and authenticated user sidebar
 - Implemented security middleware (rate limiting, RBAC, audit logging)
-- Updated branding to "VeritasAI" with Pan-African messaging
-- Added Pricing page with subscription tier comparison and country compliance preview
-- Added language preferences to tenant configuration
-- Added payment method placeholder for Stripe integration
 - Configured autoscale deployment for production

@@ -2509,4 +2509,160 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
       res.status(500).json({ error: "Failed to process message" });
     }
   });
+
+  // === STRIPE PAYMENT ROUTES ===
+  const { stripeService } = await import("./stripeService");
+  const { getStripePublishableKey } = await import("./stripeClient");
+
+  // Get Stripe publishable key for frontend
+  app.get("/api/stripe/publishable-key", async (req, res) => {
+    try {
+      const publishableKey = await getStripePublishableKey();
+      res.json({ publishableKey });
+    } catch (error) {
+      console.error("Error getting Stripe publishable key:", error);
+      res.status(500).json({ error: "Failed to get Stripe configuration" });
+    }
+  });
+
+  // List products with prices
+  app.get("/api/stripe/products", async (req, res) => {
+    try {
+      const rows = await stripeService.listProductsWithPrices();
+      
+      const productsMap = new Map();
+      for (const row of rows as any[]) {
+        if (!productsMap.has(row.product_id)) {
+          productsMap.set(row.product_id, {
+            id: row.product_id,
+            name: row.product_name,
+            description: row.product_description,
+            active: row.product_active,
+            metadata: row.product_metadata,
+            prices: []
+          });
+        }
+        if (row.price_id) {
+          productsMap.get(row.product_id).prices.push({
+            id: row.price_id,
+            unit_amount: row.unit_amount,
+            currency: row.currency,
+            recurring: row.recurring,
+            active: row.price_active,
+            metadata: row.price_metadata,
+          });
+        }
+      }
+
+      res.json({ data: Array.from(productsMap.values()) });
+    } catch (error) {
+      console.error("Error listing products:", error);
+      res.status(500).json({ error: "Failed to list products" });
+    }
+  });
+
+  // List prices
+  app.get("/api/stripe/prices", async (req, res) => {
+    try {
+      const prices = await stripeService.listPrices();
+      res.json({ data: prices });
+    } catch (error) {
+      console.error("Error listing prices:", error);
+      res.status(500).json({ error: "Failed to list prices" });
+    }
+  });
+
+  // Create checkout session for subscription
+  app.post("/api/stripe/checkout", isAuthenticated, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { priceId, tenantId } = req.body;
+
+      if (!priceId) {
+        return res.status(400).json({ error: "Price ID is required" });
+      }
+
+      // Check if tenant already has a Stripe customer ID
+      let customerId: string;
+      const tenant = tenantId ? await storage.getTenant(tenantId) : null;
+      
+      if (tenant?.stripeCustomerId) {
+        customerId = tenant.stripeCustomerId;
+      } else {
+        // Create a new customer
+        const customer = await stripeService.createCustomer(
+          user.email || `user-${user.id}@veritasai.com`,
+          tenantId || 'default',
+          { userId: user.id }
+        );
+        customerId = customer.id;
+        
+        // Save customer ID to tenant if tenant exists
+        if (tenant && tenantId) {
+          await storage.updateTenant(tenantId, { stripeCustomerId: customerId });
+        }
+      }
+
+      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+      const session = await stripeService.createCheckoutSession(
+        customerId,
+        priceId,
+        `${baseUrl}/billing?success=true`,
+        `${baseUrl}/billing?canceled=true`,
+        { tenantId: tenantId || 'default', userId: user.id }
+      );
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
+      res.status(500).json({ error: "Failed to create checkout session" });
+    }
+  });
+
+  // Create customer portal session for managing subscription
+  app.post("/api/stripe/portal", isAuthenticated, async (req, res) => {
+    try {
+      const { tenantId } = req.body;
+      
+      const tenant = tenantId ? await storage.getTenant(tenantId) : null;
+      
+      if (!tenant?.stripeCustomerId) {
+        return res.status(400).json({ error: "No subscription found for this organization" });
+      }
+
+      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+      const session = await stripeService.createCustomerPortalSession(
+        tenant.stripeCustomerId,
+        `${baseUrl}/billing`
+      );
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Error creating portal session:", error);
+      res.status(500).json({ error: "Failed to create portal session" });
+    }
+  });
+
+  // Get current subscription status
+  app.get("/api/stripe/subscription/:tenantId", isAuthenticated, async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      
+      const tenant = await storage.getTenant(tenantId);
+      
+      if (!tenant?.stripeCustomerId) {
+        return res.json({ subscription: null });
+      }
+
+      const subscriptions = await stripeService.getCustomerSubscriptions(tenant.stripeCustomerId);
+      const activeSubscription = subscriptions.find((s: any) => 
+        s.status === 'active' || s.status === 'trialing'
+      );
+
+      res.json({ subscription: activeSubscription || null });
+    } catch (error) {
+      console.error("Error getting subscription:", error);
+      res.status(500).json({ error: "Failed to get subscription" });
+    }
+  });
 }
