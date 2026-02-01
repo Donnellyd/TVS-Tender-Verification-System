@@ -26,13 +26,29 @@ export default function HelpPage() {
 
   useEffect(() => {
     document.title = "Help & Documentation - GLOBAL-TVS";
-    let metaDescription = document.querySelector('meta[name="description"]');
-    if (!metaDescription) {
-      metaDescription = document.createElement('meta');
-      metaDescription.setAttribute('name', 'description');
-      document.head.appendChild(metaDescription);
-    }
-    metaDescription.setAttribute('content', 'Learn how to use GLOBAL-TVS for bid evaluation and procurement compliance. Guides for getting started, billing, API integration, and more.');
+    
+    const setMeta = (name: string, content: string, property?: string) => {
+      const selector = property ? `meta[property="${property}"]` : `meta[name="${name}"]`;
+      let meta = document.querySelector(selector);
+      if (!meta) {
+        meta = document.createElement('meta');
+        if (property) {
+          meta.setAttribute('property', property);
+        } else {
+          meta.setAttribute('name', name);
+        }
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', content);
+    };
+
+    const description = 'Learn how to use GLOBAL-TVS for bid evaluation and procurement compliance. Guides for getting started, billing, API integration, and more.';
+    
+    setMeta('description', description);
+    setMeta('', 'Help & Documentation - GLOBAL-TVS', 'og:title');
+    setMeta('', description, 'og:description');
+    setMeta('', 'website', 'og:type');
+    setMeta('', window.location.href, 'og:url');
   }, []);
 
   return (
