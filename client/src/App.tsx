@@ -24,6 +24,7 @@ import Billing from "@/pages/billing";
 import ComplianceRules from "@/pages/compliance-rules";
 import ApiSettings from "@/pages/api-settings";
 import Pricing from "@/pages/pricing";
+import ComplianceExplorer from "@/pages/compliance-explorer";
 
 function LoadingScreen() {
   return (
@@ -64,6 +65,7 @@ function AuthenticatedApp() {
             <Route path="/billing" component={Billing} />
             <Route path="/api-settings" component={ApiSettings} />
             <Route path="/pricing" component={Pricing} />
+            <Route path="/compliance-explorer" component={ComplianceExplorer} />
             <Route path="/notifications" component={Dashboard} />
             <Route path="/settings" component={Dashboard} />
             <Route component={NotFound} />
@@ -85,6 +87,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/pricing" component={Pricing} />
+        <Route path="/compliance-explorer" component={ComplianceExplorer} />
         <Route component={Landing} />
       </Switch>
     );

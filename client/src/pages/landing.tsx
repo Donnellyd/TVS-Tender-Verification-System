@@ -1,8 +1,26 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Shield, CheckCircle, BarChart3, Users, FileCheck, Lock } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Shield, CheckCircle, BarChart3, Users, FileCheck, Lock, Globe, ArrowRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+
+interface CountryComplianceInfo {
+  countryCode: string;
+  countryName: string;
+  region: string;
+  status: string;
+  description?: string;
+  keyFeatures?: string[];
+}
 
 export default function Landing() {
+  const { data: countries } = useQuery<CountryComplianceInfo[]>({
+    queryKey: ["/api/compliance/countries"],
+  });
+
+  const featuredCountries = countries?.filter(c => c.countryCode !== "GLOBAL").slice(0, 6) || [];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -179,6 +197,69 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Country Compliance Section */}
+      <section id="compliance" className="py-20 px-6 lg:px-8" data-testid="section-country-compliance">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge variant="secondary" className="mb-4">
+              <Globe className="w-3 h-3 mr-1" />
+              Country-Specific Compliance
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 font-serif">
+              Compliance Coverage by Country
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              We understand each country's unique procurement requirements. Select your country to see 
+              what regulations, documents, and scoring methods we support.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" data-testid="country-cards-grid">
+            {featuredCountries.map((country) => (
+              <Link key={country.countryCode} href={`/compliance-explorer?country=${country.countryCode}`}>
+                <Card className="h-full hover-elevate cursor-pointer" data-testid={`card-country-${country.countryCode}`}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="text-lg">{country.countryName}</CardTitle>
+                      <Badge variant="outline" className="text-xs flex-shrink-0">{country.region}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                      {country.description || `Procurement compliance verification for ${country.countryName}`}
+                    </p>
+                    {Array.isArray(country.keyFeatures) && country.keyFeatures.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {country.keyFeatures.slice(0, 2).map((feature, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {typeof feature === 'string' ? feature.split(' ').slice(0, 3).join(' ') : ''}
+                          </Badge>
+                        ))}
+                        {country.keyFeatures.length > 2 && (
+                          <Badge variant="secondary" className="text-xs">+{country.keyFeatures.length - 2} more</Badge>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <Link href="/compliance-explorer">
+              <Button variant="outline" size="lg" data-testid="button-explore-all-countries">
+                Explore All Countries
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+            <p className="text-sm text-muted-foreground mt-3">
+              Don't see your country? Our <strong>Global</strong> framework supports any country worldwide.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
@@ -186,11 +267,16 @@ export default function Landing() {
             Ready to Transform Your Procurement?
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Join South African municipalities using GLOBAL - TVS for compliant, efficient tender management.
+            Join organizations across Africa and beyond using GLOBAL-TVS for compliant, efficient tender management.
           </p>
-          <Button size="lg" asChild>
-            <a href="/api/login">Get Started Now</a>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" asChild>
+              <a href="/api/login">Get Started Now</a>
+            </Button>
+            <Link href="/pricing">
+              <Button size="lg" variant="outline">View Pricing</Button>
+            </Link>
+          </div>
         </div>
       </section>
 
