@@ -4,7 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Check, Globe, Shield, Zap, Users, FileCheck, BarChart3, Headphones } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Check, Globe, Shield, Zap, Users, FileCheck, BarChart3, Headphones, Building2, Mail, Phone, ArrowRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+
+interface CountryComplianceInfo {
+  countryCode: string;
+  countryName: string;
+  region: string;
+  status: string;
+  description?: string;
+  keyFeatures?: string[];
+}
 
 const SUBSCRIPTION_TIERS = [
   {
@@ -24,7 +39,8 @@ const SUBSCRIPTION_TIERS = [
       "1 user seat",
       "Email support"
     ],
-    highlighted: false
+    highlighted: false,
+    isContactUs: false
   },
   {
     id: "professional",
@@ -44,7 +60,8 @@ const SUBSCRIPTION_TIERS = [
       "5 user seats",
       "Priority email support"
     ],
-    highlighted: true
+    highlighted: true,
+    isContactUs: false
   },
   {
     id: "enterprise",
@@ -64,33 +81,50 @@ const SUBSCRIPTION_TIERS = [
       "25 user seats",
       "Phone & email support"
     ],
-    highlighted: false
+    highlighted: false,
+    isContactUs: false
   },
   {
     id: "government",
-    name: "Government",
-    description: "For government agencies and public sector",
-    priceMonthly: 999,
-    priceAnnual: 9999,
+    name: "Government & Public Sector",
+    description: "Tailored solutions for national, provincial & municipal procurement",
+    priceMonthly: -1,
+    priceAnnual: -1,
     bidsIncluded: -1,
     documentsIncluded: -1,
     storageGb: -1,
     features: [
       "Everything in Enterprise",
-      "Unlimited bids & documents",
-      "Unlimited storage",
-      "On-premise deployment option",
+      "Custom pricing based on scope",
+      "Unlimited capacity options",
+      "On-premise deployment available",
       "Custom integrations",
       "Unlimited user seats",
       "24/7 dedicated support",
       "SLA guarantee"
     ],
-    highlighted: false
+    highlighted: false,
+    isContactUs: true
   }
 ];
 
 export default function PricingPage() {
   const [isAnnual, setIsAnnual] = useState(true);
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    organization: "",
+    country: "",
+    message: ""
+  });
+
+  const { data: countries } = useQuery<CountryComplianceInfo[]>({
+    queryKey: ["/api/compliance/countries"],
+  });
+
+  const selectedCountryData = countries?.find(c => c.countryCode === selectedCountry);
 
   useEffect(() => {
     document.title = "Pricing - GLOBAL-TVS | AI-Powered Bid Evaluation Platform";
@@ -101,7 +135,7 @@ export default function PricingPage() {
       metaDescription.setAttribute('name', 'description');
       document.head.appendChild(metaDescription);
     }
-    metaDescription.setAttribute("content", "Choose from Starter, Professional, Enterprise, or Government plans. AI-powered document verification for procurement teams across Africa and Middle East.");
+    metaDescription.setAttribute("content", "Choose from Starter, Professional, Enterprise plans or contact us for Government solutions. AI-powered document verification for procurement teams across Africa and Middle East.");
     
     let ogTitle = document.querySelector('meta[property="og:title"]');
     if (!ogTitle) {
@@ -117,13 +151,19 @@ export default function PricingPage() {
       ogDescription.setAttribute('property', 'og:description');
       document.head.appendChild(ogDescription);
     }
-    ogDescription.setAttribute("content", "Choose from Starter ($499/yr), Professional ($1,999/yr), Enterprise ($4,999/yr), or Government ($9,999/yr) plans.");
+    ogDescription.setAttribute("content", "Choose from Starter ($499/yr), Professional ($1,999/yr), Enterprise ($4,999/yr), or contact us for Government solutions.");
   }, []);
 
   const formatPrice = (monthly: number, annual: number) => {
     const price = isAnnual ? annual : monthly;
     if (price === -1) return "Custom";
     return `$${price.toLocaleString()}`;
+  };
+
+  const handleContactSubmit = () => {
+    console.log("Contact form submitted:", contactForm);
+    setContactDialogOpen(false);
+    setContactForm({ name: "", email: "", organization: "", country: "", message: "" });
   };
 
   return (
@@ -140,6 +180,60 @@ export default function PricingPage() {
             verification and configurable compliance rules.
           </p>
         </div>
+
+        <Card className="mb-12 p-6" data-testid="card-country-selector">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-primary" />
+              <span className="font-medium">Select your country to see relevant compliance features:</span>
+            </div>
+            <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+              <SelectTrigger className="w-full md:w-[280px]" data-testid="select-country">
+                <SelectValue placeholder="Choose your country..." />
+              </SelectTrigger>
+              <SelectContent>
+                {countries?.filter(c => c.countryCode !== "GLOBAL").map((country) => (
+                  <SelectItem key={country.countryCode} value={country.countryCode}>
+                    {country.countryName} ({country.region})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedCountryData && (
+            <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20" data-testid="country-compliance-preview">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    {selectedCountryData.countryName} Compliance
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">{selectedCountryData.description}</p>
+                  {selectedCountryData.keyFeatures && selectedCountryData.keyFeatures.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {selectedCountryData.keyFeatures.slice(0, 5).map((feature, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-xs">
+                          {feature}
+                        </Badge>
+                      ))}
+                      {selectedCountryData.keyFeatures.length > 5 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{selectedCountryData.keyFeatures.length - 5} more
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <Link href="/compliance-explorer">
+                  <Button variant="outline" size="sm" className="flex items-center gap-1" data-testid="link-compliance-explorer">
+                    View Full Details <ArrowRight className="h-3 w-3" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
+        </Card>
 
         <div className="flex items-center justify-center gap-4 mb-12" data-testid="billing-toggle-container">
           <Label htmlFor="billing-toggle" className={!isAnnual ? "font-semibold" : "text-muted-foreground"} data-testid="label-monthly">
@@ -161,7 +255,7 @@ export default function PricingPage() {
           {SUBSCRIPTION_TIERS.map((tier) => (
             <Card 
               key={tier.id} 
-              className={tier.highlighted ? "border-primary shadow-lg relative" : ""}
+              className={`${tier.highlighted ? "border-primary shadow-lg relative" : ""} ${tier.isContactUs ? "bg-gradient-to-b from-primary/5 to-transparent" : ""}`}
               data-testid={`card-pricing-${tier.id}`}
             >
               {tier.highlighted && (
@@ -171,42 +265,46 @@ export default function PricingPage() {
               )}
               <CardHeader>
                 <CardTitle className="flex items-center gap-2" data-testid={`text-tier-name-${tier.id}`}>
+                  {tier.isContactUs && <Building2 className="h-5 w-5 text-primary" />}
                   {tier.name}
                 </CardTitle>
                 <CardDescription data-testid={`text-tier-description-${tier.id}`}>{tier.description}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div data-testid={`text-tier-price-${tier.id}`}>
-                  <span className="text-4xl font-bold">
-                    {formatPrice(tier.priceMonthly, tier.priceAnnual)}
-                  </span>
-                  {tier.priceMonthly !== -1 && (
-                    <span className="text-muted-foreground">
-                      /{isAnnual ? "year" : "month"}
-                    </span>
+                  {tier.isContactUs ? (
+                    <div>
+                      <span className="text-2xl font-bold text-primary">Contact Us</span>
+                      <p className="text-sm text-muted-foreground mt-1">Custom pricing based on your needs</p>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-4xl font-bold">
+                        {formatPrice(tier.priceMonthly, tier.priceAnnual)}
+                      </span>
+                      <span className="text-muted-foreground">
+                        /{isAnnual ? "year" : "month"}
+                      </span>
+                    </>
                   )}
                 </div>
 
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2" data-testid={`text-bids-${tier.id}`}>
-                    <FileCheck className="h-4 w-4 text-primary" />
-                    <span>
-                      {tier.bidsIncluded === -1 ? "Unlimited" : tier.bidsIncluded} bids/month
-                    </span>
+                {!tier.isContactUs && (
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2" data-testid={`text-bids-${tier.id}`}>
+                      <FileCheck className="h-4 w-4 text-primary" />
+                      <span>{tier.bidsIncluded} bids/month</span>
+                    </div>
+                    <div className="flex items-center gap-2" data-testid={`text-documents-${tier.id}`}>
+                      <FileCheck className="h-4 w-4 text-primary" />
+                      <span>{tier.documentsIncluded} documents/month</span>
+                    </div>
+                    <div className="flex items-center gap-2" data-testid={`text-storage-${tier.id}`}>
+                      <FileCheck className="h-4 w-4 text-primary" />
+                      <span>{tier.storageGb} GB storage</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2" data-testid={`text-documents-${tier.id}`}>
-                    <FileCheck className="h-4 w-4 text-primary" />
-                    <span>
-                      {tier.documentsIncluded === -1 ? "Unlimited" : tier.documentsIncluded} documents/month
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2" data-testid={`text-storage-${tier.id}`}>
-                    <FileCheck className="h-4 w-4 text-primary" />
-                    <span>
-                      {tier.storageGb === -1 ? "Unlimited" : `${tier.storageGb} GB`} storage
-                    </span>
-                  </div>
-                </div>
+                )}
 
                 <div className="border-t pt-4 space-y-2" data-testid={`features-list-${tier.id}`}>
                   {tier.features.map((feature, idx) => (
@@ -218,13 +316,110 @@ export default function PricingPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button 
-                  className="w-full" 
-                  variant={tier.highlighted ? "default" : "outline"}
-                  data-testid={`button-select-${tier.id}`}
-                >
-                  {tier.id === "government" ? "Contact Sales" : "Get Started"}
-                </Button>
+                {tier.isContactUs ? (
+                  <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full" variant="default" data-testid={`button-select-${tier.id}`}>
+                        <Mail className="h-4 w-4 mr-2" />
+                        Contact Sales
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[500px]">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                          <Building2 className="h-5 w-5 text-primary" />
+                          Government & Public Sector Inquiry
+                        </DialogTitle>
+                        <DialogDescription>
+                          Tell us about your requirements and we'll create a custom solution for your organization.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="contact-name">Name</Label>
+                            <Input 
+                              id="contact-name" 
+                              placeholder="Your name"
+                              value={contactForm.name}
+                              onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
+                              data-testid="input-contact-name"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="contact-email">Email</Label>
+                            <Input 
+                              id="contact-email" 
+                              type="email"
+                              placeholder="your@email.gov"
+                              value={contactForm.email}
+                              onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                              data-testid="input-contact-email"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="contact-org">Organization</Label>
+                            <Input 
+                              id="contact-org" 
+                              placeholder="Ministry / Agency"
+                              value={contactForm.organization}
+                              onChange={(e) => setContactForm({...contactForm, organization: e.target.value})}
+                              data-testid="input-contact-org"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="contact-country">Country</Label>
+                            <Select 
+                              value={contactForm.country} 
+                              onValueChange={(v) => setContactForm({...contactForm, country: v})}
+                            >
+                              <SelectTrigger data-testid="select-contact-country">
+                                <SelectValue placeholder="Select country" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {countries?.filter(c => c.countryCode !== "GLOBAL").map((country) => (
+                                  <SelectItem key={country.countryCode} value={country.countryCode}>
+                                    {country.countryName}
+                                  </SelectItem>
+                                ))}
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="contact-message">Tell us about your needs</Label>
+                          <Textarea 
+                            id="contact-message" 
+                            placeholder="Number of municipalities/agencies, expected bid volume, specific compliance requirements..."
+                            rows={4}
+                            value={contactForm.message}
+                            onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
+                            data-testid="textarea-contact-message"
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setContactDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={handleContactSubmit} data-testid="button-submit-contact">
+                          Send Inquiry
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <Button 
+                    className="w-full" 
+                    variant={tier.highlighted ? "default" : "outline"}
+                    data-testid={`button-select-${tier.id}`}
+                  >
+                    Get Started
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           ))}
@@ -266,9 +461,17 @@ export default function PricingPage() {
           <p className="text-muted-foreground mb-6" data-testid="text-contact-description">
             Contact our sales team for custom enterprise solutions or volume discounts.
           </p>
-          <Button size="lg" variant="outline" data-testid="button-contact-sales">
-            Contact Sales
-          </Button>
+          <div className="flex justify-center gap-4 flex-wrap">
+            <Button size="lg" variant="outline" data-testid="button-contact-sales">
+              <Phone className="h-4 w-4 mr-2" />
+              Schedule a Call
+            </Button>
+            <Link href="/help">
+              <Button size="lg" variant="ghost" data-testid="button-view-docs">
+                View Documentation
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
