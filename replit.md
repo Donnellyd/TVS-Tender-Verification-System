@@ -96,16 +96,20 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 
 ## Recent Changes
 - Added multi-tenant architecture with complete tenant isolation
-- Implemented subscription billing with 4 tiers ($499-$9,999/year)
+- Implemented subscription billing with 4 tiers ($499-$4,999/year commercial, custom for Government)
+- Changed Government tier to "Contact Us" with custom pricing (relationship-based enterprise sales)
+- Added country selector to Pricing page showing relevant compliance features for selected country
 - Created country-specific compliance modules (ZA, KE, NG, GH, AE, UK, US) with GLOBAL fallback
 - Built AI document processing pipeline with multi-language support (EN/FR/PT/AR)
 - Added API v1 for external integrations
 - Built Country Compliance Explorer page with interactive country selector and detailed compliance info
 - Added Help/Documentation page with 5 tabs (Getting Started, Billing, Platform Usage, API, FAQ)
+- Created docs/help-guide.md with comprehensive platform documentation
 - Integrated AI Chatbot (GPT-4o) as floating widget on all pages for user assistance
+- Added Help link to landing page header and authenticated user sidebar
 - Implemented security middleware (rate limiting, RBAC, audit logging)
 - Updated branding to "GLOBAL-TVS" with Pan-African messaging
-- Added Pricing page with subscription tier comparison
+- Added Pricing page with subscription tier comparison and country compliance preview
 - Added language preferences to tenant configuration
 - Added payment method placeholder for Stripe integration
 - Configured autoscale deployment for production
