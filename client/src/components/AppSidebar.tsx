@@ -17,6 +17,7 @@ import {
   CreditCard,
   Key,
   Globe,
+  HelpCircle,
 } from "lucide-react";
 import {
   Sidebar,
@@ -53,6 +54,7 @@ const settingsNavItems = [
   { title: "API Settings", url: "/api-settings", icon: Key },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Help & Docs", url: "/help", icon: HelpCircle },
 ];
 
 export function AppSidebar() {

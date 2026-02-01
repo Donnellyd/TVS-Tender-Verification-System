@@ -189,7 +189,7 @@ export default function PricingPage() {
             </div>
             <Select value={selectedCountry} onValueChange={setSelectedCountry}>
               <SelectTrigger className="w-full md:w-[280px]" data-testid="select-country">
-                <SelectValue placeholder="Choose your country..." />
+                <SelectValue placeholder={countries ? "Choose your country..." : "Loading countries..."} />
               </SelectTrigger>
               <SelectContent>
                 {countries?.filter(c => c.countryCode !== "GLOBAL").map((country) => (
@@ -197,6 +197,9 @@ export default function PricingPage() {
                     {country.countryName} ({country.region})
                   </SelectItem>
                 ))}
+                {!countries?.length && (
+                  <div className="p-2 text-sm text-muted-foreground text-center">Loading...</div>
+                )}
               </SelectContent>
             </Select>
           </div>

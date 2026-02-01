@@ -37,6 +37,7 @@ export default function Landing() {
               <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
               <a href="#compliance" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Compliance</a>
               <a href="#about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</a>
+              <Link href="/help" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Help</Link>
             </div>
             <Button asChild data-testid="button-login">
               <a href="/api/login">Sign In</a>
