@@ -23,6 +23,7 @@ import WhatsappTemplates from "@/pages/whatsapp-templates";
 import Billing from "@/pages/billing";
 import ComplianceRules from "@/pages/compliance-rules";
 import ApiSettings from "@/pages/api-settings";
+import Pricing from "@/pages/pricing";
 
 function LoadingScreen() {
   return (
@@ -80,7 +81,12 @@ function Router() {
   }
 
   if (!user) {
-    return <Landing />;
+    return (
+      <Switch>
+        <Route path="/pricing" component={Pricing} />
+        <Route component={Landing} />
+      </Switch>
+    );
   }
 
   return <AuthenticatedApp />;

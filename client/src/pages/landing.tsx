@@ -50,7 +50,7 @@ export default function Landing() {
                   <a href="/api/login">Get Started</a>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
-                  <a href="#features">Learn More</a>
+                  <a href="/pricing">View Pricing</a>
                 </Button>
               </div>
               <div className="flex items-center gap-6 pt-4 flex-wrap">
