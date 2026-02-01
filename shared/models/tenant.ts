@@ -8,6 +8,8 @@ export const subscriptionStatusEnum = z.enum(["active", "past_due", "cancelled",
 export const billingIntervalEnum = z.enum(["monthly", "annual"]);
 export const tenantStatusEnum = z.enum(["active", "suspended", "pending"]);
 
+export const languageEnum = z.enum(["en", "fr", "pt", "ar"]);
+
 export const tenants = pgTable("tenants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -18,6 +20,8 @@ export const tenants = pgTable("tenants", {
   country: text("country").notNull().default("ZA"),
   timezone: text("timezone").default("Africa/Johannesburg"),
   currency: text("currency").default("ZAR"),
+  language: text("language").default("en"),
+  supportedLanguages: text("supported_languages").array().default(sql`ARRAY['en']::text[]`),
   status: text("status").notNull().default("active"),
   settings: jsonb("settings").default({}),
   createdAt: timestamp("created_at").defaultNow(),

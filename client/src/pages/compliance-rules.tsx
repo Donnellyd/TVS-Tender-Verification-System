@@ -191,7 +191,7 @@ export default function ComplianceRulesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Compliance Rules Engine</h1>
-          <p className="text-muted-foreground">Configure country-specific compliance rules and scoring criteria</p>
+          <p className="text-muted-foreground">Configure compliance rules for any country. Pre-built modules available for popular regions, with GLOBAL fallback for all others.</p>
         </div>
       </div>
 

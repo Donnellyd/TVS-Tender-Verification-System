@@ -34,16 +34,16 @@ export default function Landing() {
             <div className="space-y-8">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm text-primary border border-primary/20">
                 <Shield className="h-4 w-4" />
-                <span>Multi-Country Compliance</span>
+                <span>Pan-African Compliance</span>
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight font-serif">
-                AI-Powered Global{" "}
+                AI-Powered{" "}
                 <span className="text-primary">Bid Evaluation Platform</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl">
                 Transform your procurement process with automated AI document verification, 
-                country-specific compliance rules, and enterprise-grade security. 
-                Built for governments and enterprises across Africa, Middle East, and beyond.
+                configurable compliance rules, and enterprise-grade security. 
+                Serving all 54 African nations, Middle East, and expanding globally.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" asChild data-testid="button-get-started">
@@ -56,15 +56,15 @@ export default function Landing() {
               <div className="flex items-center gap-6 pt-4 flex-wrap">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>7+ Countries</span>
+                  <span>Africa + Middle East</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>AI-Powered OCR</span>
+                  <span>Multi-Language (EN/FR/PT/AR)</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Fraud Detection</span>
+                  <span>AI Document Processing</span>
                 </div>
               </div>
             </div>
