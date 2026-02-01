@@ -63,6 +63,7 @@ function AuthenticatedApp() {
             <Route path="/rules" component={ComplianceRules} />
             <Route path="/billing" component={Billing} />
             <Route path="/api-settings" component={ApiSettings} />
+            <Route path="/pricing" component={Pricing} />
             <Route path="/notifications" component={Dashboard} />
             <Route path="/settings" component={Dashboard} />
             <Route component={NotFound} />

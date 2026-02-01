@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -92,6 +92,34 @@ const SUBSCRIPTION_TIERS = [
 export default function PricingPage() {
   const [isAnnual, setIsAnnual] = useState(true);
 
+  useEffect(() => {
+    document.title = "Pricing - GLOBAL-TVS | AI-Powered Bid Evaluation Platform";
+    
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute("content", "Choose from Starter, Professional, Enterprise, or Government plans. AI-powered document verification for procurement teams across Africa and Middle East.");
+    
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    if (!ogTitle) {
+      ogTitle = document.createElement('meta');
+      ogTitle.setAttribute('property', 'og:title');
+      document.head.appendChild(ogTitle);
+    }
+    ogTitle.setAttribute("content", "Pricing - GLOBAL-TVS | AI-Powered Bid Evaluation Platform");
+    
+    let ogDescription = document.querySelector('meta[property="og:description"]');
+    if (!ogDescription) {
+      ogDescription = document.createElement('meta');
+      ogDescription.setAttribute('property', 'og:description');
+      document.head.appendChild(ogDescription);
+    }
+    ogDescription.setAttribute("content", "Choose from Starter ($499/yr), Professional ($1,999/yr), Enterprise ($4,999/yr), or Government ($9,999/yr) plans.");
+  }, []);
+
   const formatPrice = (monthly: number, annual: number) => {
     const price = isAnnual ? annual : monthly;
     if (price === -1) return "Custom";
@@ -99,22 +127,22 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-6 py-16">
+    <div className="min-h-screen bg-background" data-testid="page-pricing">
+      <div className="container mx-auto px-6 py-16" data-testid="pricing-container">
         <div className="text-center mb-12">
-          <Badge variant="secondary" className="mb-4">
+          <Badge variant="secondary" className="mb-4" data-testid="badge-coverage">
             <Globe className="h-3 w-3 mr-1" />
             Serving 54+ African Nations & Middle East
           </Badge>
-          <h1 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <h1 className="text-4xl font-bold mb-4" data-testid="text-pricing-title">Simple, Transparent Pricing</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-pricing-subtitle">
             Choose the plan that fits your organization. All plans include AI-powered document 
             verification and configurable compliance rules.
           </p>
         </div>
 
-        <div className="flex items-center justify-center gap-4 mb-12">
-          <Label htmlFor="billing-toggle" className={!isAnnual ? "font-semibold" : "text-muted-foreground"}>
+        <div className="flex items-center justify-center gap-4 mb-12" data-testid="billing-toggle-container">
+          <Label htmlFor="billing-toggle" className={!isAnnual ? "font-semibold" : "text-muted-foreground"} data-testid="label-monthly">
             Monthly
           </Label>
           <Switch
@@ -123,31 +151,32 @@ export default function PricingPage() {
             onCheckedChange={setIsAnnual}
             data-testid="switch-billing-toggle"
           />
-          <Label htmlFor="billing-toggle" className={isAnnual ? "font-semibold" : "text-muted-foreground"}>
+          <Label htmlFor="billing-toggle" className={isAnnual ? "font-semibold" : "text-muted-foreground"} data-testid="label-annual">
             Annual
-            <Badge variant="secondary" className="ml-2 text-xs">Save 15%</Badge>
+            <Badge variant="secondary" className="ml-2 text-xs" data-testid="badge-save">Save 15%</Badge>
           </Label>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16" data-testid="pricing-grid">
           {SUBSCRIPTION_TIERS.map((tier) => (
             <Card 
               key={tier.id} 
               className={tier.highlighted ? "border-primary shadow-lg relative" : ""}
+              data-testid={`card-pricing-${tier.id}`}
             >
               {tier.highlighted && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-primary">Most Popular</Badge>
+                  <Badge className="bg-primary" data-testid="badge-most-popular">Most Popular</Badge>
                 </div>
               )}
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2" data-testid={`text-tier-name-${tier.id}`}>
                   {tier.name}
                 </CardTitle>
-                <CardDescription>{tier.description}</CardDescription>
+                <CardDescription data-testid={`text-tier-description-${tier.id}`}>{tier.description}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
+                <div data-testid={`text-tier-price-${tier.id}`}>
                   <span className="text-4xl font-bold">
                     {formatPrice(tier.priceMonthly, tier.priceAnnual)}
                   </span>
@@ -159,19 +188,19 @@ export default function PricingPage() {
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2" data-testid={`text-bids-${tier.id}`}>
                     <FileCheck className="h-4 w-4 text-primary" />
                     <span>
                       {tier.bidsIncluded === -1 ? "Unlimited" : tier.bidsIncluded} bids/month
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2" data-testid={`text-documents-${tier.id}`}>
                     <FileCheck className="h-4 w-4 text-primary" />
                     <span>
                       {tier.documentsIncluded === -1 ? "Unlimited" : tier.documentsIncluded} documents/month
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2" data-testid={`text-storage-${tier.id}`}>
                     <FileCheck className="h-4 w-4 text-primary" />
                     <span>
                       {tier.storageGb === -1 ? "Unlimited" : `${tier.storageGb} GB`} storage
@@ -179,9 +208,9 @@ export default function PricingPage() {
                   </div>
                 </div>
 
-                <div className="border-t pt-4 space-y-2">
+                <div className="border-t pt-4 space-y-2" data-testid={`features-list-${tier.id}`}>
                   {tier.features.map((feature, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-sm">
+                    <div key={idx} className="flex items-start gap-2 text-sm" data-testid={`text-feature-${tier.id}-${idx}`}>
                       <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                       <span>{feature}</span>
                     </div>
@@ -201,40 +230,40 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <Card className="text-center p-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16" data-testid="features-grid">
+          <Card className="text-center p-6" data-testid="card-feature-security">
             <Shield className="h-10 w-10 mx-auto mb-4 text-primary" />
-            <h3 className="font-semibold mb-2">Enterprise Security</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="font-semibold mb-2" data-testid="text-feature-security-title">Enterprise Security</h3>
+            <p className="text-sm text-muted-foreground" data-testid="text-feature-security-desc">
               AES-256 encryption, audit logging, and RBAC
             </p>
           </Card>
-          <Card className="text-center p-6">
+          <Card className="text-center p-6" data-testid="card-feature-coverage">
             <Globe className="h-10 w-10 mx-auto mb-4 text-primary" />
-            <h3 className="font-semibold mb-2">Pan-African Coverage</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="font-semibold mb-2" data-testid="text-feature-coverage-title">Pan-African Coverage</h3>
+            <p className="text-sm text-muted-foreground" data-testid="text-feature-coverage-desc">
               All 54 African nations + Middle East support
             </p>
           </Card>
-          <Card className="text-center p-6">
+          <Card className="text-center p-6" data-testid="card-feature-ai">
             <Zap className="h-10 w-10 mx-auto mb-4 text-primary" />
-            <h3 className="font-semibold mb-2">AI-Powered</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="font-semibold mb-2" data-testid="text-feature-ai-title">AI-Powered</h3>
+            <p className="text-sm text-muted-foreground" data-testid="text-feature-ai-desc">
               Document verification in seconds, not hours
             </p>
           </Card>
-          <Card className="text-center p-6">
+          <Card className="text-center p-6" data-testid="card-feature-support">
             <Headphones className="h-10 w-10 mx-auto mb-4 text-primary" />
-            <h3 className="font-semibold mb-2">Dedicated Support</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="font-semibold mb-2" data-testid="text-feature-support-title">Dedicated Support</h3>
+            <p className="text-sm text-muted-foreground" data-testid="text-feature-support-desc">
               Expert assistance when you need it
             </p>
           </Card>
         </div>
 
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Questions about pricing?</h2>
-          <p className="text-muted-foreground mb-6">
+        <div className="text-center" data-testid="contact-section">
+          <h2 className="text-2xl font-bold mb-4" data-testid="text-contact-title">Questions about pricing?</h2>
+          <p className="text-muted-foreground mb-6" data-testid="text-contact-description">
             Contact our sales team for custom enterprise solutions or volume discounts.
           </p>
           <Button size="lg" variant="outline" data-testid="button-contact-sales">
