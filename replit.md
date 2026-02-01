@@ -13,17 +13,16 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 
 ### Multi-Tenant SaaS Features
 - **Tenant Isolation**: Complete data separation with tenant_id on all tables
-- **Subscription Tiers**: Starter ($499), Professional ($1,999), Enterprise ($4,999), Government ($9,999)
+- **Subscription Tiers**: Starter ($499), Professional ($1,499), Enterprise ($3,999), Government (Custom Pricing)
 - **Usage-Based Billing**: Track bids, documents, storage, API calls per tenant
 - **API Integration**: REST API v1 with API key authentication and OAuth support
 
-### Supported Countries
-- **South Africa (ZA)**: BBBEE, CSD, Tax Clearance, 80/20 and 90/10 scoring
-- **Kenya (KE)**: AGPO (Youth, Women, PWD preferences), PPRA compliance
-- **Nigeria (NG)**: Local Content Act, BPP compliance
-- **Ghana (GH)**: PPA regulations, local participation
+### Supported Countries (70 total)
+- **All 54 African Nations**: Including ZA, KE, NG, GH, EG, MA, DZ, TN, ET, TZ, UG, RW, CI, SN, CM, AO, MZ, ZW, ZM, BW, NA, and more
+- **Australia (AU)**: Commonwealth Procurement Rules, Indigenous Procurement Policy
 - **UAE (AE)**: Local ICV requirements
-- **UK (UK)**: Public Contracts Regulations
+- **EU Countries**: Germany, France, Netherlands, Italy, Spain, Belgium, Portugal, Sweden, Denmark, Poland
+- **UK**: Public Contracts Regulations
 - **USA (US)**: FAR/DFAR, SBA preferences
 
 ### Frontend (React + TypeScript)

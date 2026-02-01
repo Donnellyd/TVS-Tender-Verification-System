@@ -534,6 +534,1485 @@ function getCountrySeedData() {
         "Past performance evaluation"
       ]
     },
+    // AUSTRALIA
+    {
+      countryCode: "AU",
+      countryName: "Australia",
+      region: "Asia-Pacific",
+      status: "active",
+      description: "Australian procurement follows Commonwealth Procurement Rules (CPRs) with emphasis on value for money and Indigenous procurement targets.",
+      complianceFrameworks: [
+        { name: "CPRs", description: "Commonwealth Procurement Rules", required: true },
+        { name: "IPP", description: "Indigenous Procurement Policy", required: false }
+      ],
+      documentTypes: [
+        { type: "ABN Registration", description: "Australian Business Number Registration", required: true },
+        { type: "Tax Certificate", description: "ATO Tax Clearance Certificate", required: true },
+        { type: "Insurance", description: "Public Liability Insurance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Value for Money", description: "Value for money assessment framework" }
+      ],
+      governmentIntegrations: [
+        { name: "ATO", description: "Australian Taxation Office" },
+        { name: "ASIC", description: "Australian Securities and Investments Commission" }
+      ],
+      languages: ["English"],
+      keyFeatures: [
+        "CPR compliance checking",
+        "Indigenous procurement tracking",
+        "ABN verification",
+        "Value for money assessment",
+        "State/territory procurement support"
+      ]
+    },
+    // EU COUNTRIES
+    {
+      countryCode: "DE",
+      countryName: "Germany",
+      region: "Europe",
+      status: "active",
+      description: "German procurement follows EU Directives with additional national regulations including GWB and VgV for public contracts.",
+      complianceFrameworks: [
+        { name: "EU Directives", description: "EU Public Procurement Directives 2014/24/EU", required: true },
+        { name: "GWB", description: "Gesetz gegen Wettbewerbsbeschränkungen", required: true },
+        { name: "VgV", description: "Vergabeverordnung", required: true }
+      ],
+      documentTypes: [
+        { type: "Handelsregister", description: "Commercial Register Extract", required: true },
+        { type: "Tax Certificate", description: "Finanzamt Tax Clearance", required: true },
+        { type: "Social Insurance", description: "Social Insurance Compliance Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "MEAT", description: "Most Economically Advantageous Tender" }
+      ],
+      governmentIntegrations: [],
+      languages: ["German", "English"],
+      keyFeatures: [
+        "EU Directive compliance",
+        "Handelsregister verification",
+        "Social insurance validation",
+        "Environmental criteria support",
+        "SME-friendly evaluation"
+      ]
+    },
+    {
+      countryCode: "FR",
+      countryName: "France",
+      region: "Europe",
+      status: "active",
+      description: "French procurement follows EU Directives with Code de la Commande Publique governing public contracts.",
+      complianceFrameworks: [
+        { name: "EU Directives", description: "EU Public Procurement Directives 2014/24/EU", required: true },
+        { name: "CCP", description: "Code de la Commande Publique", required: true }
+      ],
+      documentTypes: [
+        { type: "KBIS", description: "Extrait Kbis - Company Registration", required: true },
+        { type: "Tax Certificate", description: "Attestation Fiscale", required: true },
+        { type: "Social Certificate", description: "Attestation URSSAF", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "MAPA", description: "Marché à Procédure Adaptée for smaller contracts" },
+        { name: "MEAT", description: "Most Economically Advantageous Tender" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: [
+        "KBIS company verification",
+        "URSSAF social compliance",
+        "Environmental clause support",
+        "French language document processing",
+        "SME preference tracking"
+      ]
+    },
+    {
+      countryCode: "NL",
+      countryName: "Netherlands",
+      region: "Europe",
+      status: "active",
+      description: "Dutch procurement follows EU Directives with emphasis on sustainability and innovation in public contracts.",
+      complianceFrameworks: [
+        { name: "EU Directives", description: "EU Public Procurement Directives 2014/24/EU", required: true },
+        { name: "Aanbestedingswet", description: "Dutch Public Procurement Act 2012", required: true }
+      ],
+      documentTypes: [
+        { type: "KvK Extract", description: "Chamber of Commerce Registration", required: true },
+        { type: "Tax Certificate", description: "Belastingdienst Tax Clearance", required: true },
+        { type: "UEA", description: "Uniform European Aanbestedingsdocument", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "EMVI", description: "Economisch Meest Voordelige Inschrijving" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Dutch", "English"],
+      keyFeatures: [
+        "KvK registration verification",
+        "Sustainability criteria support",
+        "EMVI evaluation framework",
+        "Social return requirements",
+        "Innovation procurement support"
+      ]
+    },
+    {
+      countryCode: "IT",
+      countryName: "Italy",
+      region: "Europe",
+      status: "active",
+      description: "Italian procurement follows EU Directives with Codice dei Contratti Pubblici governing public contracts.",
+      complianceFrameworks: [
+        { name: "EU Directives", description: "EU Public Procurement Directives 2014/24/EU", required: true },
+        { name: "D.Lgs. 36/2023", description: "New Italian Public Contracts Code", required: true }
+      ],
+      documentTypes: [
+        { type: "Visura Camerale", description: "Chamber of Commerce Certificate", required: true },
+        { type: "DURC", description: "Social Insurance Compliance Certificate", required: true },
+        { type: "Tax Certificate", description: "Agenzia delle Entrate Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "OEPV", description: "Offerta Economicamente Più Vantaggiosa" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Italian", "English"],
+      keyFeatures: [
+        "DURC social compliance verification",
+        "Anti-mafia certification support",
+        "Visura camerale validation",
+        "SOA qualification checking",
+        "MePA marketplace integration"
+      ]
+    },
+    {
+      countryCode: "ES",
+      countryName: "Spain",
+      region: "Europe",
+      status: "active",
+      description: "Spanish procurement follows EU Directives with Ley de Contratos del Sector Público governing public contracts.",
+      complianceFrameworks: [
+        { name: "EU Directives", description: "EU Public Procurement Directives 2014/24/EU", required: true },
+        { name: "LCSP", description: "Ley 9/2017 de Contratos del Sector Público", required: true }
+      ],
+      documentTypes: [
+        { type: "Registro Mercantil", description: "Commercial Registry Certificate", required: true },
+        { type: "Tax Certificate", description: "AEAT Tax Clearance Certificate", required: true },
+        { type: "Social Security", description: "TGSS Social Security Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "MEAT", description: "Most Economically Advantageous Tender" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Spanish", "English"],
+      keyFeatures: [
+        "ROLECE registry verification",
+        "Social security compliance",
+        "Regional autonomy support",
+        "Social clause evaluation",
+        "Environmental criteria"
+      ]
+    },
+    {
+      countryCode: "BE",
+      countryName: "Belgium",
+      region: "Europe",
+      status: "active",
+      description: "Belgian procurement follows EU Directives with federal and regional procurement regulations.",
+      complianceFrameworks: [
+        { name: "EU Directives", description: "EU Public Procurement Directives 2014/24/EU", required: true },
+        { name: "Belgian Public Procurement Law", description: "Wet inzake Overheidsopdrachten", required: true }
+      ],
+      documentTypes: [
+        { type: "BCE Extract", description: "Banque-Carrefour des Entreprises Extract", required: true },
+        { type: "Tax Certificate", description: "SPF Finances Tax Certificate", required: true },
+        { type: "ONSS Certificate", description: "Social Security Compliance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "MEAT", description: "Most Economically Advantageous Tender" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "Dutch", "German", "English"],
+      keyFeatures: [
+        "Multi-regional compliance",
+        "BCE verification",
+        "Social security validation",
+        "Multi-language support (FR/NL/DE)",
+        "Federal/regional procurement"
+      ]
+    },
+    {
+      countryCode: "PT",
+      countryName: "Portugal",
+      region: "Europe",
+      status: "active",
+      description: "Portuguese procurement follows EU Directives with Código dos Contratos Públicos governing public contracts.",
+      complianceFrameworks: [
+        { name: "EU Directives", description: "EU Public Procurement Directives 2014/24/EU", required: true },
+        { name: "CCP", description: "Código dos Contratos Públicos", required: true }
+      ],
+      documentTypes: [
+        { type: "Certidão Permanente", description: "Permanent Company Certificate", required: true },
+        { type: "Tax Certificate", description: "AT Tax Clearance Certificate", required: true },
+        { type: "Social Security", description: "Segurança Social Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "MEAT", description: "Most Economically Advantageous Tender" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Portuguese", "English"],
+      keyFeatures: [
+        "BASE platform compliance",
+        "Portuguese document processing",
+        "Social security verification",
+        "Tax clearance validation",
+        "Public contract registry"
+      ]
+    },
+    {
+      countryCode: "SE",
+      countryName: "Sweden",
+      region: "Europe",
+      status: "active",
+      description: "Swedish procurement follows EU Directives with LOU (Public Procurement Act) emphasizing sustainability.",
+      complianceFrameworks: [
+        { name: "EU Directives", description: "EU Public Procurement Directives 2014/24/EU", required: true },
+        { name: "LOU", description: "Lagen om offentlig upphandling", required: true }
+      ],
+      documentTypes: [
+        { type: "Bolagsverket", description: "Company Registration Certificate", required: true },
+        { type: "Skatteverket", description: "Tax Authority Certificate", required: true },
+        { type: "F-skatt", description: "F-tax Registration", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "MEAT", description: "Most Economically Advantageous Tender" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Swedish", "English"],
+      keyFeatures: [
+        "Sustainability focus",
+        "F-skatt verification",
+        "Collective agreement checking",
+        "Environmental criteria support",
+        "Innovation procurement"
+      ]
+    },
+    {
+      countryCode: "DK",
+      countryName: "Denmark",
+      region: "Europe",
+      status: "active",
+      description: "Danish procurement follows EU Directives with emphasis on transparency and digital procurement.",
+      complianceFrameworks: [
+        { name: "EU Directives", description: "EU Public Procurement Directives 2014/24/EU", required: true },
+        { name: "Udbudsloven", description: "Danish Public Procurement Act", required: true }
+      ],
+      documentTypes: [
+        { type: "CVR Registration", description: "Central Business Register Certificate", required: true },
+        { type: "Tax Certificate", description: "SKAT Tax Clearance", required: true },
+        { type: "ATP Certificate", description: "Labor Market Pension Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "MEAT", description: "Most Economically Advantageous Tender" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Danish", "English"],
+      keyFeatures: [
+        "CVR verification",
+        "Digital procurement support",
+        "ATP compliance checking",
+        "Collective agreement verification",
+        "Environmental criteria"
+      ]
+    },
+    {
+      countryCode: "PL",
+      countryName: "Poland",
+      region: "Europe",
+      status: "active",
+      description: "Polish procurement follows EU Directives with Prawo Zamówień Publicznych governing public contracts.",
+      complianceFrameworks: [
+        { name: "EU Directives", description: "EU Public Procurement Directives 2014/24/EU", required: true },
+        { name: "PZP", description: "Prawo Zamówień Publicznych (Public Procurement Law)", required: true }
+      ],
+      documentTypes: [
+        { type: "KRS Extract", description: "National Court Register Extract", required: true },
+        { type: "Tax Certificate", description: "US/ZUS Tax and Social Insurance Certificate", required: true },
+        { type: "No Criminal Record", description: "KRK Criminal Record Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "MEAT", description: "Most Economically Advantageous Tender" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Polish", "English"],
+      keyFeatures: [
+        "KRS registry verification",
+        "ZUS social insurance checking",
+        "Criminal record validation",
+        "BDO waste registry compliance",
+        "Digital contract management"
+      ]
+    },
+    // ADDITIONAL AFRICAN COUNTRIES - North Africa
+    {
+      countryCode: "EG",
+      countryName: "Egypt",
+      region: "North Africa",
+      status: "active",
+      description: "Egyptian procurement follows the Government Tenders and Bids Law with emphasis on local content and national development.",
+      complianceFrameworks: [
+        { name: "Law 182/2018", description: "Government Tenders, Bids and Stores Law", required: true }
+      ],
+      documentTypes: [
+        { type: "Commercial Register", description: "Commercial Registry Certificate", required: true },
+        { type: "Tax Card", description: "Tax Registration Card", required: true },
+        { type: "Social Insurance", description: "Social Insurance Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation with local preference" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Arabic", "English"],
+      keyFeatures: [
+        "Arabic document processing",
+        "Local content preferences",
+        "Commercial registry verification",
+        "Social insurance compliance",
+        "Public tender registration"
+      ]
+    },
+    {
+      countryCode: "MA",
+      countryName: "Morocco",
+      region: "North Africa",
+      status: "active",
+      description: "Moroccan procurement follows the Public Procurement Decree with emphasis on transparency and SME development.",
+      complianceFrameworks: [
+        { name: "Decree 2-12-349", description: "Public Procurement Decree 2013", required: true }
+      ],
+      documentTypes: [
+        { type: "RC", description: "Registre de Commerce Certificate", required: true },
+        { type: "Tax Certificate", description: "Direction Générale des Impôts Certificate", required: true },
+        { type: "CNSS", description: "Social Security Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation framework" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Arabic", "French", "English"],
+      keyFeatures: [
+        "French/Arabic document processing",
+        "SME preference support",
+        "CNSS compliance verification",
+        "National preference margins",
+        "e-Procurement platform support"
+      ]
+    },
+    {
+      countryCode: "DZ",
+      countryName: "Algeria",
+      region: "North Africa",
+      status: "active",
+      description: "Algerian procurement follows the Public Procurement Code with emphasis on national production and local content.",
+      complianceFrameworks: [
+        { name: "Presidential Decree 15-247", description: "Public Procurement Code", required: true }
+      ],
+      documentTypes: [
+        { type: "Commercial Register", description: "Registre de Commerce", required: true },
+        { type: "Tax Certificate", description: "Mise à Jour Fiscale", required: true },
+        { type: "CNAS", description: "Social Security Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "National Preference", description: "25% preference for national production" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Arabic", "French", "English"],
+      keyFeatures: [
+        "National preference (25% margin)",
+        "Local content requirements",
+        "CNAS compliance verification",
+        "French/Arabic processing",
+        "Public tender platform"
+      ]
+    },
+    {
+      countryCode: "TN",
+      countryName: "Tunisia",
+      region: "North Africa",
+      status: "active",
+      description: "Tunisian procurement follows the Public Procurement Code with emphasis on transparency and SME development.",
+      complianceFrameworks: [
+        { name: "Decree 2014-1039", description: "Public Procurement Code", required: true }
+      ],
+      documentTypes: [
+        { type: "Registre de Commerce", description: "Commercial Registry Certificate", required: true },
+        { type: "Tax Certificate", description: "Tax Clearance Certificate", required: true },
+        { type: "CNSS", description: "Social Security Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation framework" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Arabic", "French", "English"],
+      keyFeatures: [
+        "French/Arabic document processing",
+        "SME development support",
+        "CNSS compliance",
+        "e-Procurement TUNEPS platform",
+        "Transparency requirements"
+      ]
+    },
+    {
+      countryCode: "LY",
+      countryName: "Libya",
+      region: "North Africa",
+      status: "active",
+      description: "Libyan procurement follows national procurement regulations with emphasis on reconstruction and development.",
+      complianceFrameworks: [
+        { name: "National Procurement Regulations", description: "Libyan Procurement Framework", required: true }
+      ],
+      documentTypes: [
+        { type: "Commercial License", description: "Business License", required: true },
+        { type: "Tax Certificate", description: "Tax Registration", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation framework" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Arabic", "English"],
+      keyFeatures: [
+        "Arabic document processing",
+        "Basic compliance framework",
+        "Commercial license verification",
+        "Reconstruction sector support",
+        "International partnership tracking"
+      ]
+    },
+    // East Africa
+    {
+      countryCode: "ET",
+      countryName: "Ethiopia",
+      region: "East Africa",
+      status: "active",
+      description: "Ethiopian procurement follows the Federal Procurement and Property Administration Agency guidelines with margin of preference for local suppliers.",
+      complianceFrameworks: [
+        { name: "Proclamation 649/2009", description: "Federal Procurement and Property Administration", required: true }
+      ],
+      documentTypes: [
+        { type: "Business License", description: "Trade Registration Certificate", required: true },
+        { type: "Tax Clearance", description: "Ethiopian Revenue Certificate", required: true },
+        { type: "VAT Registration", description: "VAT Registration Certificate", required: false }
+      ],
+      scoringMethodologies: [
+        { name: "Local Preference", description: "Margin of preference for Ethiopian suppliers" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Amharic", "English"],
+      keyFeatures: [
+        "Local preference margins",
+        "Trade registration verification",
+        "Tax clearance validation",
+        "Sector-specific requirements",
+        "Development project support"
+      ]
+    },
+    {
+      countryCode: "TZ",
+      countryName: "Tanzania",
+      region: "East Africa",
+      status: "active",
+      description: "Tanzanian procurement follows the Public Procurement Act with PPRA oversight and local content requirements.",
+      complianceFrameworks: [
+        { name: "PPA 2011", description: "Public Procurement Act 2011", required: true },
+        { name: "PPRA", description: "Public Procurement Regulatory Authority Regulations", required: true }
+      ],
+      documentTypes: [
+        { type: "Business License", description: "TRA Business License", required: true },
+        { type: "Tax Clearance", description: "TRA Tax Compliance Certificate", required: true },
+        { type: "NSSF", description: "Social Security Compliance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Local Content", description: "Preference for Tanzanian enterprises" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Swahili", "English"],
+      keyFeatures: [
+        "PPRA compliance verification",
+        "TRA tax clearance validation",
+        "Local content tracking",
+        "NSSF compliance",
+        "Swahili document support"
+      ]
+    },
+    {
+      countryCode: "UG",
+      countryName: "Uganda",
+      region: "East Africa",
+      status: "active",
+      description: "Ugandan procurement follows the PPDA Act with emphasis on domestic preferences and anti-corruption measures.",
+      complianceFrameworks: [
+        { name: "PPDA Act 2003", description: "Public Procurement and Disposal of Public Assets Act", required: true }
+      ],
+      documentTypes: [
+        { type: "Business Registration", description: "URSB Registration Certificate", required: true },
+        { type: "Tax Clearance", description: "URA Tax Clearance Certificate", required: true },
+        { type: "NSSF", description: "National Social Security Fund Compliance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Domestic Preference", description: "15% preference for Ugandan suppliers" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English", "Swahili"],
+      keyFeatures: [
+        "PPDA compliance verification",
+        "15% domestic preference",
+        "URA tax validation",
+        "NSSF compliance checking",
+        "Anti-corruption measures"
+      ]
+    },
+    {
+      countryCode: "RW",
+      countryName: "Rwanda",
+      region: "East Africa",
+      status: "active",
+      description: "Rwandan procurement follows the Law on Public Procurement with emphasis on local content and Made in Rwanda policy.",
+      complianceFrameworks: [
+        { name: "Law N°62/2018", description: "Law Governing Public Procurement", required: true }
+      ],
+      documentTypes: [
+        { type: "Business Registration", description: "RDB Registration Certificate", required: true },
+        { type: "Tax Clearance", description: "RRA Tax Clearance Certificate", required: true },
+        { type: "RSSB", description: "Social Security Compliance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Made in Rwanda", description: "Preference for local products and services" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English", "French", "Kinyarwanda"],
+      keyFeatures: [
+        "Made in Rwanda preference",
+        "RDB registration verification",
+        "e-Procurement platform (UMUCYO)",
+        "RSSB compliance",
+        "Multi-language support"
+      ]
+    },
+    // West Africa (additional)
+    {
+      countryCode: "CI",
+      countryName: "Ivory Coast",
+      region: "West Africa",
+      status: "active",
+      description: "Ivorian procurement follows the Public Procurement Code with WAEMU directives compliance.",
+      complianceFrameworks: [
+        { name: "Ordonnance 2019-679", description: "Public Procurement Code", required: true },
+        { name: "WAEMU Directives", description: "West African Economic and Monetary Union Directives", required: true }
+      ],
+      documentTypes: [
+        { type: "RCCM", description: "Registre du Commerce et du Crédit Mobilier", required: true },
+        { type: "Tax Certificate", description: "Direction Générale des Impôts Certificate", required: true },
+        { type: "CNPS", description: "Caisse Nationale de Prévoyance Sociale Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "WAEMU-compliant evaluation framework" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: [
+        "WAEMU directive compliance",
+        "French document processing",
+        "CNPS social security verification",
+        "RCCM validation",
+        "Community preference margins"
+      ]
+    },
+    {
+      countryCode: "SN",
+      countryName: "Senegal",
+      region: "West Africa",
+      status: "active",
+      description: "Senegalese procurement follows the Public Procurement Code with ARMP oversight and WAEMU compliance.",
+      complianceFrameworks: [
+        { name: "Decree 2014-1212", description: "Public Procurement Code", required: true },
+        { name: "WAEMU Directives", description: "West African Economic and Monetary Union Directives", required: true }
+      ],
+      documentTypes: [
+        { type: "NINEA", description: "National Business Identification Number", required: true },
+        { type: "Tax Certificate", description: "Direction Générale des Impôts et Domaines Certificate", required: true },
+        { type: "IPRES/CSS", description: "Social Security Certificates", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "ARMP-supervised evaluation framework" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: [
+        "ARMP regulatory compliance",
+        "NINEA verification",
+        "French document processing",
+        "WAEMU standards",
+        "SME development support"
+      ]
+    },
+    {
+      countryCode: "CM",
+      countryName: "Cameroon",
+      region: "Central Africa",
+      status: "active",
+      description: "Cameroonian procurement follows the Public Contracts Code with bilingual (French/English) requirements.",
+      complianceFrameworks: [
+        { name: "Decree 2018/366", description: "Public Contracts Code", required: true }
+      ],
+      documentTypes: [
+        { type: "Trade Register", description: "Registre du Commerce Certificate", required: true },
+        { type: "Tax Certificate", description: "Direction Générale des Impôts Certificate", required: true },
+        { type: "CNPS", description: "Social Security Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation with local preference" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: [
+        "Bilingual French/English support",
+        "CNPS compliance verification",
+        "Local content preference",
+        "ARMP regulation compliance",
+        "Public contract registry"
+      ]
+    },
+    // Southern Africa (additional)
+    {
+      countryCode: "AO",
+      countryName: "Angola",
+      region: "Southern Africa",
+      status: "active",
+      description: "Angolan procurement follows the Public Contracting Law with emphasis on local content and Angolanization.",
+      complianceFrameworks: [
+        { name: "Law 9/16", description: "Public Contracting Law", required: true },
+        { name: "Local Content", description: "Angolanization requirements", required: true }
+      ],
+      documentTypes: [
+        { type: "NIF", description: "Número de Identificação Fiscal", required: true },
+        { type: "Commercial License", description: "Alvará Comercial", required: true },
+        { type: "INSS", description: "Social Security Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Local Content", description: "Preference for Angolan content and ownership" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Portuguese", "English"],
+      keyFeatures: [
+        "Portuguese document processing",
+        "Angolanization compliance",
+        "Oil & gas sector support",
+        "Local content tracking",
+        "INSS verification"
+      ]
+    },
+    {
+      countryCode: "MZ",
+      countryName: "Mozambique",
+      region: "Southern Africa",
+      status: "active",
+      description: "Mozambican procurement follows the Regulation on Contracting of Public Works with local content emphasis.",
+      complianceFrameworks: [
+        { name: "Decree 5/2016", description: "Regulation on Contracting of Public Works, Supply of Goods and Services", required: true }
+      ],
+      documentTypes: [
+        { type: "NUIT", description: "Número Único de Identificação Tributária", required: true },
+        { type: "Commercial License", description: "Alvará Comercial", required: true },
+        { type: "INSS", description: "Social Security Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Local Preference", description: "Preference for Mozambican companies" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Portuguese", "English"],
+      keyFeatures: [
+        "Portuguese document processing",
+        "Local content requirements",
+        "NUIT verification",
+        "Energy sector support",
+        "INSS compliance"
+      ]
+    },
+    {
+      countryCode: "ZW",
+      countryName: "Zimbabwe",
+      region: "Southern Africa",
+      status: "active",
+      description: "Zimbabwean procurement follows the Procurement Regulatory Authority of Zimbabwe (PRAZ) regulations.",
+      complianceFrameworks: [
+        { name: "Public Procurement and Disposal of Public Assets Act", description: "PPDPAA", required: true }
+      ],
+      documentTypes: [
+        { type: "Company Registration", description: "Companies Registry Certificate", required: true },
+        { type: "Tax Clearance", description: "ZIMRA Tax Clearance Certificate", required: true },
+        { type: "NSSA", description: "National Social Security Authority Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Local Preference", description: "Preference for Zimbabwean suppliers" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English"],
+      keyFeatures: [
+        "PRAZ registration verification",
+        "ZIMRA tax validation",
+        "NSSA compliance checking",
+        "Local preference margins",
+        "Public tender platform"
+      ]
+    },
+    {
+      countryCode: "ZM",
+      countryName: "Zambia",
+      region: "Southern Africa",
+      status: "active",
+      description: "Zambian procurement follows the Public Procurement Act with ZPPA oversight and citizen economic empowerment.",
+      complianceFrameworks: [
+        { name: "Public Procurement Act 2020", description: "Public Procurement Act No. 8 of 2020", required: true }
+      ],
+      documentTypes: [
+        { type: "PACRA Registration", description: "Patents and Companies Registration Certificate", required: true },
+        { type: "Tax Clearance", description: "ZRA Tax Clearance Certificate", required: true },
+        { type: "NAPSA", description: "National Pension Scheme Authority Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Citizen Preference", description: "Preference for Zambian citizen-owned enterprises" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English"],
+      keyFeatures: [
+        "ZPPA compliance verification",
+        "Citizen economic empowerment",
+        "ZRA tax validation",
+        "NAPSA compliance",
+        "Mining sector support"
+      ]
+    },
+    {
+      countryCode: "BW",
+      countryName: "Botswana",
+      region: "Southern Africa",
+      status: "active",
+      description: "Botswana procurement follows the Public Procurement and Asset Disposal Act with citizen preference.",
+      complianceFrameworks: [
+        { name: "PPADB", description: "Public Procurement and Asset Disposal Board Regulations", required: true }
+      ],
+      documentTypes: [
+        { type: "CIPA Registration", description: "Companies and Intellectual Property Authority Certificate", required: true },
+        { type: "Tax Clearance", description: "BURS Tax Clearance Certificate", required: true },
+        { type: "PPADB Registration", description: "PPADB Contractor Registration", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Citizen Preference", description: "Reservation and preference for citizen-owned enterprises" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English"],
+      keyFeatures: [
+        "PPADB registration verification",
+        "Citizen preference scheme",
+        "BURS tax validation",
+        "Reservation policy support",
+        "Contractor classification"
+      ]
+    },
+    {
+      countryCode: "NA",
+      countryName: "Namibia",
+      region: "Southern Africa",
+      status: "active",
+      description: "Namibian procurement follows the Public Procurement Act with emphasis on SME development and local empowerment.",
+      complianceFrameworks: [
+        { name: "Public Procurement Act 2015", description: "Public Procurement Act 15 of 2015", required: true }
+      ],
+      documentTypes: [
+        { type: "BIPA Registration", description: "Business and Intellectual Property Authority Certificate", required: true },
+        { type: "Tax Clearance", description: "Inland Revenue Tax Clearance", required: true },
+        { type: "Social Security", description: "Social Security Commission Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "SME Preference", description: "Preference for SMEs and previously disadvantaged" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English"],
+      keyFeatures: [
+        "BIPA registration verification",
+        "SME development support",
+        "Tax clearance validation",
+        "Empowerment compliance",
+        "Central procurement board"
+      ]
+    },
+    // Additional countries to reach 54 African nations
+    {
+      countryCode: "MW",
+      countryName: "Malawi",
+      region: "Southern Africa",
+      status: "active",
+      description: "Malawian procurement follows the Public Procurement and Disposal of Public Assets Act.",
+      complianceFrameworks: [
+        { name: "PPDA", description: "Public Procurement and Disposal of Public Assets Act", required: true }
+      ],
+      documentTypes: [
+        { type: "Business Registration", description: "Registrar General Certificate", required: true },
+        { type: "Tax Clearance", description: "MRA Tax Clearance Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation framework" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English"],
+      keyFeatures: ["PPDA compliance", "Tax clearance verification", "Local preference margins"]
+    },
+    {
+      countryCode: "MU",
+      countryName: "Mauritius",
+      region: "East Africa",
+      status: "active",
+      description: "Mauritian procurement follows the Public Procurement Act with emphasis on transparency and good governance.",
+      complianceFrameworks: [
+        { name: "Public Procurement Act 2006", description: "Public Procurement Act", required: true }
+      ],
+      documentTypes: [
+        { type: "Business Registration", description: "Registrar of Companies Certificate", required: true },
+        { type: "Tax Clearance", description: "MRA Tax Clearance Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation framework" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English", "French"],
+      keyFeatures: ["PPO compliance", "Tax clearance verification", "SME preference", "Multi-language support"]
+    },
+    {
+      countryCode: "SC",
+      countryName: "Seychelles",
+      region: "East Africa",
+      status: "active",
+      description: "Seychelles procurement follows the Public Procurement Act with focus on transparency.",
+      complianceFrameworks: [
+        { name: "Public Procurement Act", description: "Public Procurement Regulations", required: true }
+      ],
+      documentTypes: [
+        { type: "Business License", description: "Trade License", required: true },
+        { type: "Tax Clearance", description: "SRC Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation framework" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English", "French", "Creole"],
+      keyFeatures: ["Trade license verification", "Tax compliance", "Local preference"]
+    },
+    {
+      countryCode: "MG",
+      countryName: "Madagascar",
+      region: "East Africa",
+      status: "active",
+      description: "Malagasy procurement follows the Public Procurement Code with ARMP oversight.",
+      complianceFrameworks: [
+        { name: "Code des Marchés Publics", description: "Public Procurement Code", required: true }
+      ],
+      documentTypes: [
+        { type: "NIF", description: "Numéro d'Identification Fiscale", required: true },
+        { type: "STAT", description: "Carte Statistique", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "ARMP-supervised evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "Malagasy", "English"],
+      keyFeatures: ["ARMP compliance", "French document processing", "NIF verification"]
+    },
+    {
+      countryCode: "DJ",
+      countryName: "Djibouti",
+      region: "East Africa",
+      status: "active",
+      description: "Djiboutian procurement follows the Public Procurement Code.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true }
+      ],
+      documentTypes: [
+        { type: "Trade License", description: "Patente", required: true },
+        { type: "Tax Certificate", description: "Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "Arabic", "English"],
+      keyFeatures: ["Multi-language support", "Trade license verification", "Strategic location procurement"]
+    },
+    {
+      countryCode: "ER",
+      countryName: "Eritrea",
+      region: "East Africa",
+      status: "active",
+      description: "Eritrean procurement follows national regulations for government contracting.",
+      complianceFrameworks: [
+        { name: "National Procurement Regulations", description: "Government Procurement Rules", required: true }
+      ],
+      documentTypes: [
+        { type: "Business License", description: "Trade License", required: true },
+        { type: "Tax Certificate", description: "Tax Registration", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Tigrinya", "Arabic", "English"],
+      keyFeatures: ["Basic compliance framework", "Trade license verification"]
+    },
+    {
+      countryCode: "SO",
+      countryName: "Somalia",
+      region: "East Africa",
+      status: "active",
+      description: "Somali procurement follows developing regulations with international partner support.",
+      complianceFrameworks: [
+        { name: "Federal Procurement Guidelines", description: "Federal Government Procurement Rules", required: true }
+      ],
+      documentTypes: [
+        { type: "Business License", description: "Trade License", required: true },
+        { type: "Tax Certificate", description: "Tax Registration", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Somali", "Arabic", "English"],
+      keyFeatures: ["Developing framework support", "International compliance", "Multi-language processing"]
+    },
+    {
+      countryCode: "SS",
+      countryName: "South Sudan",
+      region: "East Africa",
+      status: "active",
+      description: "South Sudanese procurement follows the Procurement and Disposal Act.",
+      complianceFrameworks: [
+        { name: "Procurement and Disposal Act", description: "Public Procurement Regulations", required: true }
+      ],
+      documentTypes: [
+        { type: "Business Registration", description: "Company Registration", required: true },
+        { type: "Tax Certificate", description: "Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English", "Arabic"],
+      keyFeatures: ["Emerging market support", "Development project compliance", "Basic verification"]
+    },
+    {
+      countryCode: "BI",
+      countryName: "Burundi",
+      region: "East Africa",
+      status: "active",
+      description: "Burundian procurement follows the Public Procurement Code with EAC integration.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true }
+      ],
+      documentTypes: [
+        { type: "Trade Register", description: "Registre de Commerce", required: true },
+        { type: "Tax Certificate", description: "OBR Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "Kirundi", "English"],
+      keyFeatures: ["EAC compliance", "French document processing", "Local preference"]
+    },
+    // West Africa (remaining)
+    {
+      countryCode: "ML",
+      countryName: "Mali",
+      region: "West Africa",
+      status: "active",
+      description: "Malian procurement follows the Public Procurement Code with WAEMU compliance.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true },
+        { name: "WAEMU Directives", description: "WAEMU Procurement Directives", required: true }
+      ],
+      documentTypes: [
+        { type: "RCCM", description: "Registre du Commerce Certificate", required: true },
+        { type: "Tax Certificate", description: "DGI Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "WAEMU-compliant evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: ["WAEMU compliance", "French document processing", "Community preference"]
+    },
+    {
+      countryCode: "BF",
+      countryName: "Burkina Faso",
+      region: "West Africa",
+      status: "active",
+      description: "Burkinabe procurement follows the Public Procurement Code with WAEMU compliance.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true },
+        { name: "WAEMU Directives", description: "WAEMU Procurement Directives", required: true }
+      ],
+      documentTypes: [
+        { type: "RCCM", description: "Registre du Commerce Certificate", required: true },
+        { type: "Tax Certificate", description: "DGI Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "WAEMU-compliant evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: ["WAEMU compliance", "French document processing", "ARCOP oversight"]
+    },
+    {
+      countryCode: "NE",
+      countryName: "Niger",
+      region: "West Africa",
+      status: "active",
+      description: "Nigerian procurement follows the Public Procurement Code with WAEMU compliance.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true },
+        { name: "WAEMU Directives", description: "WAEMU Procurement Directives", required: true }
+      ],
+      documentTypes: [
+        { type: "RCCM", description: "Registre du Commerce Certificate", required: true },
+        { type: "Tax Certificate", description: "DGI Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "WAEMU-compliant evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: ["WAEMU compliance", "French document processing", "ARMP oversight"]
+    },
+    {
+      countryCode: "TG",
+      countryName: "Togo",
+      region: "West Africa",
+      status: "active",
+      description: "Togolese procurement follows the Public Procurement Code with WAEMU compliance.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true },
+        { name: "WAEMU Directives", description: "WAEMU Procurement Directives", required: true }
+      ],
+      documentTypes: [
+        { type: "RCCM", description: "Registre du Commerce Certificate", required: true },
+        { type: "Tax Certificate", description: "OTR Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "WAEMU-compliant evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: ["WAEMU compliance", "French document processing", "ARMP oversight"]
+    },
+    {
+      countryCode: "BJ",
+      countryName: "Benin",
+      region: "West Africa",
+      status: "active",
+      description: "Beninese procurement follows the Public Procurement Code with WAEMU compliance.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true },
+        { name: "WAEMU Directives", description: "WAEMU Procurement Directives", required: true }
+      ],
+      documentTypes: [
+        { type: "RCCM", description: "Registre du Commerce Certificate", required: true },
+        { type: "Tax Certificate", description: "DGI Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "WAEMU-compliant evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: ["WAEMU compliance", "French document processing", "ARMP oversight"]
+    },
+    {
+      countryCode: "GN",
+      countryName: "Guinea",
+      region: "West Africa",
+      status: "active",
+      description: "Guinean procurement follows the Public Procurement Code.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true }
+      ],
+      documentTypes: [
+        { type: "RCCM", description: "Registre du Commerce Certificate", required: true },
+        { type: "Tax Certificate", description: "DNI Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: ["French document processing", "Mining sector support", "Local preference"]
+    },
+    {
+      countryCode: "SL",
+      countryName: "Sierra Leone",
+      region: "West Africa",
+      status: "active",
+      description: "Sierra Leonean procurement follows the Public Procurement Act with NPPA oversight.",
+      complianceFrameworks: [
+        { name: "Public Procurement Act 2016", description: "Public Procurement Act", required: true }
+      ],
+      documentTypes: [
+        { type: "Business Registration", description: "OARG Registration", required: true },
+        { type: "Tax Clearance", description: "NRA Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "NPPA-supervised evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English"],
+      keyFeatures: ["NPPA compliance", "NRA tax verification", "Local preference margins"]
+    },
+    {
+      countryCode: "LR",
+      countryName: "Liberia",
+      region: "West Africa",
+      status: "active",
+      description: "Liberian procurement follows the Public Procurement and Concessions Act with PPCC oversight.",
+      complianceFrameworks: [
+        { name: "PPCA 2010", description: "Public Procurement and Concessions Act", required: true }
+      ],
+      documentTypes: [
+        { type: "Business Registration", description: "MoCI Registration", required: true },
+        { type: "Tax Clearance", description: "LRA Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "PPCC-supervised evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English"],
+      keyFeatures: ["PPCC compliance", "LRA tax verification", "Local preference"]
+    },
+    {
+      countryCode: "GW",
+      countryName: "Guinea-Bissau",
+      region: "West Africa",
+      status: "active",
+      description: "Guinea-Bissau procurement follows WAEMU procurement directives.",
+      complianceFrameworks: [
+        { name: "WAEMU Directives", description: "WAEMU Procurement Directives", required: true }
+      ],
+      documentTypes: [
+        { type: "Trade License", description: "Commercial License", required: true },
+        { type: "Tax Certificate", description: "Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "WAEMU-compliant evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Portuguese", "French", "English"],
+      keyFeatures: ["Portuguese document processing", "WAEMU compliance", "Community preference"]
+    },
+    {
+      countryCode: "CV",
+      countryName: "Cape Verde",
+      region: "West Africa",
+      status: "active",
+      description: "Cape Verdean procurement follows the Public Contracts Code with transparency emphasis.",
+      complianceFrameworks: [
+        { name: "Public Contracts Code", description: "Código dos Contratos Públicos", required: true }
+      ],
+      documentTypes: [
+        { type: "NIF", description: "Número de Identificação Fiscal", required: true },
+        { type: "Tax Certificate", description: "DNRE Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Portuguese", "English"],
+      keyFeatures: ["Portuguese document processing", "NIF verification", "Transparency focus"]
+    },
+    {
+      countryCode: "GM",
+      countryName: "Gambia",
+      region: "West Africa",
+      status: "active",
+      description: "Gambian procurement follows the Public Procurement Act with GPPA oversight.",
+      complianceFrameworks: [
+        { name: "Public Procurement Act 2014", description: "Public Procurement Act", required: true }
+      ],
+      documentTypes: [
+        { type: "Business Registration", description: "MoJ Registration", required: true },
+        { type: "Tax Clearance", description: "GRA Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "GPPA-supervised evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English"],
+      keyFeatures: ["GPPA compliance", "GRA tax verification", "Local preference"]
+    },
+    {
+      countryCode: "MR",
+      countryName: "Mauritania",
+      region: "West Africa",
+      status: "active",
+      description: "Mauritanian procurement follows the Public Procurement Code.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true }
+      ],
+      documentTypes: [
+        { type: "Trade Register", description: "Registre de Commerce", required: true },
+        { type: "Tax Certificate", description: "Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Arabic", "French", "English"],
+      keyFeatures: ["Arabic/French document processing", "Mining sector support", "Local preference"]
+    },
+    // Central Africa
+    {
+      countryCode: "CD",
+      countryName: "Democratic Republic of Congo",
+      region: "Central Africa",
+      status: "active",
+      description: "DRC procurement follows the Public Procurement Law with ARMP oversight.",
+      complianceFrameworks: [
+        { name: "Law 10/010", description: "Public Procurement Law", required: true }
+      ],
+      documentTypes: [
+        { type: "RCCM", description: "Registre du Commerce Certificate", required: true },
+        { type: "Tax Certificate", description: "DGI Tax Clearance", required: true },
+        { type: "INSS", description: "Social Security Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation with local preference" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: ["ARMP compliance", "French document processing", "Mining sector support", "Local preference"]
+    },
+    {
+      countryCode: "CG",
+      countryName: "Republic of Congo",
+      region: "Central Africa",
+      status: "active",
+      description: "Congolese procurement follows the Public Procurement Code.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true }
+      ],
+      documentTypes: [
+        { type: "RCCM", description: "Registre du Commerce Certificate", required: true },
+        { type: "Tax Certificate", description: "DGI Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: ["French document processing", "Oil sector support", "ARMP compliance"]
+    },
+    {
+      countryCode: "GA",
+      countryName: "Gabon",
+      region: "Central Africa",
+      status: "active",
+      description: "Gabonese procurement follows the Public Procurement Code with ANRMP oversight.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true }
+      ],
+      documentTypes: [
+        { type: "RCCM", description: "Registre du Commerce Certificate", required: true },
+        { type: "Tax Certificate", description: "DGI Tax Clearance", required: true },
+        { type: "CNSS", description: "Social Security Certificate", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: ["ANRMP compliance", "French document processing", "Oil sector support"]
+    },
+    {
+      countryCode: "GQ",
+      countryName: "Equatorial Guinea",
+      region: "Central Africa",
+      status: "active",
+      description: "Equatoguinean procurement follows national regulations.",
+      complianceFrameworks: [
+        { name: "National Procurement Regulations", description: "Government Procurement Rules", required: true }
+      ],
+      documentTypes: [
+        { type: "Trade License", description: "Business License", required: true },
+        { type: "Tax Certificate", description: "Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Spanish", "French", "English"],
+      keyFeatures: ["Spanish/French document processing", "Oil sector support", "Local content"]
+    },
+    {
+      countryCode: "CF",
+      countryName: "Central African Republic",
+      region: "Central Africa",
+      status: "active",
+      description: "CAR procurement follows the Public Procurement Code.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true }
+      ],
+      documentTypes: [
+        { type: "Trade Register", description: "Registre de Commerce", required: true },
+        { type: "Tax Certificate", description: "Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "English"],
+      keyFeatures: ["French document processing", "Development project support", "International compliance"]
+    },
+    {
+      countryCode: "TD",
+      countryName: "Chad",
+      region: "Central Africa",
+      status: "active",
+      description: "Chadian procurement follows the Public Procurement Code with ARMP oversight.",
+      complianceFrameworks: [
+        { name: "Public Procurement Code", description: "Code des Marchés Publics", required: true }
+      ],
+      documentTypes: [
+        { type: "Trade Register", description: "Registre de Commerce", required: true },
+        { type: "Tax Certificate", description: "Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["French", "Arabic", "English"],
+      keyFeatures: ["French/Arabic document processing", "Oil sector support", "ARMP compliance"]
+    },
+    {
+      countryCode: "ST",
+      countryName: "Sao Tome and Principe",
+      region: "Central Africa",
+      status: "active",
+      description: "Sao Tome procurement follows the Public Procurement Law.",
+      complianceFrameworks: [
+        { name: "Public Procurement Law", description: "Lei de Contratação Pública", required: true }
+      ],
+      documentTypes: [
+        { type: "Business Registration", description: "Company Registration", required: true },
+        { type: "Tax Certificate", description: "Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Portuguese", "English"],
+      keyFeatures: ["Portuguese document processing", "Small economy support", "Transparency focus"]
+    },
+    // Island Nations
+    {
+      countryCode: "KM",
+      countryName: "Comoros",
+      region: "East Africa",
+      status: "active",
+      description: "Comorian procurement follows national regulations.",
+      complianceFrameworks: [
+        { name: "National Procurement Regulations", description: "Government Procurement Rules", required: true }
+      ],
+      documentTypes: [
+        { type: "Trade License", description: "Business License", required: true },
+        { type: "Tax Certificate", description: "Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Arabic", "French", "English"],
+      keyFeatures: ["Arabic/French document processing", "Island economy support", "Basic compliance"]
+    },
+    {
+      countryCode: "LS",
+      countryName: "Lesotho",
+      region: "Southern Africa",
+      status: "active",
+      description: "Lesotho procurement follows the Public Procurement Regulations with PPAD oversight.",
+      complianceFrameworks: [
+        { name: "Public Procurement Regulations 2007", description: "Public Procurement Regulations", required: true }
+      ],
+      documentTypes: [
+        { type: "Business Registration", description: "Registrar of Companies Certificate", required: true },
+        { type: "Tax Clearance", description: "LRA Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "PPAD-supervised evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English", "Sesotho"],
+      keyFeatures: ["PPAD compliance", "Tax clearance verification", "Local preference"]
+    },
+    {
+      countryCode: "SZ",
+      countryName: "Eswatini",
+      region: "Southern Africa",
+      status: "active",
+      description: "Eswatini procurement follows the Public Procurement Act with Swaziland Tender Board oversight.",
+      complianceFrameworks: [
+        { name: "Public Procurement Act 2011", description: "Public Procurement Act", required: true }
+      ],
+      documentTypes: [
+        { type: "Business Registration", description: "Registrar of Companies Certificate", required: true },
+        { type: "Tax Clearance", description: "SRA Tax Clearance", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["English", "Swazi"],
+      keyFeatures: ["Tender Board compliance", "Tax clearance verification", "Local preference"]
+    },
+    {
+      countryCode: "SD",
+      countryName: "Sudan",
+      region: "North Africa",
+      status: "active",
+      description: "Sudanese procurement follows national procurement regulations.",
+      complianceFrameworks: [
+        { name: "National Procurement Regulations", description: "Government Procurement Rules", required: true }
+      ],
+      documentTypes: [
+        { type: "Trade License", description: "Business License", required: true },
+        { type: "Tax Certificate", description: "Tax Registration", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Arabic", "English"],
+      keyFeatures: ["Arabic document processing", "Development sector support", "Basic compliance"]
+    },
+    {
+      countryCode: "EH",
+      countryName: "Western Sahara",
+      region: "North Africa",
+      status: "active",
+      description: "Western Sahara follows regional procurement practices.",
+      complianceFrameworks: [
+        { name: "Regional Procurement Rules", description: "Regional Procurement Regulations", required: true }
+      ],
+      documentTypes: [
+        { type: "Trade License", description: "Business License", required: true },
+        { type: "Tax Certificate", description: "Tax Registration", required: true }
+      ],
+      scoringMethodologies: [
+        { name: "Technical/Financial", description: "Standard evaluation" }
+      ],
+      governmentIntegrations: [],
+      languages: ["Arabic", "Spanish", "English"],
+      keyFeatures: ["Arabic/Spanish document processing", "Regional compliance", "Basic verification"]
+    },
     {
       countryCode: "GLOBAL",
       countryName: "Global (All Countries)",

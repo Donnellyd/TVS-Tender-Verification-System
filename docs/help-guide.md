@@ -25,9 +25,9 @@ Sign up using your email or organization credentials. Your account will be linke
 
 #### Step 2: Choose Your Subscription
 Select a plan that fits your needs:
-- **Starter** ($499/year): For small procurement teams
-- **Professional** ($1,999/year): For growing organizations
-- **Enterprise** ($4,999/year): For large organizations
+- **Starter** ($499/year): 50 bids/month for small procurement teams
+- **Professional** ($1,499/year): 300 bids/month for growing organizations
+- **Enterprise** ($3,999/year): 1,500 bids/month for large organizations
 - **Government**: Contact us for custom pricing
 
 You can start with Starter and upgrade anytime as your needs grow.
@@ -67,11 +67,11 @@ GLOBAL-TVS supports role-based access control:
 
 ### Supported Countries
 
-We have pre-configured compliance modules for major markets:
-- South Africa, Kenya, Nigeria, Ghana (Africa)
-- United Arab Emirates (Middle East)
-- United Kingdom (Europe)
-- United States (Americas)
+We have pre-configured compliance modules for 70 countries:
+- **All 54 African nations**: South Africa, Kenya, Nigeria, Ghana, Egypt, Morocco, Ethiopia, Tanzania, and more
+- **Europe**: UK, Germany, France, Netherlands, Italy, Spain, Belgium, Portugal, Sweden, Denmark, Poland
+- **Asia-Pacific**: Australia, UAE
+- **Americas**: United States
 
 Our **Global framework** works for any country not specifically configured. You can customize compliance rules to match your specific requirements.
 
@@ -84,8 +84,8 @@ Our **Global framework** works for any country not specifically configured. You 
 | Plan | Price | Bids/Month | Documents/Month | Storage | Support |
 |------|-------|------------|-----------------|---------|---------|
 | Starter | $499/year | 50 | 500 | 5 GB | Email |
-| Professional | $1,999/year | 200 | 2,000 | 25 GB | Priority Email |
-| Enterprise | $4,999/year | 1,000 | 10,000 | 100 GB | Phone & Email |
+| Professional | $1,499/year | 300 | 3,000 | 25 GB | Priority Email |
+| Enterprise | $3,999/year | 1,500 | 15,000 | 100 GB | Phone & Email |
 | Government | Custom | Custom | Custom | Custom | Dedicated |
 
 ### What's Included in Each Plan
@@ -143,8 +143,17 @@ You can upgrade your plan anytime. The price difference is prorated for the rema
 **Downgrades**
 Downgrades take effect at the next billing cycle to ensure you don't lose access to features mid-cycle.
 
-**Overages**
-If you exceed your plan limits, you'll be notified and can either upgrade or wait until the next billing period. We don't charge overage fees - we believe in transparent, predictable pricing.
+**Overage Pricing**
+If you exceed your monthly bid limit, you can continue processing bids at the following per-bid rates:
+
+| Plan | Included Bids | Overage Rate |
+|------|---------------|--------------|
+| Starter | 50/month | $2.00/bid |
+| Professional | 300/month | $1.00/bid |
+| Enterprise | 1,500/month | $0.50/bid |
+| Government | Custom | Custom |
+
+You'll receive alerts at 80% and 100% of your limits. Overage charges are billed at the end of your billing cycle.
 
 ---
 

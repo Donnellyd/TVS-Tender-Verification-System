@@ -31,6 +31,8 @@ const SUBSCRIPTION_TIERS = [
     bidsIncluded: 50,
     documentsIncluded: 500,
     storageGb: 5,
+    overagePricePerBid: 2.00,
+    costPerBid: 0.83,
     features: [
       "AI document verification",
       "GLOBAL compliance rules",
@@ -46,11 +48,13 @@ const SUBSCRIPTION_TIERS = [
     id: "professional",
     name: "Professional",
     description: "For growing organizations with regional needs",
-    priceMonthly: 199,
-    priceAnnual: 1999,
-    bidsIncluded: 200,
-    documentsIncluded: 2000,
+    priceMonthly: 149,
+    priceAnnual: 1499,
+    bidsIncluded: 300,
+    documentsIncluded: 3000,
     storageGb: 25,
+    overagePricePerBid: 1.00,
+    costPerBid: 0.42,
     features: [
       "Everything in Starter",
       "Country-specific compliance modules",
@@ -67,11 +71,13 @@ const SUBSCRIPTION_TIERS = [
     id: "enterprise",
     name: "Enterprise",
     description: "For large organizations with complex requirements",
-    priceMonthly: 499,
-    priceAnnual: 4999,
-    bidsIncluded: 1000,
-    documentsIncluded: 10000,
+    priceMonthly: 399,
+    priceAnnual: 3999,
+    bidsIncluded: 1500,
+    documentsIncluded: 15000,
     storageGb: 100,
+    overagePricePerBid: 0.50,
+    costPerBid: 0.22,
     features: [
       "Everything in Professional",
       "Custom compliance rule builder",
@@ -93,6 +99,8 @@ const SUBSCRIPTION_TIERS = [
     bidsIncluded: -1,
     documentsIncluded: -1,
     storageGb: -1,
+    overagePricePerBid: -1,
+    costPerBid: -1,
     features: [
       "Everything in Enterprise",
       "Custom pricing based on scope",
@@ -151,7 +159,7 @@ export default function PricingPage() {
       ogDescription.setAttribute('property', 'og:description');
       document.head.appendChild(ogDescription);
     }
-    ogDescription.setAttribute("content", "Choose from Starter ($499/yr), Professional ($1,999/yr), Enterprise ($4,999/yr), or contact us for Government solutions.");
+    ogDescription.setAttribute("content", "Choose from Starter ($499/yr), Professional ($1,499/yr), Enterprise ($3,999/yr), or contact us for Government solutions.");
   }, []);
 
   const formatPrice = (monthly: number, annual: number) => {
@@ -298,9 +306,15 @@ export default function PricingPage() {
                       <FileCheck className="h-4 w-4 text-primary" />
                       <span>{tier.bidsIncluded} bids/month</span>
                     </div>
+                    <div className="flex items-center gap-2 text-muted-foreground" data-testid={`text-cost-per-bid-${tier.id}`}>
+                      <span className="ml-6 text-xs">~${tier.costPerBid.toFixed(2)}/bid included</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground" data-testid={`text-overage-${tier.id}`}>
+                      <span className="ml-6 text-xs">+${tier.overagePricePerBid.toFixed(2)}/bid over limit</span>
+                    </div>
                     <div className="flex items-center gap-2" data-testid={`text-documents-${tier.id}`}>
                       <FileCheck className="h-4 w-4 text-primary" />
-                      <span>{tier.documentsIncluded} documents/month</span>
+                      <span>{tier.documentsIncluded.toLocaleString()} documents/month</span>
                     </div>
                     <div className="flex items-center gap-2" data-testid={`text-storage-${tier.id}`}>
                       <FileCheck className="h-4 w-4 text-primary" />
