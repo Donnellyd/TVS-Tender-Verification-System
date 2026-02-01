@@ -1,6 +1,8 @@
 import type { Express } from "express";
+import express from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
+import { tenantStorage } from "./tenant-storage";
 import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integrations/auth";
 import { tenantRouter } from "./tenant-routes";
 import { apiV1Router } from "./api-v1-routes";
@@ -2584,7 +2586,7 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
 
       // Check if tenant already has a Stripe customer ID
       let customerId: string;
-      const tenant = tenantId ? await storage.getTenant(tenantId) : null;
+      const tenant = tenantId ? await tenantStorage.getTenant(tenantId) : null;
       
       if (tenant?.stripeCustomerId) {
         customerId = tenant.stripeCustomerId;
@@ -2599,7 +2601,7 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
         
         // Save customer ID to tenant if tenant exists
         if (tenant && tenantId) {
-          await storage.updateTenant(tenantId, { stripeCustomerId: customerId });
+          await tenantStorage.updateTenant(tenantId, { stripeCustomerId: customerId });
         }
       }
 
@@ -2624,7 +2626,7 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
     try {
       const { tenantId } = req.body;
       
-      const tenant = tenantId ? await storage.getTenant(tenantId) : null;
+      const tenant = tenantId ? await tenantStorage.getTenant(tenantId) : null;
       
       if (!tenant?.stripeCustomerId) {
         return res.status(400).json({ error: "No subscription found for this organization" });
@@ -2648,7 +2650,7 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
     try {
       const { tenantId } = req.params;
       
-      const tenant = await storage.getTenant(tenantId);
+      const tenant = await tenantStorage.getTenant(tenantId);
       
       if (!tenant?.stripeCustomerId) {
         return res.json({ subscription: null });
@@ -2663,6 +2665,123 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
     } catch (error) {
       console.error("Error getting subscription:", error);
       res.status(500).json({ error: "Failed to get subscription" });
+    }
+  });
+
+  const { getYocoPaymentService, isYocoConfigured } = await import("./yoco-payments");
+
+  app.get("/api/yoco/configured", async (_req, res) => {
+    res.json({ configured: isYocoConfigured() });
+  });
+
+  app.post("/api/yoco/create-checkout", isAuthenticated, async (req, res) => {
+    try {
+      const yocoService = getYocoPaymentService();
+      if (!yocoService) {
+        return res.status(503).json({ error: "Yoco payment gateway not configured" });
+      }
+
+      const { priceId, tenantId } = req.body;
+      if (!priceId || !tenantId) {
+        return res.status(400).json({ error: "Missing priceId or tenantId" });
+      }
+
+      const zarPricing: Record<string, { amount: number; tier: string; name: string }> = {
+        starter_annual: { amount: 899900, tier: 'starter', name: 'Starter Annual' },
+        starter_monthly: { amount: 89900, tier: 'starter', name: 'Starter Monthly' },
+        professional_annual: { amount: 2699900, tier: 'professional', name: 'Professional Annual' },
+        professional_monthly: { amount: 269900, tier: 'professional', name: 'Professional Monthly' },
+        enterprise_annual: { amount: 7199900, tier: 'enterprise', name: 'Enterprise Annual' },
+        enterprise_monthly: { amount: 719900, tier: 'enterprise', name: 'Enterprise Monthly' },
+      };
+
+      const pricing = zarPricing[priceId];
+      if (!pricing) {
+        return res.status(400).json({ error: "Invalid price ID for Yoco payment" });
+      }
+
+      const baseUrl = process.env.BASE_URL || 
+        (process.env.REPLIT_DEV_DOMAIN 
+          ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+          : `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`);
+
+      const checkout = await yocoService.createCheckout({
+        amount: pricing.amount,
+        currency: 'ZAR',
+        successUrl: `${baseUrl}/billing?yoco_success=true&tenantId=${tenantId}&tier=${pricing.tier}`,
+        cancelUrl: `${baseUrl}/billing?yoco_cancelled=true`,
+        failureUrl: `${baseUrl}/billing?yoco_failed=true`,
+        metadata: {
+          tenantId: tenantId.toString(),
+          tier: pricing.tier,
+          productName: pricing.name,
+        },
+      });
+
+      res.json({ redirectUrl: checkout.redirectUrl, checkoutId: checkout.id });
+    } catch (error) {
+      console.error("Yoco checkout error:", error);
+      res.status(500).json({ error: "Failed to create Yoco checkout" });
+    }
+  });
+
+  app.post("/api/webhooks/yoco", express.raw({ type: 'application/json' }), async (req, res) => {
+    try {
+      const yocoService = getYocoPaymentService();
+      if (!yocoService) {
+        return res.status(503).json({ error: "Yoco not configured" });
+      }
+
+      const webhookSecret = process.env.YOCO_WEBHOOK_SECRET;
+      
+      if (webhookSecret) {
+        const webhookId = req.headers['webhook-id'] as string;
+        const webhookTimestamp = req.headers['webhook-timestamp'] as string;
+        const webhookSignature = req.headers['webhook-signature'] as string;
+
+        if (!webhookId || !webhookTimestamp || !webhookSignature) {
+          return res.status(401).json({ error: "Missing webhook headers" });
+        }
+
+        const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+        const isValid = yocoService.verifyWebhookSignature(
+          payload,
+          webhookId,
+          webhookTimestamp,
+          webhookSignature,
+          webhookSecret
+        );
+
+        if (!isValid) {
+          return res.status(401).json({ error: "Invalid webhook signature" });
+        }
+      }
+
+      const event = yocoService.parseWebhookEvent(
+        typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+      );
+
+      console.log('Yoco webhook received:', event.type);
+
+      if (event.type === 'payment.succeeded') {
+        const tenantId = event.payload?.metadata?.tenantId;
+        const tier = event.payload?.metadata?.tier || 'starter';
+        const paymentId = event.payload?.id;
+
+        if (tenantId) {
+          console.log(`Yoco payment succeeded for tenant ${tenantId}, tier ${tier}, payment ${paymentId}`);
+          
+          await tenantStorage.updateTenant(tenantId, {
+            subscriptionTier: tier as any,
+            subscriptionStatus: 'active',
+          });
+        }
+      }
+
+      res.status(200).json({ received: true });
+    } catch (error) {
+      console.error("Yoco webhook error:", error);
+      res.status(500).json({ error: "Webhook processing failed" });
     }
   });
 }

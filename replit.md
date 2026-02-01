@@ -99,12 +99,14 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Templates**: Award letters, rejection letters, document expiry alerts, bid received confirmations
 - **Monthly Limits**: Starter 500, Professional 3,000, Enterprise 15,000 emails (included free)
 
-### Payment Processing (Stripe)
-- **Service**: `server/stripeClient.ts`, `server/stripeService.ts` - Stripe integration via Replit connector
-- **Webhooks**: `server/webhookHandlers.ts` - Subscription lifecycle events (created, renewed, cancelled)
-- **Checkout**: Stripe Checkout for subscription purchases, Customer Portal for management
+### Payment Processing (Stripe + Yoco)
+- **Stripe Service**: `server/stripeClient.ts`, `server/stripeService.ts` - International cards via Replit connector
+- **Yoco Service**: `server/yoco-payments.ts` - South African local card payments (ZAR)
+- **Webhooks**: `server/webhookHandlers.ts` (Stripe), `/api/webhooks/yoco` (Yoco)
+- **Checkout**: Stripe Checkout for USD, Yoco Checkout for ZAR
 - **Pricing**: Annual billing with monthly equivalent display ($49-$399/month, billed annually)
 - **Seed Script**: `server/seed-stripe-products.ts` - Creates products/prices in Stripe
+- **Environment**: `YOCO_SECRET_KEY` required for Yoco, Stripe via Replit connector
 
 ## Development Commands
 - `npm run dev`: Start development server
@@ -113,6 +115,7 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - `npx tsx server/seed-stripe-products.ts`: Seed Stripe products (run once per Stripe account)
 
 ## Recent Changes
+- Added Yoco payment integration for South African local card payments (ZAR)
 - Rebranded from GLOBAL-TVS to VeritasAI with Circuit V logo
 - Integrated Stripe payment processing with webhook handling
 - Implemented SendGrid email notifications with template support

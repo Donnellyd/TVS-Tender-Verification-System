@@ -5,9 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CreditCard, FileText, BarChart3, Clock, CheckCircle, AlertCircle, Download } from "lucide-react";
+import { CreditCard, FileText, BarChart3, Clock, CheckCircle, AlertCircle, Download, Globe } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
+import { useState } from "react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface SubscriptionTier {
   name: string;
@@ -46,10 +48,53 @@ interface Invoice {
 
 export default function BillingPage() {
   const { user } = useAuth();
+  const [paymentLoading, setPaymentLoading] = useState(false);
   
   const { data: tiers } = useQuery<Record<string, SubscriptionTier>>({
     queryKey: ["/api/subscription-tiers"],
   });
+
+  const { data: yocoConfigured } = useQuery<{ configured: boolean }>({
+    queryKey: ["/api/yoco/configured"],
+  });
+
+  const handleYocoPayment = async (priceId: string) => {
+    if (!tenantId) return;
+    setPaymentLoading(true);
+    try {
+      const response = await apiRequest("/api/yoco/create-checkout", {
+        method: "POST",
+        body: JSON.stringify({ priceId, tenantId }),
+      });
+      const data = await response.json();
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      }
+    } catch (error) {
+      console.error("Yoco payment error:", error);
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  const handleStripePayment = async (priceId: string) => {
+    if (!tenantId) return;
+    setPaymentLoading(true);
+    try {
+      const response = await apiRequest("/api/stripe/checkout", {
+        method: "POST",
+        body: JSON.stringify({ priceId, tenantId }),
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Stripe payment error:", error);
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
 
   const { data: userTenants } = useQuery<{ tenantId: string }[]>({
     queryKey: ["/api/user/tenants"],
@@ -149,30 +194,54 @@ export default function BillingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                Payment Method
+                Payment Methods
               </CardTitle>
               <CardDescription>
-                Manage your payment method for subscription billing
+                Choose your preferred payment method for subscription billing
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center">
                     <CreditCard className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <p className="font-medium">No payment method on file</p>
-                    <p className="text-sm text-muted-foreground">Add a card to enable automatic billing</p>
+                    <p className="font-medium">International Cards (Stripe)</p>
+                    <p className="text-sm text-muted-foreground">Visa, Mastercard, Amex - USD billing</p>
                   </div>
                 </div>
-                <Button variant="outline" data-testid="button-add-payment-method">
-                  Add Card
+                <Button variant="outline" data-testid="button-pay-stripe">
+                  Pay with Card
                 </Button>
               </div>
+              
+              {yocoConfigured?.configured && (
+                <div className="flex items-center justify-between p-4 border rounded-lg border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-8 bg-gradient-to-r from-green-500 to-teal-600 rounded flex items-center justify-center">
+                      <Globe className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium">South African Cards (Yoco)</p>
+                      <p className="text-sm text-muted-foreground">Local ZAR billing - Recommended for SA</p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="default"
+                    className="bg-green-600 hover:bg-green-700"
+                    data-testid="button-pay-yoco"
+                    disabled={paymentLoading}
+                    onClick={() => handleYocoPayment("starter_annual")}
+                  >
+                    {paymentLoading ? "Processing..." : "Pay with Yoco"}
+                  </Button>
+                </div>
+              )}
+              
               <p className="text-xs text-muted-foreground mt-4 flex items-center gap-1">
                 <CheckCircle className="h-3 w-3 text-green-500" />
-                Payments are processed securely via Stripe
+                All payments are processed securely with bank-grade encryption
               </p>
             </CardContent>
           </Card>
