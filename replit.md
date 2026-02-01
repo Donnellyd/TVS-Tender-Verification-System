@@ -33,7 +33,8 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
   - Admin: Municipalities, Submissions, TenderRequirements
   - SaaS: Billing, ComplianceRules, ApiSettings
   - Communication: EmailTemplates, WhatsappTemplates
-- **Components**: AppSidebar, PageHeader, StatsCard, StatusBadge, EmptyState, DataTableSkeleton, ThemeToggle
+  - Public: Pricing, ComplianceExplorer, Help
+- **Components**: AppSidebar, PageHeader, StatsCard, StatusBadge, EmptyState, DataTableSkeleton, ThemeToggle, Chatbot
 - **Styling**: Tailwind CSS with professional blue/teal color scheme, dark mode support
 - **State Management**: TanStack Query for server state
 - **Routing**: Wouter
@@ -69,6 +70,7 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Multi-Language Support**: Document processing in multiple languages
 - **PDF Requirement Extraction**: Upload tender PDF → AI extracts compliance requirements automatically
 - **Letter Generation**: AI-powered or template-based award/rejection letter generation
+- **AI Chatbot**: GPT-4o powered assistant for answering user questions about the platform
 
 ### API v1 Endpoints
 - `POST /api/v1/bids`: Submit bid for evaluation
@@ -98,6 +100,9 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - Created country-specific compliance modules (ZA, KE, NG, GH, AE, UK, US) with GLOBAL fallback
 - Built AI document processing pipeline with multi-language support (EN/FR/PT/AR)
 - Added API v1 for external integrations
+- Built Country Compliance Explorer page with interactive country selector and detailed compliance info
+- Added Help/Documentation page with 5 tabs (Getting Started, Billing, Platform Usage, API, FAQ)
+- Integrated AI Chatbot (GPT-4o) as floating widget on all pages for user assistance
 - Implemented security middleware (rate limiting, RBAC, audit logging)
 - Updated branding to "GLOBAL-TVS" with Pan-African messaging
 - Added Pricing page with subscription tier comparison
