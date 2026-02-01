@@ -18,7 +18,7 @@ export function Chatbot() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: "Hi! I'm the GLOBAL-TVS AI assistant. I can help you with questions about our platform, pricing, compliance features, and more. How can I help you today?",
+      content: "Hi! I'm the VeritasAI assistant. I can help you with questions about our platform, pricing, compliance features, and more. How can I help you today?",
       timestamp: new Date(),
     },
   ]);

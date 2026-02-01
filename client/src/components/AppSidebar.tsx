@@ -8,7 +8,6 @@ import {
   BarChart3,
   Bell,
   Settings,
-  Shield,
   FolderOpen,
   LogOut,
   Send,
@@ -19,6 +18,7 @@ import {
   Globe,
   HelpCircle,
 } from "lucide-react";
+import logoImage from "@/assets/logo.png";
 import {
   Sidebar,
   SidebarContent,
@@ -76,12 +76,10 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <Shield className="h-6 w-6 text-primary-foreground" />
-          </div>
+          <img src={logoImage} alt="VeritasAI Logo" className="h-10 w-10 rounded-lg" />
           <div className="flex flex-col">
-            <span className="text-lg font-bold text-sidebar-foreground">GLOBAL - TVS</span>
-            <span className="text-xs text-sidebar-foreground/70">Tender Vetting System</span>
+            <span className="text-lg font-bold text-sidebar-foreground">VeritasAI</span>
+            <span className="text-xs text-sidebar-foreground/70">AI-Powered Bid Evaluation</span>
           </div>
         </div>
       </SidebarHeader>

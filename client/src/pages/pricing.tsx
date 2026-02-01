@@ -135,7 +135,7 @@ export default function PricingPage() {
   const selectedCountryData = countries?.find(c => c.countryCode === selectedCountry);
 
   useEffect(() => {
-    document.title = "Pricing - GLOBAL-TVS | AI-Powered Bid Evaluation Platform";
+    document.title = "Pricing - VeritasAI | AI-Powered Bid Evaluation Platform";
     
     let metaDescription = document.querySelector('meta[name="description"]');
     if (!metaDescription) {
@@ -151,7 +151,7 @@ export default function PricingPage() {
       ogTitle.setAttribute('property', 'og:title');
       document.head.appendChild(ogTitle);
     }
-    ogTitle.setAttribute("content", "Pricing - GLOBAL-TVS | AI-Powered Bid Evaluation Platform");
+    ogTitle.setAttribute("content", "Pricing - VeritasAI | AI-Powered Bid Evaluation Platform");
     
     let ogDescription = document.querySelector('meta[property="og:description"]');
     if (!ogDescription) {

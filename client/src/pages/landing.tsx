@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Shield, CheckCircle, BarChart3, Users, FileCheck, Lock, Globe, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import logoImage from "@/assets/logo.png";
 
 interface CountryComplianceInfo {
   countryCode: string;
@@ -28,10 +29,8 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                <Shield className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-foreground">GLOBAL - TVS</span>
+              <img src={logoImage} alt="VeritasAI Logo" className="h-10 w-10 rounded-lg" />
+              <span className="text-xl font-bold text-foreground">VeritasAI</span>
             </div>
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>

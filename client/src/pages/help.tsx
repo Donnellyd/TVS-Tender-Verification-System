@@ -25,7 +25,7 @@ export default function HelpPage() {
   const [activeTab, setActiveTab] = useState("getting-started");
 
   useEffect(() => {
-    document.title = "Help & Documentation - GLOBAL-TVS";
+    document.title = "Help & Documentation - VeritasAI";
     
     const setMeta = (name: string, content: string, property?: string) => {
       const selector = property ? `meta[property="${property}"]` : `meta[name="${name}"]`;
@@ -42,10 +42,10 @@ export default function HelpPage() {
       meta.setAttribute('content', content);
     };
 
-    const description = 'Learn how to use GLOBAL-TVS for bid evaluation and procurement compliance. Guides for getting started, billing, API integration, and more.';
+    const description = 'Learn how to use VeritasAI for bid evaluation and procurement compliance. Guides for getting started, billing, API integration, and more.';
     
     setMeta('description', description);
-    setMeta('', 'Help & Documentation - GLOBAL-TVS', 'og:title');
+    setMeta('', 'Help & Documentation - VeritasAI', 'og:title');
     setMeta('', description, 'og:description');
     setMeta('', 'website', 'og:type');
     setMeta('', window.location.href, 'og:url');
@@ -64,7 +64,7 @@ export default function HelpPage() {
               Documentation & Guides
             </h1>
             <p className="text-lg text-muted-foreground" data-testid="text-help-subtitle">
-              Everything you need to get started with GLOBAL-TVS and make the most of your subscription.
+              Everything you need to get started with VeritasAI and make the most of your subscription.
             </p>
           </div>
         </div>
@@ -430,7 +430,7 @@ export default function HelpPage() {
                     <Code className="w-5 h-5 text-primary" />
                     API Overview
                   </CardTitle>
-                  <CardDescription>Integrate GLOBAL-TVS with your systems</CardDescription>
+                  <CardDescription>Integrate VeritasAI with your systems</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -508,9 +508,9 @@ export default function HelpPage() {
               <CardContent>
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="item-1">
-                    <AccordionTrigger>What is GLOBAL-TVS?</AccordionTrigger>
+                    <AccordionTrigger>What is VeritasAI?</AccordionTrigger>
                     <AccordionContent>
-                      GLOBAL-TVS (Global Tender Verification System) is an AI-powered multi-tenant SaaS platform 
+                      VeritasAI is an AI-powered multi-tenant SaaS platform 
                       for bid evaluation and procurement compliance. It helps organizations verify vendor documents, 
                       evaluate bids against compliance rules, and manage the entire tender lifecycle.
                     </AccordionContent>
@@ -532,7 +532,7 @@ export default function HelpPage() {
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="item-4">
-                    <AccordionTrigger>Can I integrate GLOBAL-TVS with my existing systems?</AccordionTrigger>
+                    <AccordionTrigger>Can I integrate VeritasAI with my existing systems?</AccordionTrigger>
                     <AccordionContent>
                       Yes! Professional and higher plans include API access. You can submit bids programmatically, 
                       verify documents, and receive webhook notifications for status changes. See our API documentation 
@@ -558,7 +558,7 @@ export default function HelpPage() {
                   <AccordionItem value="item-7">
                     <AccordionTrigger>Do you offer a free trial?</AccordionTrigger>
                     <AccordionContent>
-                      We offer personalized demos for organizations evaluating GLOBAL-TVS. Contact our sales team 
+                      We offer personalized demos for organizations evaluating VeritasAI. Contact our sales team 
                       to schedule a demo and discuss your requirements. For smaller organizations, the Starter plan 
                       offers an affordable entry point.
                     </AccordionContent>

@@ -83,9 +83,9 @@ apiV1Router.get("/docs", (req, res) => {
   res.json({
     openapi: "3.0.0",
     info: {
-      title: "GLOBAL-TVS API",
+      title: "VeritasAI API",
       version: "1.0.0",
-      description: "Global Tender Verification System API",
+      description: "VeritasAI - AI-Powered Bid Evaluation Platform API",
     },
     servers: [
       { url: "/api/v1", description: "API v1" },

@@ -1,6 +1,6 @@
-# GLOBAL-TVS Help Guide
+# VeritasAI Help Guide
 
-Complete documentation for the Global Tender Verification System - your AI-powered bid evaluation platform.
+Complete documentation for the VeritasAI - your AI-powered bid evaluation platform.
 
 ---
 
@@ -18,7 +18,7 @@ Complete documentation for the Global Tender Verification System - your AI-power
 
 ### Quick Start Guide
 
-Get up and running with GLOBAL-TVS in 5 simple steps:
+Get up and running with VeritasAI in 5 simple steps:
 
 #### Step 1: Create Your Account
 Sign up using your email or organization credentials. Your account will be linked to a tenant (organization) which provides complete data isolation.
@@ -56,7 +56,7 @@ Set up a tender with requirements and deadlines. Upload tender PDFs and our AI w
 
 ### User Roles
 
-GLOBAL-TVS supports role-based access control:
+VeritasAI supports role-based access control:
 
 | Role | Permissions |
 |------|-------------|
@@ -210,7 +210,7 @@ You'll receive alerts at 80% and 100% of your limits. Overage charges are billed
 
 ### Overview
 
-GLOBAL-TVS provides a RESTful API for integrating with your existing systems. API access is available on Professional plans and above.
+VeritasAI provides a RESTful API for integrating with your existing systems. API access is available on Professional plans and above.
 
 ### Authentication
 
@@ -329,8 +329,8 @@ Errors return appropriate HTTP status codes with details:
 
 ### General
 
-**What is GLOBAL-TVS?**
-GLOBAL-TVS (Global Tender Verification System) is an AI-powered multi-tenant SaaS platform for bid evaluation and procurement compliance. It helps organizations verify vendor documents, evaluate bids against compliance rules, and manage the entire tender lifecycle.
+**What is VeritasAI?**
+VeritasAI (VeritasAI) is an AI-powered multi-tenant SaaS platform for bid evaluation and procurement compliance. It helps organizations verify vendor documents, evaluate bids against compliance rules, and manage the entire tender lifecycle.
 
 **Which countries do you support?**
 We have pre-configured compliance modules for South Africa, Kenya, Nigeria, Ghana, UAE, UK, and USA. Our Global framework works for any other country - you can customize the compliance rules to match your specific requirements.
@@ -357,7 +357,7 @@ Our AI achieves over 95% accuracy for document classification and data extractio
 
 ### Integration & Security
 
-**Can I integrate GLOBAL-TVS with my existing systems?**
+**Can I integrate VeritasAI with my existing systems?**
 Yes! Professional and higher plans include API access. You can:
 - Submit bids programmatically
 - Verify documents via API
@@ -378,7 +378,7 @@ Absolutely. We implement:
 You'll receive alerts at 80% and 100% of your limits. If you exceed limits, you can upgrade your plan or wait until the next billing period. We don't charge overage fees.
 
 **Do you offer a free trial?**
-We offer personalized demos for organizations evaluating GLOBAL-TVS. Contact our sales team to schedule a demo. For smaller organizations, the Starter plan offers an affordable entry point.
+We offer personalized demos for organizations evaluating VeritasAI. Contact our sales team to schedule a demo. For smaller organizations, the Starter plan offers an affordable entry point.
 
 **How do I get support?**
 Support options vary by plan:

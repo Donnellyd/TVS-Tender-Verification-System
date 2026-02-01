@@ -49,7 +49,7 @@ export default function ComplianceExplorerPage() {
   const [selectedCountry, setSelectedCountry] = useState<string>("");
 
   useEffect(() => {
-    document.title = "Compliance Explorer - GLOBAL-TVS";
+    document.title = "Compliance Explorer - VeritasAI";
     let metaDescription = document.querySelector('meta[name="description"]');
     if (!metaDescription) {
       metaDescription = document.createElement('meta');
@@ -90,7 +90,7 @@ export default function ComplianceExplorerPage() {
               Find Your Country's Compliance Requirements
             </h1>
             <p className="text-lg text-muted-foreground mb-6" data-testid="text-explorer-subtitle">
-              GLOBAL-TVS supports procurement compliance for countries worldwide. Select your country to see 
+              VeritasAI supports procurement compliance for countries worldwide. Select your country to see 
               the specific regulations, document types, and scoring methodologies we verify.
             </p>
 
@@ -358,7 +358,7 @@ export default function ComplianceExplorerPage() {
                     <CardHeader>
                       <CardTitle>Key Features</CardTitle>
                       <CardDescription>
-                        What GLOBAL-TVS offers for {selectedCountryData?.countryName}
+                        What VeritasAI offers for {selectedCountryData?.countryName}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -416,7 +416,7 @@ export default function ComplianceExplorerPage() {
                   <div>
                     <h3 className="font-semibold text-lg">Ready to get started in {selectedCountryData?.countryName}?</h3>
                     <p className="text-muted-foreground">
-                      Start verifying bids and documents with GLOBAL-TVS today.
+                      Start verifying bids and documents with VeritasAI today.
                     </p>
                   </div>
                   <div className="flex gap-3">

@@ -1,4 +1,4 @@
-# GLOBAL-TVS - Global Tender Verification System
+# VeritasAI - VeritasAI
 
 ## Overview
 A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation and procurement compliance. The system handles vendor management, tender tracking, AI-powered document processing, country-specific compliance rules, and enterprise-grade security with full API integration.
@@ -107,7 +107,7 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - Integrated AI Chatbot (GPT-4o) as floating widget on all pages for user assistance
 - Added Help link to landing page header and authenticated user sidebar
 - Implemented security middleware (rate limiting, RBAC, audit logging)
-- Updated branding to "GLOBAL-TVS" with Pan-African messaging
+- Updated branding to "VeritasAI" with Pan-African messaging
 - Added Pricing page with subscription tier comparison and country compliance preview
 - Added language preferences to tenant configuration
 - Added payment method placeholder for Stripe integration
