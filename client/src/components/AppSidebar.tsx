@@ -17,6 +17,7 @@ import {
   Key,
   Globe,
   HelpCircle,
+  Rocket,
 } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import {
@@ -50,6 +51,7 @@ const settingsNavItems = [
   { title: "Email Templates", url: "/email-templates", icon: Mail },
   { title: "WhatsApp Templates", url: "/whatsapp-templates", icon: MessageCircle },
   { title: "Compliance Rules", url: "/rules", icon: Globe },
+  { title: "Country Launch", url: "/country-launch", icon: Rocket },
   { title: "Billing", url: "/billing", icon: CreditCard },
   { title: "API Settings", url: "/api-settings", icon: Key },
   { title: "Notifications", url: "/notifications", icon: Bell },

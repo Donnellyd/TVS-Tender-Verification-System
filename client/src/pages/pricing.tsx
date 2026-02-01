@@ -8,9 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Check, Globe, Shield, Zap, Users, FileCheck, BarChart3, Headphones, Building2, Mail, Phone, ArrowRight } from "lucide-react";
+import { Check, Globe, Shield, Zap, Users, FileCheck, BarChart3, Headphones, Building2, Mail, Phone, ArrowRight, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { CountryEnquiryForm } from "@/components/CountryEnquiryForm";
+import type { CountryLaunchStatus } from "@shared/schema";
 
 interface CountryComplianceInfo {
   countryCode: string;
@@ -132,6 +134,17 @@ export default function PricingPage() {
     queryKey: ["/api/compliance/countries"],
   });
 
+  const { data: countryLaunchStatus } = useQuery<CountryLaunchStatus>({
+    queryKey: ["/api/country-launch-status", selectedCountry],
+    queryFn: async () => {
+      const res = await fetch(`/api/country-launch-status/${selectedCountry}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!selectedCountry,
+  });
+
+  const isCountryActive = countryLaunchStatus?.status === "active";
   const selectedCountryData = countries?.find(c => c.countryCode === selectedCountry);
 
   useEffect(() => {
@@ -244,7 +257,30 @@ export default function PricingPage() {
               </div>
             </div>
           )}
+
+          {selectedCountry && !isCountryActive && (
+            <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg" data-testid="country-not-active-notice">
+              <div className="flex items-start gap-3">
+                <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-amber-800 dark:text-amber-200">Coming Soon to {selectedCountryData?.countryName || selectedCountry}</h4>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    VeritasAI is not yet available for direct purchase in your region. Submit an enquiry below and we'll contact you when we launch.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </Card>
+
+        {selectedCountry && !isCountryActive && (
+          <div className="mb-12" data-testid="enquiry-form-section">
+            <CountryEnquiryForm 
+              countryCode={selectedCountry} 
+              countryName={selectedCountryData?.countryName || selectedCountry} 
+            />
+          </div>
+        )}
 
         <div className="flex items-center justify-center gap-4 mb-12" data-testid="billing-toggle-container">
           <Label htmlFor="billing-toggle" className={!isAnnual ? "font-semibold" : "text-muted-foreground"} data-testid="label-monthly">
@@ -428,14 +464,26 @@ export default function PricingPage() {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-                ) : (
+                ) : selectedCountry && !isCountryActive ? (
                   <Button 
                     className="w-full" 
-                    variant={tier.highlighted ? "default" : "outline"}
+                    variant="outline"
+                    disabled
                     data-testid={`button-select-${tier.id}`}
                   >
-                    Get Started
+                    <Clock className="h-4 w-4 mr-2" />
+                    Coming Soon
                   </Button>
+                ) : (
+                  <Link href="/billing">
+                    <Button 
+                      className="w-full" 
+                      variant={tier.highlighted ? "default" : "outline"}
+                      data-testid={`button-select-${tier.id}`}
+                    >
+                      Get Started
+                    </Button>
+                  </Link>
                 )}
               </CardFooter>
             </Card>

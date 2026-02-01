@@ -29,7 +29,7 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Entry**: `client/src/App.tsx`
 - **Pages**: 
   - Core: Landing, Dashboard, Vendors, Tenders, Documents, Compliance, Analytics
-  - Admin: Municipalities, Submissions, TenderRequirements
+  - Admin: Municipalities, Submissions, TenderRequirements, CountryLaunch
   - SaaS: Billing, ComplianceRules, ApiSettings
   - Communication: EmailTemplates, WhatsappTemplates
   - Public: Pricing, ComplianceExplorer, Help
@@ -48,6 +48,7 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
   - `server/storage.ts`: Core DatabaseStorage class
   - `server/tenant-storage.ts`: Tenant-specific operations
   - `server/compliance-storage.ts`: Compliance rules engine
+  - `server/country-launch-storage.ts`: Country launch status and enquiries
 - **AI Integration**: 
   - `server/ai-document-processor.ts`: Document analysis, OCR, fraud detection
 - **Security**:
@@ -60,6 +61,7 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Submission Tables**: tender_requirements, bid_submissions, submission_documents, evaluation_scores, letter_templates, generated_letters
 - **Multi-Tenant Tables**: tenants, subscriptions, usage_tracking, invoices, api_keys, tenant_users
 - **Compliance Engine Tables**: compliance_rule_sets, compliance_rule_definitions, rule_version_history, rule_execution_logs
+- **Country Launch Tables**: country_launch_status, country_enquiries
 
 ### AI-Powered Features
 - **Document Analysis**: AI-powered extraction of document data (tax clearance, company registration, BBBEE, etc.)
@@ -114,7 +116,16 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - `npm run db:push --force`: Force push schema changes
 - `npx tsx server/seed-stripe-products.ts`: Seed Stripe products (run once per Stripe account)
 
+### Country Launch Control System
+- **Purpose**: Phased country-by-country rollout with payment gateway control
+- **Status Types**: active (full payment), enquiry_only (contact form), coming_soon, disabled
+- **Initial Launch**: South Africa (ZA) is active with Yoco gateway, all other countries are enquiry_only
+- **Admin UI**: `/country-launch` page for managing country statuses and viewing enquiries
+- **Public Flow**: Pricing page checks country status - shows payment for active, enquiry form for others
+- **Enquiry Management**: Stores customer enquiries with follow-up tracking
+
 ## Recent Changes
+- Added country launch control system for phased rollout (SA active first, others enquiry-only)
 - Added Yoco payment integration for South African local card payments (ZAR)
 - Rebranded from GLOBAL-TVS to VeritasAI with Circuit V logo
 - Integrated Stripe payment processing with webhook handling

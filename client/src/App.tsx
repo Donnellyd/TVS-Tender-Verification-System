@@ -26,6 +26,7 @@ import ApiSettings from "@/pages/api-settings";
 import Pricing from "@/pages/pricing";
 import ComplianceExplorer from "@/pages/compliance-explorer";
 import Help from "@/pages/help";
+import CountryLaunch from "@/pages/country-launch";
 import { Chatbot } from "@/components/Chatbot";
 
 function LoadingScreen() {
@@ -64,6 +65,7 @@ function AuthenticatedApp() {
             <Route path="/email-templates" component={EmailTemplates} />
             <Route path="/whatsapp-templates" component={WhatsappTemplates} />
             <Route path="/rules" component={ComplianceRules} />
+            <Route path="/country-launch" component={CountryLaunch} />
             <Route path="/billing" component={Billing} />
             <Route path="/api-settings" component={ApiSettings} />
             <Route path="/pricing" component={Pricing} />

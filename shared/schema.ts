@@ -917,3 +917,61 @@ export const insertChatbotConversationSchema = createInsertSchema(chatbotConvers
 
 export type InsertChatbotConversation = z.infer<typeof insertChatbotConversationSchema>;
 export type ChatbotConversation = typeof chatbotConversations.$inferSelect;
+
+// Country Launch Status - Controls which countries have active payment vs enquiry only
+export const countryLaunchStatusEnum = z.enum(["active", "enquiry_only", "coming_soon", "disabled"]);
+
+export const countryLaunchStatus = pgTable("country_launch_status", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  countryCode: text("country_code").notNull().unique(),
+  countryName: text("country_name").notNull(),
+  region: text("region").notNull(),
+  status: text("status").notNull().default("enquiry_only"),
+  paymentGateway: text("payment_gateway"),
+  currency: text("currency"),
+  launchDate: timestamp("launch_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCountryLaunchStatusSchema = createInsertSchema(countryLaunchStatus).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCountryLaunchStatus = z.infer<typeof insertCountryLaunchStatusSchema>;
+export type CountryLaunchStatus = typeof countryLaunchStatus.$inferSelect;
+
+// Country Enquiries - Stores enquiries from users in non-active countries
+export const countryEnquiries = pgTable("country_enquiries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  countryCode: text("country_code").notNull(),
+  companyName: text("company_name").notNull(),
+  contactName: text("contact_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  organizationType: text("organization_type"),
+  expectedUsers: integer("expected_users"),
+  interestedTier: text("interested_tier"),
+  message: text("message"),
+  status: text("status").notNull().default("new"),
+  followedUpAt: timestamp("followed_up_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_country_enquiries_country").on(table.countryCode),
+  index("idx_country_enquiries_status").on(table.status),
+]);
+
+export const insertCountryEnquirySchema = createInsertSchema(countryEnquiries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  followedUpAt: true,
+});
+
+export type InsertCountryEnquiry = z.infer<typeof insertCountryEnquirySchema>;
+export type CountryEnquiry = typeof countryEnquiries.$inferSelect;

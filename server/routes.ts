@@ -3,6 +3,7 @@ import express from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
 import { tenantStorage } from "./tenant-storage";
+import { countryLaunchStorage, seedCountryLaunchStatuses } from "./country-launch-storage";
 import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integrations/auth";
 import { tenantRouter } from "./tenant-routes";
 import { apiV1Router } from "./api-v1-routes";
@@ -69,7 +70,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.use("/api/v1", apiV1Router);
 
   // Auth-protected API routes (except auth routes themselves, API v1, and public endpoints)
-  app.use(/^\/api(?!\/auth|\/login|\/logout|\/callback|\/subscription-tiers|\/compliance\/countries|\/chatbot|\/v1)/, isAuthenticated);
+  app.use(/^\/api(?!\/auth|\/login|\/logout|\/callback|\/subscription-tiers|\/compliance\/countries|\/chatbot|\/v1|\/country-launch-status|\/country-enquiries)/, isAuthenticated);
 
   // Municipalities
   app.get("/api/municipalities", async (req, res) => {
@@ -2782,6 +2783,135 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
     } catch (error) {
       console.error("Yoco webhook error:", error);
       res.status(500).json({ error: "Webhook processing failed" });
+    }
+  });
+
+  // Country Launch Status Routes
+  await seedCountryLaunchStatuses();
+
+  app.get("/api/country-launch-status", async (_req, res) => {
+    try {
+      const statuses = await countryLaunchStorage.getCountryLaunchStatuses();
+      res.json(statuses);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch country launch statuses" });
+    }
+  });
+
+  app.get("/api/country-launch-status/:countryCode", async (req, res) => {
+    try {
+      const status = await countryLaunchStorage.getCountryLaunchStatus(req.params.countryCode);
+      if (!status) {
+        return res.status(404).json({ error: "Country not found" });
+      }
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch country status" });
+    }
+  });
+
+  app.get("/api/country-launch-status/active/list", async (_req, res) => {
+    try {
+      const activeCountries = await countryLaunchStorage.getActiveCountries();
+      res.json(activeCountries);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch active countries" });
+    }
+  });
+
+  app.put("/api/country-launch-status/:countryCode", isAuthenticated, async (req, res) => {
+    try {
+      const { status, paymentGateway, currency, launchDate, notes } = req.body;
+      const updated = await countryLaunchStorage.updateCountryLaunchStatus(req.params.countryCode, {
+        status,
+        paymentGateway,
+        currency,
+        launchDate: launchDate ? new Date(launchDate) : undefined,
+        notes,
+      });
+      if (!updated) {
+        return res.status(404).json({ error: "Country not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update country status" });
+    }
+  });
+
+  // Country Enquiries Routes
+  app.get("/api/country-enquiries", isAuthenticated, async (_req, res) => {
+    try {
+      const enquiries = await countryLaunchStorage.getEnquiries();
+      res.json(enquiries);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch enquiries" });
+    }
+  });
+
+  app.get("/api/country-enquiries/:id", isAuthenticated, async (req, res) => {
+    try {
+      const enquiry = await countryLaunchStorage.getEnquiry(req.params.id);
+      if (!enquiry) {
+        return res.status(404).json({ error: "Enquiry not found" });
+      }
+      res.json(enquiry);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch enquiry" });
+    }
+  });
+
+  app.post("/api/country-enquiries", async (req, res) => {
+    try {
+      const { countryCode, companyName, contactName, email, phone, organizationType, expectedUsers, interestedTier, message } = req.body;
+      
+      if (!countryCode || !companyName || !contactName || !email) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const enquiry = await countryLaunchStorage.createEnquiry({
+        countryCode,
+        companyName,
+        contactName,
+        email,
+        phone,
+        organizationType,
+        expectedUsers,
+        interestedTier,
+        message,
+        status: "new",
+      });
+      res.status(201).json(enquiry);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create enquiry" });
+    }
+  });
+
+  app.put("/api/country-enquiries/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { status, notes } = req.body;
+      const updated = await countryLaunchStorage.updateEnquiry(req.params.id, {
+        status,
+        notes,
+        followedUpAt: status === "contacted" ? new Date() : undefined,
+      });
+      if (!updated) {
+        return res.status(404).json({ error: "Enquiry not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update enquiry" });
+    }
+  });
+
+  app.delete("/api/country-enquiries/:id", isAuthenticated, async (req, res) => {
+    try {
+      const deleted = await countryLaunchStorage.deleteEnquiry(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Enquiry not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete enquiry" });
     }
   });
 }
