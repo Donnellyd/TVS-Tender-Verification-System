@@ -19,6 +19,8 @@ import {
   whatsappTemplates,
   notificationLogs,
   notificationSettings,
+  countryComplianceInfo,
+  chatbotConversations,
   type InsertMunicipality,
   type Municipality,
   type InsertVendor,
@@ -48,6 +50,10 @@ import {
   type InsertBidSubmission,
   type BidSubmission,
   type InsertSubmissionDocument,
+  type CountryComplianceInfo,
+  type InsertCountryComplianceInfo,
+  type ChatbotConversation,
+  type InsertChatbotConversation,
   type SubmissionDocument,
   type InsertEvaluationScore,
   type EvaluationScore,
@@ -882,6 +888,61 @@ export class DatabaseStorage implements IStorage {
       return await db.select().from(notificationLogs).where(eq(notificationLogs.vendorId, vendorId)).orderBy(desc(notificationLogs.createdAt));
     }
     return await db.select().from(notificationLogs).orderBy(desc(notificationLogs.createdAt)).limit(100);
+  }
+
+  // Country Compliance Info
+  async getCountryComplianceInfo(): Promise<CountryComplianceInfo[]> {
+    return await db.select().from(countryComplianceInfo).orderBy(countryComplianceInfo.countryName);
+  }
+
+  async getCountryComplianceInfoByCode(code: string): Promise<CountryComplianceInfo | undefined> {
+    const [result] = await db.select().from(countryComplianceInfo).where(eq(countryComplianceInfo.countryCode, code.toUpperCase()));
+    return result;
+  }
+
+  async getCountryComplianceInfoByRegion(region: string): Promise<CountryComplianceInfo[]> {
+    return await db.select().from(countryComplianceInfo).where(eq(countryComplianceInfo.region, region)).orderBy(countryComplianceInfo.countryName);
+  }
+
+  async createCountryComplianceInfo(data: InsertCountryComplianceInfo): Promise<CountryComplianceInfo> {
+    const [result] = await db.insert(countryComplianceInfo).values(data).returning();
+    return result;
+  }
+
+  async updateCountryComplianceInfo(code: string, data: Partial<InsertCountryComplianceInfo>): Promise<CountryComplianceInfo | undefined> {
+    const [result] = await db.update(countryComplianceInfo)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(countryComplianceInfo.countryCode, code.toUpperCase()))
+      .returning();
+    return result;
+  }
+
+  async upsertCountryComplianceInfo(data: InsertCountryComplianceInfo): Promise<CountryComplianceInfo> {
+    const existing = await this.getCountryComplianceInfoByCode(data.countryCode);
+    if (existing) {
+      const result = await this.updateCountryComplianceInfo(data.countryCode, data);
+      return result!;
+    }
+    return await this.createCountryComplianceInfo(data);
+  }
+
+  // Chatbot Conversations
+  async getChatbotConversation(sessionId: string): Promise<ChatbotConversation | undefined> {
+    const [result] = await db.select().from(chatbotConversations).where(eq(chatbotConversations.sessionId, sessionId));
+    return result;
+  }
+
+  async createChatbotConversation(data: InsertChatbotConversation): Promise<ChatbotConversation> {
+    const [result] = await db.insert(chatbotConversations).values(data).returning();
+    return result;
+  }
+
+  async updateChatbotConversation(sessionId: string, messages: any[], context?: any): Promise<ChatbotConversation | undefined> {
+    const [result] = await db.update(chatbotConversations)
+      .set({ messages, context, updatedAt: new Date() })
+      .where(eq(chatbotConversations.sessionId, sessionId))
+      .returning();
+    return result;
   }
 }
 

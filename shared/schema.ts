@@ -869,3 +869,51 @@ export type NotificationLog = typeof notificationLogs.$inferSelect;
 
 export type NotificationChannel = z.infer<typeof notificationChannelEnum>;
 export type NotificationTrigger = z.infer<typeof notificationTriggerEnum>;
+
+// Country Compliance Info - Public information about compliance coverage per country
+export const countryComplianceInfo = pgTable("country_compliance_info", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  countryCode: text("country_code").notNull().unique(),
+  countryName: text("country_name").notNull(),
+  region: text("region").notNull(),
+  flagEmoji: text("flag_emoji"),
+  status: text("status").notNull().default("active"),
+  complianceFrameworks: jsonb("compliance_frameworks").default([]),
+  documentTypes: jsonb("document_types").default([]),
+  scoringMethodologies: jsonb("scoring_methodologies").default([]),
+  governmentIntegrations: jsonb("government_integrations").default([]),
+  languages: jsonb("languages").default([]),
+  keyFeatures: jsonb("key_features").default([]),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCountryComplianceInfoSchema = createInsertSchema(countryComplianceInfo).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCountryComplianceInfo = z.infer<typeof insertCountryComplianceInfoSchema>;
+export type CountryComplianceInfo = typeof countryComplianceInfo.$inferSelect;
+
+// Chatbot conversations for AI assistant
+export const chatbotConversations = pgTable("chatbot_conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: text("session_id").notNull(),
+  userId: varchar("user_id"),
+  messages: jsonb("messages").default([]),
+  context: jsonb("context").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertChatbotConversationSchema = createInsertSchema(chatbotConversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertChatbotConversation = z.infer<typeof insertChatbotConversationSchema>;
+export type ChatbotConversation = typeof chatbotConversations.$inferSelect;
