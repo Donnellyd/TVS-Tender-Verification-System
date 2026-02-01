@@ -25,6 +25,8 @@ import ComplianceRules from "@/pages/compliance-rules";
 import ApiSettings from "@/pages/api-settings";
 import Pricing from "@/pages/pricing";
 import ComplianceExplorer from "@/pages/compliance-explorer";
+import Help from "@/pages/help";
+import { Chatbot } from "@/components/Chatbot";
 
 function LoadingScreen() {
   return (
@@ -66,6 +68,7 @@ function AuthenticatedApp() {
             <Route path="/api-settings" component={ApiSettings} />
             <Route path="/pricing" component={Pricing} />
             <Route path="/compliance-explorer" component={ComplianceExplorer} />
+            <Route path="/help" component={Help} />
             <Route path="/notifications" component={Dashboard} />
             <Route path="/settings" component={Dashboard} />
             <Route component={NotFound} />
@@ -88,6 +91,7 @@ function Router() {
       <Switch>
         <Route path="/pricing" component={Pricing} />
         <Route path="/compliance-explorer" component={ComplianceExplorer} />
+        <Route path="/help" component={Help} />
         <Route component={Landing} />
       </Switch>
     );
@@ -102,6 +106,7 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router />
+        <Chatbot />
       </TooltipProvider>
     </QueryClientProvider>
   );

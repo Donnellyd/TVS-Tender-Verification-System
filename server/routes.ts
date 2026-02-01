@@ -66,8 +66,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Register API v1 routes (uses API key auth, not session auth)
   app.use("/api/v1", apiV1Router);
 
-  // Auth-protected API routes (except auth routes themselves and API v1)
-  app.use(/^\/api(?!\/auth|\/login|\/logout|\/callback|\/subscription-tiers|\/compliance\/countries|\/v1)/, isAuthenticated);
+  // Auth-protected API routes (except auth routes themselves, API v1, and public endpoints)
+  app.use(/^\/api(?!\/auth|\/login|\/logout|\/callback|\/subscription-tiers|\/compliance\/countries|\/chatbot|\/v1)/, isAuthenticated);
 
   // Municipalities
   app.get("/api/municipalities", async (req, res) => {
@@ -2409,6 +2409,104 @@ Return a JSON object with scores for each criterion:
       res.json(result);
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to send bulk templated emails" });
+    }
+  });
+
+  // Chatbot API endpoint
+  const chatbotMessageSchema = z.object({
+    message: z.string().min(1),
+    history: z.array(z.object({
+      role: z.enum(["user", "assistant"]),
+      content: z.string(),
+    })).optional(),
+  });
+
+  app.post("/api/chatbot/message", async (req, res) => {
+    try {
+      const parsed = chatbotMessageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request" });
+      }
+
+      const { message, history = [] } = parsed.data;
+
+      const openai = new OpenAI();
+      
+      const systemPrompt = `You are the GLOBAL-TVS AI Assistant, a helpful chatbot for a global bid evaluation and procurement compliance platform. You help users and potential clients understand the platform's features, pricing, and how to get started.
+
+KEY INFORMATION ABOUT GLOBAL-TVS:
+
+PLATFORM OVERVIEW:
+- GLOBAL-TVS is an AI-powered multi-tenant SaaS platform for bid evaluation and procurement compliance
+- Serves organizations across Africa (all 54 nations), Middle East (UAE), and expanding globally
+- Handles vendor management, tender tracking, AI document processing, and compliance verification
+
+PRICING (Annual):
+- Starter: $499/year - 100 bids/month, 500 docs, 5GB storage, email support
+- Professional: $1,999/year - 500 bids/month, 2,500 docs, 25GB storage, API access
+- Enterprise: $4,999/year - 2,000 bids/month, 10,000 docs, 100GB storage, priority support
+- Government: $9,999/year - Unlimited bids/docs, 500GB storage, dedicated support with SLA
+
+SUPPORTED COUNTRIES:
+- South Africa: B-BBEE, CSD verification, 80/20 and 90/10 scoring, PFMA/PPPFA compliance
+- Kenya: AGPO (Youth, Women, PWD preferences), PPRA compliance
+- Nigeria: Local Content Act, BPP compliance
+- Ghana: PPA regulations, local participation requirements
+- UAE: In-Country Value (ICV) requirements
+- UK: Public Contracts Regulations 2015, Social Value Act
+- USA: FAR/DFAR, SBA small business preferences
+- GLOBAL: Universal framework works for any country
+
+KEY FEATURES:
+- AI-powered document verification and fraud detection
+- Multi-language support (English, French, Portuguese, Arabic)
+- Automatic compliance rule checking
+- Tender lifecycle management
+- Real-time analytics and reporting
+- Complete audit trail
+- API integration for programmatic access
+- Webhook notifications
+
+GETTING STARTED:
+1. Create account via sign-up
+2. Choose subscription plan
+3. Configure country/compliance rules
+4. Add vendors and upload documents
+5. Create tenders and receive bids
+6. AI verifies documents automatically
+7. Score and award tenders
+
+SECURITY:
+- AES-256-GCM encryption for sensitive data
+- Role-based access control (RBAC)
+- Complete audit logging
+- POPIA, GDPR compliant
+
+SUPPORT:
+- Email support (all plans)
+- Chat support (Professional+)
+- Priority support with 4-hour response (Enterprise)
+- Dedicated account manager (Government)
+
+Be helpful, friendly, and concise. If you don't know something, suggest they contact sales or check the documentation. Always encourage users to explore the platform's features.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+          { role: "user", content: message },
+        ],
+        max_tokens: 500,
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response. Please try again.";
+
+      res.json({ response });
+    } catch (error) {
+      console.error("Chatbot error:", error);
+      res.status(500).json({ error: "Failed to process message" });
     }
   });
 }
