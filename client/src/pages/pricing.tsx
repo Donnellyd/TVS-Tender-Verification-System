@@ -8,9 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Check, Globe, Shield, Zap, Users, FileCheck, BarChart3, Headphones, Building2, Mail, Phone, ArrowRight, Clock } from "lucide-react";
+import { Check, Globe, Shield, Zap, Users, FileCheck, BarChart3, Headphones, Building2, Mail, Phone, ArrowRight, Clock, Loader2, CreditCard } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { CountryEnquiryForm } from "@/components/CountryEnquiryForm";
 import type { CountryLaunchStatus } from "@shared/schema";
 
@@ -23,7 +23,11 @@ interface CountryComplianceInfo {
   keyFeatures?: string[];
 }
 
-const SUBSCRIPTION_TIERS = [
+const SADC_COUNTRIES = [
+  "ZA", "BW", "LS", "MW", "MZ", "NA", "SZ", "TZ", "ZM", "ZW", "AO", "CD", "MG", "MU", "SC", "KM"
+];
+
+const USD_TIERS = [
   {
     id: "starter",
     name: "Starter",
@@ -118,10 +122,115 @@ const SUBSCRIPTION_TIERS = [
   }
 ];
 
+const ZAR_TIERS = [
+  {
+    id: "starter",
+    name: "Starter",
+    description: "For small procurement teams getting started",
+    priceMonthly: 899,
+    priceAnnual: 8999,
+    bidsIncluded: 50,
+    documentsIncluded: 500,
+    storageGb: 5,
+    overagePricePerBid: 35,
+    costPerBid: 15,
+    features: [
+      "AI document verification",
+      "GLOBAL compliance rules",
+      "Email notifications",
+      "Basic analytics",
+      "1 user seat",
+      "Email support"
+    ],
+    highlighted: false,
+    isContactUs: false
+  },
+  {
+    id: "professional",
+    name: "Professional",
+    description: "For growing organizations with regional needs",
+    priceMonthly: 2499,
+    priceAnnual: 24999,
+    bidsIncluded: 300,
+    documentsIncluded: 3000,
+    storageGb: 25,
+    overagePricePerBid: 18,
+    costPerBid: 7,
+    features: [
+      "Everything in Starter",
+      "Country-specific compliance modules",
+      "Multi-language support (EN/FR/PT/AR)",
+      "Advanced fraud detection",
+      "Webhook integrations",
+      "5 user seats",
+      "Priority email support"
+    ],
+    highlighted: true,
+    isContactUs: false
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    description: "For large organizations with complex requirements",
+    priceMonthly: 6999,
+    priceAnnual: 69999,
+    bidsIncluded: 1500,
+    documentsIncluded: 15000,
+    storageGb: 100,
+    overagePricePerBid: 9,
+    costPerBid: 4,
+    features: [
+      "Everything in Professional",
+      "Custom compliance rule builder",
+      "API access with high rate limits",
+      "SSO/SAML integration",
+      "Dedicated account manager",
+      "25 user seats",
+      "Phone & email support"
+    ],
+    highlighted: false,
+    isContactUs: false
+  },
+  {
+    id: "government",
+    name: "Government & Public Sector",
+    description: "Tailored solutions for national, provincial & municipal procurement",
+    priceMonthly: -1,
+    priceAnnual: -1,
+    bidsIncluded: -1,
+    documentsIncluded: -1,
+    storageGb: -1,
+    overagePricePerBid: -1,
+    costPerBid: -1,
+    features: [
+      "Everything in Enterprise",
+      "Custom pricing based on scope",
+      "Unlimited capacity options",
+      "On-premise deployment available",
+      "Custom integrations",
+      "Unlimited user seats",
+      "24/7 dedicated support",
+      "SLA guarantee"
+    ],
+    highlighted: false,
+    isContactUs: true
+  }
+];
+
 export default function PricingPage() {
+  const [, setLocation] = useLocation();
   const [isAnnual, setIsAnnual] = useState(true);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
+  const [selectedTierId, setSelectedTierId] = useState<string>("");
+  const [checkoutForm, setCheckoutForm] = useState({
+    email: "",
+    companyName: "",
+    contactName: "",
+    phone: ""
+  });
   const [contactForm, setContactForm] = useState({
     name: "",
     email: "",
@@ -146,6 +255,10 @@ export default function PricingPage() {
 
   const isCountryActive = countryLaunchStatus?.status === "active";
   const selectedCountryData = countries?.find(c => c.countryCode === selectedCountry);
+  const isSADCRegion = SADC_COUNTRIES.includes(selectedCountry);
+  const currentTiers = isSADCRegion ? ZAR_TIERS : USD_TIERS;
+  const currencySymbol = isSADCRegion ? "R" : "$";
+  const currencyCode = isSADCRegion ? "ZAR" : "USD";
 
   useEffect(() => {
     document.title = "Pricing - VeritasAI | AI-Powered Bid Evaluation Platform";
@@ -178,7 +291,54 @@ export default function PricingPage() {
   const formatPrice = (monthly: number, annual: number) => {
     const price = isAnnual ? annual : monthly;
     if (price === -1) return "Custom";
-    return `$${price.toLocaleString()}`;
+    return `${currencySymbol}${price.toLocaleString()}`;
+  };
+
+  const handleStartCheckout = (tierId: string) => {
+    setSelectedTierId(tierId);
+    setCheckoutDialogOpen(true);
+  };
+
+  const handleCheckoutSubmit = async () => {
+    if (!checkoutForm.email || !checkoutForm.companyName || !checkoutForm.contactName) {
+      return;
+    }
+
+    setCheckoutLoading(selectedTierId);
+    try {
+      const tier = currentTiers.find(t => t.id === selectedTierId);
+      if (!tier) return;
+
+      const amount = isAnnual ? tier.priceAnnual : tier.priceMonthly;
+      
+      const response = await fetch("/api/public/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tierId: selectedTierId,
+          amount: amount * 100,
+          currency: currencyCode,
+          countryCode: selectedCountry,
+          email: checkoutForm.email,
+          companyName: checkoutForm.companyName,
+          contactName: checkoutForm.contactName,
+          phone: checkoutForm.phone,
+          billingPeriod: isAnnual ? "annual" : "monthly"
+        }),
+      });
+
+      const data = await response.json();
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else if (data.error) {
+        console.error("Checkout error:", data.error);
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+    } finally {
+      setCheckoutLoading(null);
+      setCheckoutDialogOpen(false);
+    }
   };
 
   const handleContactSubmit = () => {
@@ -298,8 +458,16 @@ export default function PricingPage() {
           </Label>
         </div>
 
+        {isSADCRegion && selectedCountry && (
+          <div className="mb-6 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg text-center" data-testid="zar-pricing-notice">
+            <span className="text-green-800 dark:text-green-200 font-medium">
+              Pricing shown in South African Rand (ZAR) for SADC region. Pay with local cards via Yoco.
+            </span>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16" data-testid="pricing-grid">
-          {SUBSCRIPTION_TIERS.map((tier) => (
+          {currentTiers.map((tier) => (
             <Card 
               key={tier.id} 
               className={`${tier.highlighted ? "border-primary shadow-lg relative" : ""} ${tier.isContactUs ? "bg-gradient-to-b from-primary/5 to-transparent" : ""}`}
@@ -343,10 +511,10 @@ export default function PricingPage() {
                       <span>{tier.bidsIncluded} bids/month</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground" data-testid={`text-cost-per-bid-${tier.id}`}>
-                      <span className="ml-6 text-xs">~${tier.costPerBid.toFixed(2)}/bid included</span>
+                      <span className="ml-6 text-xs">~{currencySymbol}{tier.costPerBid.toFixed(2)}/bid included</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground" data-testid={`text-overage-${tier.id}`}>
-                      <span className="ml-6 text-xs">+${tier.overagePricePerBid.toFixed(2)}/bid over limit</span>
+                      <span className="ml-6 text-xs">+{currencySymbol}{tier.overagePricePerBid.toFixed(2)}/bid over limit</span>
                     </div>
                     <div className="flex items-center gap-2" data-testid={`text-documents-${tier.id}`}>
                       <FileCheck className="h-4 w-4 text-primary" />
@@ -474,21 +642,127 @@ export default function PricingPage() {
                     <Clock className="h-4 w-4 mr-2" />
                     Coming Soon
                   </Button>
+                ) : selectedCountry && isCountryActive ? (
+                  <Button 
+                    className="w-full" 
+                    variant={tier.highlighted ? "default" : "outline"}
+                    onClick={() => handleStartCheckout(tier.id)}
+                    disabled={checkoutLoading === tier.id}
+                    data-testid={`button-select-${tier.id}`}
+                  >
+                    {checkoutLoading === tier.id ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Get Started"
+                    )}
+                  </Button>
                 ) : (
-                  <Link href="/billing">
-                    <Button 
-                      className="w-full" 
-                      variant={tier.highlighted ? "default" : "outline"}
-                      data-testid={`button-select-${tier.id}`}
-                    >
-                      Get Started
-                    </Button>
-                  </Link>
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    disabled
+                    data-testid={`button-select-${tier.id}`}
+                  >
+                    Select a Country
+                  </Button>
                 )}
               </CardFooter>
             </Card>
           ))}
         </div>
+
+        <Dialog open={checkoutDialogOpen} onOpenChange={setCheckoutDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary" />
+                Complete Your Purchase
+              </DialogTitle>
+              <DialogDescription>
+                Enter your details to proceed to {isSADCRegion ? "Yoco" : "Stripe"} checkout for the {currentTiers.find(t => t.id === selectedTierId)?.name} plan.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="checkout-email">Email Address *</Label>
+                <Input 
+                  id="checkout-email" 
+                  type="email"
+                  placeholder="your@email.com"
+                  value={checkoutForm.email}
+                  onChange={(e) => setCheckoutForm({...checkoutForm, email: e.target.value})}
+                  data-testid="input-checkout-email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="checkout-company">Company Name *</Label>
+                <Input 
+                  id="checkout-company" 
+                  placeholder="Your Company"
+                  value={checkoutForm.companyName}
+                  onChange={(e) => setCheckoutForm({...checkoutForm, companyName: e.target.value})}
+                  data-testid="input-checkout-company"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="checkout-name">Contact Name *</Label>
+                  <Input 
+                    id="checkout-name" 
+                    placeholder="Your Name"
+                    value={checkoutForm.contactName}
+                    onChange={(e) => setCheckoutForm({...checkoutForm, contactName: e.target.value})}
+                    data-testid="input-checkout-name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="checkout-phone">Phone (Optional)</Label>
+                  <Input 
+                    id="checkout-phone" 
+                    type="tel"
+                    placeholder="+27 xxx xxx xxxx"
+                    value={checkoutForm.phone}
+                    onChange={(e) => setCheckoutForm({...checkoutForm, phone: e.target.value})}
+                    data-testid="input-checkout-phone"
+                  />
+                </div>
+              </div>
+              <div className="p-3 bg-muted rounded-lg text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">{currentTiers.find(t => t.id === selectedTierId)?.name} Plan</span>
+                  <span className="font-bold">
+                    {currencySymbol}{(isAnnual ? currentTiers.find(t => t.id === selectedTierId)?.priceAnnual : currentTiers.find(t => t.id === selectedTierId)?.priceMonthly)?.toLocaleString()}/{isAnnual ? "year" : "month"}
+                  </span>
+                </div>
+                <p className="text-muted-foreground mt-1">
+                  {isSADCRegion ? "Pay securely with Yoco (SA local cards)" : "Pay securely with Stripe"}
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCheckoutDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCheckoutSubmit} 
+                disabled={!checkoutForm.email || !checkoutForm.companyName || !checkoutForm.contactName || checkoutLoading !== null}
+                data-testid="button-proceed-checkout"
+              >
+                {checkoutLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Proceed to Payment"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16" data-testid="features-grid">
           <Card className="text-center p-6" data-testid="card-feature-security">

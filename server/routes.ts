@@ -70,7 +70,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.use("/api/v1", apiV1Router);
 
   // Auth-protected API routes (except auth routes themselves, API v1, and public endpoints)
-  app.use(/^\/api(?!\/auth|\/login|\/logout|\/callback|\/subscription-tiers|\/compliance\/countries|\/chatbot|\/v1|\/country-launch-status|\/country-enquiries)/, isAuthenticated);
+  app.use(/^\/api(?!\/auth|\/login|\/logout|\/callback|\/subscription-tiers|\/compliance\/countries|\/chatbot|\/v1|\/country-launch-status|\/country-enquiries|\/public)/, isAuthenticated);
 
   // Municipalities
   app.get("/api/municipalities", async (req, res) => {
@@ -2766,6 +2766,7 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
 
       if (event.type === 'payment.succeeded') {
         const tenantId = event.payload?.metadata?.tenantId;
+        const purchaseId = event.payload?.metadata?.purchaseId;
         const tier = event.payload?.metadata?.tier || 'starter';
         const paymentId = event.payload?.id;
 
@@ -2776,6 +2777,66 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
             subscriptionTier: tier as any,
             subscriptionStatus: 'active',
           });
+        }
+
+        if (purchaseId) {
+          console.log(`Yoco payment succeeded for purchase ${purchaseId}, tier ${tier}`);
+          
+          const { pendingPurchases, appUsers, tenants, tenantUsers } = await import("@shared/schema");
+          const bcrypt = await import("bcryptjs");
+          
+          const [purchase] = await db.select().from(pendingPurchases).where(eq(pendingPurchases.id, purchaseId));
+          
+          if (purchase && purchase.status !== "completed") {
+            const passwordHash = await bcrypt.hash(purchase.tempPassword || "temppass123", 10);
+            
+            let [appUser] = await db.select().from(appUsers).where(eq(appUsers.email, purchase.email));
+            
+            if (!appUser) {
+              const names = (purchase.contactName || "").split(" ");
+              [appUser] = await db.insert(appUsers).values({
+                email: purchase.email,
+                passwordHash,
+                firstName: names[0] || "",
+                lastName: names.slice(1).join(" ") || "",
+                phone: purchase.phone,
+                mustChangePassword: true,
+              }).returning();
+            }
+
+            const slug = purchase.companyName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 50);
+            const [tenant] = await db.insert(tenants).values({
+              name: purchase.companyName,
+              slug: slug + '-' + Date.now(),
+              country: purchase.countryCode,
+              currency: purchase.currency,
+              status: 'active',
+            }).returning();
+
+            await db.insert(tenantUsers).values({
+              tenantId: tenant.id,
+              userId: appUser.id,
+              role: 'owner',
+              joinedAt: new Date(),
+            });
+
+            await tenantStorage.createSubscription({
+              tenantId: tenant.id,
+              tier: purchase.tier,
+              status: 'active',
+              billingInterval: purchase.billingPeriod as any,
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+            });
+
+            await db.update(pendingPurchases)
+              .set({ 
+                status: 'completed', 
+                completedAt: new Date(),
+                tenantId: tenant.id,
+              })
+              .where(eq(pendingPurchases.id, purchaseId));
+          }
         }
       }
 
@@ -2912,6 +2973,102 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete enquiry" });
+    }
+  });
+
+  // Public checkout endpoint (no auth required)
+  app.post("/api/public/checkout", async (req, res) => {
+    try {
+      const { tierId, amount, currency, countryCode, email, companyName, contactName, phone, billingPeriod } = req.body;
+
+      if (!tierId || !amount || !currency || !countryCode || !email || !companyName || !contactName) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const crypto = await import('crypto');
+      const tempPassword = crypto.randomBytes(8).toString('hex');
+
+      const { pendingPurchases } = await import("@shared/schema");
+      const [pendingPurchase] = await db.insert(pendingPurchases).values({
+        email,
+        companyName,
+        contactName,
+        phone,
+        countryCode,
+        currency,
+        tier: tierId,
+        amount,
+        billingPeriod: billingPeriod || "annual",
+        status: "pending",
+        tempPassword,
+      }).returning();
+
+      const baseUrl = process.env.BASE_URL || 
+        (process.env.REPLIT_DEV_DOMAIN 
+          ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+          : `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`);
+
+      const SADC_COUNTRIES = ["ZA", "BW", "LS", "MW", "MZ", "NA", "SZ", "TZ", "ZM", "ZW", "AO", "CD", "MG", "MU", "SC", "KM"];
+      const isSADC = SADC_COUNTRIES.includes(countryCode);
+
+      if (isSADC && currency === "ZAR") {
+        const { getYocoPaymentService } = await import("./yoco-payments");
+        const yocoService = getYocoPaymentService();
+        
+        if (!yocoService) {
+          return res.status(503).json({ error: "Yoco payment gateway not configured" });
+        }
+
+        const checkout = await yocoService.createCheckout({
+          amount: amount,
+          currency: 'ZAR',
+          successUrl: `${baseUrl}/purchase-success?purchaseId=${pendingPurchase.id}`,
+          cancelUrl: `${baseUrl}/pricing?cancelled=true`,
+          failureUrl: `${baseUrl}/pricing?failed=true`,
+          metadata: {
+            purchaseId: pendingPurchase.id,
+            tier: tierId,
+            email: email,
+          },
+        });
+
+        await db.update(pendingPurchases)
+          .set({ paymentProvider: 'yoco', paymentId: checkout.id })
+          .where(eq(pendingPurchases.id, pendingPurchase.id));
+
+        res.json({ redirectUrl: checkout.redirectUrl });
+      } else {
+        res.status(400).json({ error: "Only SADC region with ZAR is currently supported for direct checkout" });
+      }
+    } catch (error) {
+      console.error("Public checkout error:", error);
+      res.status(500).json({ error: "Failed to create checkout" });
+    }
+  });
+
+  // Get pending purchase details (for success page)
+  app.get("/api/public/purchase/:id", async (req, res) => {
+    try {
+      const { pendingPurchases } = await import("@shared/schema");
+      const [purchase] = await db.select().from(pendingPurchases).where(eq(pendingPurchases.id, req.params.id));
+      
+      if (!purchase) {
+        return res.status(404).json({ error: "Purchase not found" });
+      }
+
+      res.json({
+        id: purchase.id,
+        email: purchase.email,
+        companyName: purchase.companyName,
+        contactName: purchase.contactName,
+        tier: purchase.tier,
+        status: purchase.status,
+        tempPassword: purchase.status === "completed" ? purchase.tempPassword : null,
+        currency: purchase.currency,
+        amount: purchase.amount,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch purchase" });
     }
   });
 }

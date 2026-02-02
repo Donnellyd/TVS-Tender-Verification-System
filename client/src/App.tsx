@@ -27,6 +27,7 @@ import Pricing from "@/pages/pricing";
 import ComplianceExplorer from "@/pages/compliance-explorer";
 import Help from "@/pages/help";
 import CountryLaunch from "@/pages/country-launch";
+import PurchaseSuccess from "@/pages/purchase-success";
 import { Chatbot } from "@/components/Chatbot";
 
 function LoadingScreen() {
@@ -92,6 +93,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/pricing" component={Pricing} />
+        <Route path="/purchase-success" component={PurchaseSuccess} />
         <Route path="/compliance-explorer" component={ComplianceExplorer} />
         <Route path="/help" component={Help} />
         <Route component={Landing} />

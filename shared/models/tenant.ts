@@ -307,3 +307,64 @@ export const SUBSCRIPTION_TIERS = {
     ],
   },
 } as const;
+
+export const pendingPurchases = pgTable("pending_purchases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull(),
+  companyName: text("company_name").notNull(),
+  contactName: text("contact_name").notNull(),
+  phone: text("phone"),
+  countryCode: text("country_code").notNull(),
+  currency: text("currency").notNull().default("USD"),
+  tier: text("tier").notNull(),
+  amount: integer("amount").notNull(),
+  billingPeriod: text("billing_period").notNull().default("annual"),
+  status: text("status").notNull().default("pending"),
+  paymentProvider: text("payment_provider"),
+  paymentId: text("payment_id"),
+  tempPassword: text("temp_password"),
+  tenantId: varchar("tenant_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  index("idx_pending_purchase_email").on(table.email),
+  index("idx_pending_purchase_status").on(table.status),
+  index("idx_pending_purchase_payment").on(table.paymentId),
+]);
+
+export const insertPendingPurchaseSchema = createInsertSchema(pendingPurchases).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+
+export type InsertPendingPurchase = z.infer<typeof insertPendingPurchaseSchema>;
+export type PendingPurchase = typeof pendingPurchases.$inferSelect;
+
+export const appUsers = pgTable("app_users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash"),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  phone: text("phone"),
+  isEmailVerified: boolean("is_email_verified").default(false),
+  mustChangePassword: boolean("must_change_password").default(true),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires"),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_app_user_email").on(table.email),
+  index("idx_app_user_reset_token").on(table.passwordResetToken),
+]);
+
+export const insertAppUserSchema = createInsertSchema(appUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAppUser = z.infer<typeof insertAppUserSchema>;
+export type AppUser = typeof appUsers.$inferSelect;
