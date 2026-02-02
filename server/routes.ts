@@ -3,6 +3,8 @@ import express from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
 import { tenantStorage } from "./tenant-storage";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { countryLaunchStorage, seedCountryLaunchStatuses } from "./country-launch-storage";
 import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integrations/auth";
 import { tenantRouter } from "./tenant-routes";
@@ -1512,7 +1514,8 @@ Return a JSON object with scores for each criterion:
     documentUpload.single('file'), 
     async (req, res) => {
     try {
-      const { submissionId, requirementId } = req.params;
+      const submissionId = req.params.submissionId as string;
+      const requirementId = req.params.requirementId as string;
       // Handle FormData fields which may come as strings or arrays
       const documentDate = Array.isArray(req.body.documentDate) ? req.body.documentDate[0] : req.body.documentDate;
       const expiryDate = Array.isArray(req.body.expiryDate) ? req.body.expiryDate[0] : req.body.expiryDate;
@@ -2737,6 +2740,72 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
     }
   });
 
+  // === SENDGRID WEBHOOK FOR EMAIL EVENTS ===
+  // Note: Configure this URL in SendGrid: Settings -> Mail Settings -> Event Webhook
+  // Add query param ?token=YOUR_SECRET_TOKEN for basic verification
+  app.post("/api/webhooks/sendgrid", async (req, res) => {
+    try {
+      // Basic token verification - set SENDGRID_WEBHOOK_TOKEN env var and pass as query param
+      const webhookToken = process.env.SENDGRID_WEBHOOK_TOKEN;
+      const providedToken = req.query.token as string;
+      
+      if (webhookToken && providedToken !== webhookToken) {
+        console.log("[SendGrid Webhook] Invalid or missing token");
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const events = req.body;
+      
+      if (!Array.isArray(events)) {
+        return res.status(400).json({ error: "Invalid webhook payload" });
+      }
+
+      console.log(`[SendGrid Webhook] Received ${events.length} events`);
+
+      for (const event of events) {
+        const { email, event: eventType, sg_message_id, timestamp } = event;
+        
+        // Log each event for monitoring
+        console.log(`[SendGrid Event] ${eventType} - ${email} at ${new Date(timestamp * 1000).toISOString()}`);
+        
+        // Handle specific event types
+        switch (eventType) {
+          case 'delivered':
+            // Email successfully delivered
+            console.log(`[SendGrid] Email delivered to ${email}`);
+            break;
+          case 'open':
+            // Email was opened
+            console.log(`[SendGrid] Email opened by ${email}`);
+            break;
+          case 'click':
+            // Link in email was clicked
+            console.log(`[SendGrid] Link clicked by ${email}`);
+            break;
+          case 'bounce':
+            // Email bounced - may need to notify tenant
+            console.log(`[SendGrid] Email bounced for ${email}:`, event.reason);
+            break;
+          case 'spamreport':
+            // Email marked as spam - important for sender reputation
+            console.log(`[SendGrid] SPAM REPORT from ${email}`);
+            break;
+          case 'dropped':
+            // Email was dropped (suppression list, invalid, etc)
+            console.log(`[SendGrid] Email dropped for ${email}:`, event.reason);
+            break;
+          default:
+            console.log(`[SendGrid] Event ${eventType} for ${email}`);
+        }
+      }
+
+      res.status(200).json({ received: true });
+    } catch (error) {
+      console.error("[SendGrid Webhook Error]:", error);
+      res.status(500).json({ error: "Webhook processing failed" });
+    }
+  });
+
   // === STRIPE PAYMENT ROUTES ===
   const { stripeService } = await import("./stripeService");
   const { getStripePublishableKey } = await import("./stripeClient");
@@ -2809,12 +2878,13 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
         return res.status(400).json({ error: "Price ID is required" });
       }
 
-      // Check if tenant already has a Stripe customer ID
+      // Check if tenant already has a Stripe customer ID in subscription
       let customerId: string;
       const tenant = tenantId ? await tenantStorage.getTenant(tenantId) : null;
+      const subscription = tenantId ? await tenantStorage.getSubscription(tenantId) : null;
       
-      if (tenant?.stripeCustomerId) {
-        customerId = tenant.stripeCustomerId;
+      if (subscription?.stripeCustomerId) {
+        customerId = subscription.stripeCustomerId;
       } else {
         // Create a new customer
         const customer = await stripeService.createCustomer(
@@ -2824,9 +2894,9 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
         );
         customerId = customer.id;
         
-        // Save customer ID to tenant if tenant exists
-        if (tenant && tenantId) {
-          await tenantStorage.updateTenant(tenantId, { stripeCustomerId: customerId });
+        // Save customer ID to subscription if one exists
+        if (subscription && tenantId) {
+          await tenantStorage.updateSubscription(tenantId, { stripeCustomerId: customerId });
         }
       }
 
@@ -2851,15 +2921,15 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
     try {
       const { tenantId } = req.body;
       
-      const tenant = tenantId ? await tenantStorage.getTenant(tenantId) : null;
+      const subscription = tenantId ? await tenantStorage.getSubscription(tenantId) : null;
       
-      if (!tenant?.stripeCustomerId) {
+      if (!subscription?.stripeCustomerId) {
         return res.status(400).json({ error: "No subscription found for this organization" });
       }
 
       const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
       const session = await stripeService.createCustomerPortalSession(
-        tenant.stripeCustomerId,
+        subscription.stripeCustomerId,
         `${baseUrl}/billing`
       );
 
@@ -2873,15 +2943,15 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
   // Get current subscription status
   app.get("/api/stripe/subscription/:tenantId", isAuthenticated, async (req, res) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = req.params.tenantId as string;
       
-      const tenant = await tenantStorage.getTenant(tenantId);
+      const subscription = await tenantStorage.getSubscription(tenantId);
       
-      if (!tenant?.stripeCustomerId) {
+      if (!subscription?.stripeCustomerId) {
         return res.json({ subscription: null });
       }
 
-      const subscriptions = await stripeService.getCustomerSubscriptions(tenant.stripeCustomerId);
+      const subscriptions = await stripeService.getCustomerSubscriptions(subscription.stripeCustomerId);
       const activeSubscription = subscriptions.find((s: any) => 
         s.status === 'active' || s.status === 'trialing'
       );
@@ -2997,10 +3067,14 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
         if (tenantId) {
           console.log(`Yoco payment succeeded for tenant ${tenantId}, tier ${tier}, payment ${paymentId}`);
           
-          await tenantStorage.updateTenant(tenantId, {
-            subscriptionTier: tier as any,
-            subscriptionStatus: 'active',
-          });
+          // Update or create subscription for existing tenant
+          const existingSubscription = await tenantStorage.getSubscription(tenantId);
+          if (existingSubscription) {
+            await tenantStorage.updateSubscription(tenantId, {
+              tier: tier as "starter" | "professional" | "enterprise" | "government",
+              status: 'active',
+            });
+          }
         }
 
         if (purchaseId) {
@@ -3046,9 +3120,9 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
 
             await tenantStorage.createSubscription({
               tenantId: tenant.id,
-              tier: purchase.tier,
+              tier: purchase.tier as "starter" | "professional" | "enterprise" | "government",
               status: 'active',
-              billingInterval: purchase.billingPeriod as any,
+              billingInterval: purchase.billingPeriod as "monthly" | "annual",
               currentPeriodStart: new Date(),
               currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
             });
@@ -3107,7 +3181,8 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
   app.put("/api/country-launch-status/:countryCode", isAuthenticated, async (req, res) => {
     try {
       const { status, paymentGateway, currency, launchDate, notes } = req.body;
-      const updated = await countryLaunchStorage.updateCountryLaunchStatus(req.params.countryCode, {
+      const countryCode = req.params.countryCode as string;
+      const updated = await countryLaunchStorage.updateCountryLaunchStatus(countryCode, {
         status,
         paymentGateway,
         currency,
@@ -3135,7 +3210,8 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
 
   app.get("/api/country-enquiries/:id", isAuthenticated, async (req, res) => {
     try {
-      const enquiry = await countryLaunchStorage.getEnquiry(req.params.id);
+      const enquiryId = req.params.id as string;
+      const enquiry = await countryLaunchStorage.getEnquiry(enquiryId);
       if (!enquiry) {
         return res.status(404).json({ error: "Enquiry not found" });
       }
@@ -3173,11 +3249,11 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
 
   app.put("/api/country-enquiries/:id", isAuthenticated, async (req, res) => {
     try {
+      const enquiryId = req.params.id as string;
       const { status, notes } = req.body;
-      const updated = await countryLaunchStorage.updateEnquiry(req.params.id, {
+      const updated = await countryLaunchStorage.updateEnquiry(enquiryId, {
         status,
         notes,
-        followedUpAt: status === "contacted" ? new Date() : undefined,
       });
       if (!updated) {
         return res.status(404).json({ error: "Enquiry not found" });
@@ -3190,13 +3266,67 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
 
   app.delete("/api/country-enquiries/:id", isAuthenticated, async (req, res) => {
     try {
-      const deleted = await countryLaunchStorage.deleteEnquiry(req.params.id);
+      const enquiryId = req.params.id as string;
+      const deleted = await countryLaunchStorage.deleteEnquiry(enquiryId);
       if (!deleted) {
         return res.status(404).json({ error: "Enquiry not found" });
       }
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete enquiry" });
+    }
+  });
+
+  // IP Geolocation endpoint for country detection
+  app.get("/api/public/geolocate", async (req, res) => {
+    try {
+      // Get client IP from various headers (handle proxies)
+      const forwardedFor = req.headers['x-forwarded-for'];
+      let clientIp = forwardedFor 
+        ? (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0].trim())
+        : req.ip || req.socket.remoteAddress || '';
+      
+      // Remove IPv6 prefix if present
+      if (clientIp.startsWith('::ffff:')) {
+        clientIp = clientIp.substring(7);
+      }
+      
+      // Check if IP is private/loopback - if so, call without IP to get service's external view
+      const isPrivateIp = (ip: string) => {
+        return ip === '127.0.0.1' || 
+               ip === 'localhost' ||
+               ip.startsWith('10.') || 
+               ip.startsWith('192.168.') || 
+               ip.startsWith('172.16.') || 
+               ip.startsWith('172.17.') ||
+               ip.startsWith('172.18.') ||
+               ip.startsWith('172.19.') ||
+               ip.startsWith('172.2') ||
+               ip.startsWith('172.3') ||
+               ip === '::1';
+      };
+      
+      // Use ip-api.com - call without IP for private addresses to let service detect our public IP
+      const apiUrl = isPrivateIp(clientIp) 
+        ? 'http://ip-api.com/json/?fields=status,countryCode,country'
+        : `http://ip-api.com/json/${clientIp}?fields=status,countryCode,country`;
+      
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+      
+      if (data.status === 'success' && data.countryCode) {
+        return res.json({ 
+          success: true, 
+          countryCode: data.countryCode,
+          countryName: data.country
+        });
+      }
+      
+      // Fallback if geolocation fails
+      res.json({ success: false, countryCode: null, message: 'Could not determine location' });
+    } catch (error) {
+      console.error("Geolocation error:", error);
+      res.json({ success: false, countryCode: null, message: 'Geolocation service unavailable' });
     }
   });
 

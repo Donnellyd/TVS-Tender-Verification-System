@@ -289,6 +289,30 @@ export default function PricingPage() {
     ogDescription.setAttribute("content", "Choose from Starter ($499/yr), Professional ($1,499/yr), Enterprise ($3,999/yr), or contact us for Government solutions.");
   }, []);
 
+  // Auto-detect user's country based on IP
+  useEffect(() => {
+    const detectCountry = async () => {
+      try {
+        const response = await fetch('/api/public/geolocate');
+        const data = await response.json();
+        if (data.success && data.countryCode && !selectedCountry) {
+          // Check if the detected country is in our supported list
+          const supportedCountry = countries?.find(c => c.countryCode === data.countryCode);
+          if (supportedCountry) {
+            setSelectedCountry(data.countryCode);
+          }
+        }
+      } catch (error) {
+        console.log('Country detection unavailable');
+      }
+    };
+    
+    // Only run if countries are loaded and no country is selected yet
+    if (countries && countries.length > 0 && !selectedCountry) {
+      detectCountry();
+    }
+  }, [countries, selectedCountry]);
+
   const formatPrice = (monthly: number, annual: number) => {
     const price = isAnnual ? annual : monthly;
     if (price === -1) return "Custom";
