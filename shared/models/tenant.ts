@@ -368,3 +368,70 @@ export const insertAppUserSchema = createInsertSchema(appUsers).omit({
 
 export type InsertAppUser = z.infer<typeof insertAppUserSchema>;
 export type AppUser = typeof appUsers.$inferSelect;
+
+export const emailConfigTypeEnum = z.enum(["default", "custom"]);
+export const domainVerificationStatusEnum = z.enum(["pending", "verified", "failed", "expired"]);
+
+export const tenantEmailSettings = pgTable("tenant_email_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id).unique(),
+  emailConfigType: text("email_config_type").notNull().default("default"),
+  defaultFromEmail: text("default_from_email").default("veritasai@zd-solutions.com"),
+  defaultFromName: text("default_from_name").default("VeritasAI"),
+  customDomain: text("custom_domain"),
+  customFromEmail: text("custom_from_email"),
+  customFromName: text("custom_from_name"),
+  customReplyTo: text("custom_reply_to"),
+  sendgridDomainId: text("sendgrid_domain_id"),
+  domainVerificationStatus: text("domain_verification_status").default("pending"),
+  dnsRecords: jsonb("dns_records").default({}),
+  lastVerificationCheck: timestamp("last_verification_check"),
+  verificationAttempts: integer("verification_attempts").default(0),
+  setupCompletedAt: timestamp("setup_completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_tenant_email_settings_tenant").on(table.tenantId),
+  index("idx_tenant_email_settings_domain").on(table.customDomain),
+]);
+
+export const tenantEmailSettingsRelations = relations(tenantEmailSettings, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [tenantEmailSettings.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const insertTenantEmailSettingsSchema = createInsertSchema(tenantEmailSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  emailConfigType: emailConfigTypeEnum.optional(),
+  domainVerificationStatus: domainVerificationStatusEnum.optional(),
+});
+
+export type InsertTenantEmailSettings = z.infer<typeof insertTenantEmailSettingsSchema>;
+export type TenantEmailSettings = typeof tenantEmailSettings.$inferSelect;
+
+export const domainAuthenticationLogs = pgTable("domain_authentication_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id),
+  domain: text("domain").notNull(),
+  action: text("action").notNull(),
+  status: text("status").notNull(),
+  sendgridResponse: jsonb("sendgrid_response").default({}),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_domain_auth_log_tenant").on(table.tenantId),
+  index("idx_domain_auth_log_domain").on(table.domain),
+]);
+
+export const insertDomainAuthenticationLogSchema = createInsertSchema(domainAuthenticationLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertDomainAuthenticationLog = z.infer<typeof insertDomainAuthenticationLogSchema>;
+export type DomainAuthenticationLog = typeof domainAuthenticationLogs.$inferSelect;

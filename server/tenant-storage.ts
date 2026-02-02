@@ -269,7 +269,7 @@ class TenantStorage implements ITenantStorage {
     return {
       tenantId: apiKey.tenantId,
       keyId: apiKey.id,
-      permissions: apiKey.permissions || [],
+      permissions: Array.isArray(apiKey.permissions) ? apiKey.permissions as string[] : [],
       rateLimit: apiKey.rateLimit || 1000,
     };
   }

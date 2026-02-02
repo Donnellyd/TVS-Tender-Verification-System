@@ -21,6 +21,8 @@ import {
   notificationSettings,
   countryComplianceInfo,
   chatbotConversations,
+  tenantEmailSettings,
+  domainAuthenticationLogs,
   type InsertMunicipality,
   type Municipality,
   type InsertVendor,
@@ -70,6 +72,10 @@ import {
   type NotificationSettings,
   type NotificationChannel,
   type NotificationTrigger,
+  type InsertTenantEmailSettings,
+  type TenantEmailSettings,
+  type InsertDomainAuthenticationLog,
+  type DomainAuthenticationLog,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -203,6 +209,17 @@ export interface IStorage {
   // Notification Logs
   createNotificationLog(data: InsertNotificationLog): Promise<NotificationLog>;
   getNotificationLogs(vendorId?: string): Promise<NotificationLog[]>;
+
+  // Tenant Email Settings
+  getTenantEmailSettings(tenantId: string): Promise<TenantEmailSettings | undefined>;
+  createTenantEmailSettings(data: InsertTenantEmailSettings): Promise<TenantEmailSettings>;
+  updateTenantEmailSettings(tenantId: string, data: Partial<InsertTenantEmailSettings>): Promise<TenantEmailSettings | undefined>;
+  deleteTenantEmailSettings(tenantId: string): Promise<boolean>;
+  getPendingDomainVerifications(): Promise<TenantEmailSettings[]>;
+
+  // Domain Authentication Logs
+  createDomainAuthLog(data: InsertDomainAuthenticationLog): Promise<DomainAuthenticationLog>;
+  getDomainAuthLogs(tenantId: string): Promise<DomainAuthenticationLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -943,6 +960,52 @@ export class DatabaseStorage implements IStorage {
       .where(eq(chatbotConversations.sessionId, sessionId))
       .returning();
     return result;
+  }
+
+  // Tenant Email Settings
+  async getTenantEmailSettings(tenantId: string): Promise<TenantEmailSettings | undefined> {
+    const [result] = await db.select().from(tenantEmailSettings).where(eq(tenantEmailSettings.tenantId, tenantId));
+    return result;
+  }
+
+  async createTenantEmailSettings(data: InsertTenantEmailSettings): Promise<TenantEmailSettings> {
+    const [result] = await db.insert(tenantEmailSettings).values(data).returning();
+    return result;
+  }
+
+  async updateTenantEmailSettings(tenantId: string, data: Partial<InsertTenantEmailSettings>): Promise<TenantEmailSettings | undefined> {
+    const [result] = await db.update(tenantEmailSettings)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tenantEmailSettings.tenantId, tenantId))
+      .returning();
+    return result;
+  }
+
+  async deleteTenantEmailSettings(tenantId: string): Promise<boolean> {
+    const result = await db.delete(tenantEmailSettings).where(eq(tenantEmailSettings.tenantId, tenantId));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getPendingDomainVerifications(): Promise<TenantEmailSettings[]> {
+    return await db.select().from(tenantEmailSettings)
+      .where(
+        and(
+          eq(tenantEmailSettings.emailConfigType, 'custom'),
+          eq(tenantEmailSettings.domainVerificationStatus, 'pending')
+        )
+      );
+  }
+
+  // Domain Authentication Logs
+  async createDomainAuthLog(data: InsertDomainAuthenticationLog): Promise<DomainAuthenticationLog> {
+    const [result] = await db.insert(domainAuthenticationLogs).values(data).returning();
+    return result;
+  }
+
+  async getDomainAuthLogs(tenantId: string): Promise<DomainAuthenticationLog[]> {
+    return await db.select().from(domainAuthenticationLogs)
+      .where(eq(domainAuthenticationLogs.tenantId, tenantId))
+      .orderBy(desc(domainAuthenticationLogs.createdAt));
   }
 }
 

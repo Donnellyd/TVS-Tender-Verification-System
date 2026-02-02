@@ -2513,6 +2513,230 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
     }
   });
 
+  // === TENANT EMAIL SETTINGS ROUTES ===
+  const {
+    initializeTenantEmailSettings,
+    setupCustomDomain,
+    checkAndUpdateDomainVerification,
+    switchToDefaultEmail,
+    getEffectiveSenderInfo,
+    getDomainStatus,
+  } = await import("./sendgrid-domain-service");
+
+  // Helper function to validate tenant ownership
+  async function validateTenantOwnership(req: any, tenantId: string): Promise<boolean> {
+    const userId = req.user?.claims?.sub;
+    if (!userId) return false;
+    
+    const userTenants = await tenantStorage.getUserTenants(userId);
+    return userTenants.some(t => t.tenantId === tenantId);
+  }
+
+  // Get tenant email settings
+  app.get("/api/email-settings/:tenantId", isAuthenticated, async (req, res) => {
+    try {
+      const tenantId = req.params.tenantId as string;
+      
+      // Validate tenant ownership
+      const isOwner = await validateTenantOwnership(req, tenantId);
+      if (!isOwner) {
+        return res.status(403).json({ error: "Access denied: You do not have permission to access this tenant's settings" });
+      }
+      
+      const settings = await storage.getTenantEmailSettings(tenantId);
+      
+      if (!settings) {
+        return res.json({ 
+          emailConfigType: 'default',
+          fromEmail: 'veritasai@zd-solutions.com',
+          fromName: 'VeritasAI',
+          isConfigured: false
+        });
+      }
+      
+      res.json({
+        ...settings,
+        isConfigured: true
+      });
+    } catch (error) {
+      console.error("Error getting email settings:", error);
+      res.status(500).json({ error: "Failed to get email settings" });
+    }
+  });
+
+  // Initialize email settings (choose default or custom)
+  const initEmailSettingsSchema = z.object({
+    tenantId: z.string(),
+    emailConfigType: z.enum(["default", "custom"]),
+    customConfig: z.object({
+      domain: z.string().optional(),
+      fromEmail: z.string().email().optional(),
+      fromName: z.string().optional(),
+      replyTo: z.string().email().optional(),
+    }).optional(),
+  });
+
+  app.post("/api/email-settings/initialize", isAuthenticated, async (req, res) => {
+    try {
+      const parsed = initEmailSettingsSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.errors });
+      }
+
+      const { tenantId, emailConfigType, customConfig } = parsed.data;
+      
+      // Validate tenant ownership
+      const isOwner = await validateTenantOwnership(req, tenantId);
+      if (!isOwner) {
+        return res.status(403).json({ error: "Access denied: You do not have permission to modify this tenant's settings" });
+      }
+      
+      const settings = await initializeTenantEmailSettings(tenantId, emailConfigType, customConfig);
+      
+      res.json({ success: true, settings });
+    } catch (error) {
+      console.error("Error initializing email settings:", error);
+      res.status(500).json({ error: "Failed to initialize email settings" });
+    }
+  });
+
+  // Setup custom domain with SendGrid authentication
+  const setupDomainSchema = z.object({
+    tenantId: z.string(),
+    domain: z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/, "Invalid domain format"),
+    fromEmail: z.string().email(),
+    fromName: z.string().min(1),
+    replyTo: z.string().email().optional(),
+  });
+
+  app.post("/api/email-settings/setup-domain", isAuthenticated, async (req, res) => {
+    try {
+      const parsed = setupDomainSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request", details: parsed.error.errors });
+      }
+
+      const { tenantId, domain, fromEmail, fromName, replyTo } = parsed.data;
+      
+      // Validate tenant ownership
+      const isOwner = await validateTenantOwnership(req, tenantId);
+      if (!isOwner) {
+        return res.status(403).json({ error: "Access denied: You do not have permission to modify this tenant's settings" });
+      }
+      
+      const result = await setupCustomDomain(tenantId, domain, fromEmail, fromName, replyTo);
+      
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+      
+      res.json({ 
+        success: true, 
+        dnsRecords: result.dnsRecords,
+        message: "Domain authentication initiated. Please add the DNS records to your domain."
+      });
+    } catch (error) {
+      console.error("Error setting up custom domain:", error);
+      res.status(500).json({ error: "Failed to setup custom domain" });
+    }
+  });
+
+  // Verify domain DNS records
+  app.post("/api/email-settings/verify-domain", isAuthenticated, async (req, res) => {
+    try {
+      const { tenantId } = req.body;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant ID is required" });
+      }
+
+      // Validate tenant ownership
+      const isOwner = await validateTenantOwnership(req, tenantId);
+      if (!isOwner) {
+        return res.status(403).json({ error: "Access denied: You do not have permission to modify this tenant's settings" });
+      }
+
+      const result = await checkAndUpdateDomainVerification(tenantId);
+      
+      res.json({ 
+        success: true, 
+        verified: result.verified,
+        status: result.status,
+        message: result.verified 
+          ? "Domain verified successfully! You can now send emails from your custom domain." 
+          : "Domain not yet verified. Please ensure all DNS records are properly configured."
+      });
+    } catch (error) {
+      console.error("Error verifying domain:", error);
+      res.status(500).json({ error: "Failed to verify domain" });
+    }
+  });
+
+  // Switch to default email
+  app.post("/api/email-settings/use-default", isAuthenticated, async (req, res) => {
+    try {
+      const { tenantId } = req.body;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant ID is required" });
+      }
+
+      // Validate tenant ownership
+      const isOwner = await validateTenantOwnership(req, tenantId);
+      if (!isOwner) {
+        return res.status(403).json({ error: "Access denied: You do not have permission to modify this tenant's settings" });
+      }
+
+      await switchToDefaultEmail(tenantId);
+      
+      res.json({ 
+        success: true, 
+        message: "Switched to default VeritasAI email successfully."
+      });
+    } catch (error) {
+      console.error("Error switching to default email:", error);
+      res.status(500).json({ error: "Failed to switch to default email" });
+    }
+  });
+
+  // Get effective sender info (used by email sending service)
+  app.get("/api/email-settings/:tenantId/sender", isAuthenticated, async (req, res) => {
+    try {
+      const tenantId = req.params.tenantId as string;
+      
+      // Validate tenant ownership
+      const isOwner = await validateTenantOwnership(req, tenantId);
+      if (!isOwner) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const senderInfo = await getEffectiveSenderInfo(tenantId);
+      res.json(senderInfo);
+    } catch (error) {
+      console.error("Error getting sender info:", error);
+      res.status(500).json({ error: "Failed to get sender info" });
+    }
+  });
+
+  // Get domain authentication logs
+  app.get("/api/email-settings/:tenantId/logs", isAuthenticated, async (req, res) => {
+    try {
+      const tenantId = req.params.tenantId as string;
+      
+      // Validate tenant ownership
+      const isOwner = await validateTenantOwnership(req, tenantId);
+      if (!isOwner) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const logs = await storage.getDomainAuthLogs(tenantId);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error getting domain auth logs:", error);
+      res.status(500).json({ error: "Failed to get domain authentication logs" });
+    }
+  });
+
   // === STRIPE PAYMENT ROUTES ===
   const { stripeService } = await import("./stripeService");
   const { getStripePublishableKey } = await import("./stripeClient");

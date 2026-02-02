@@ -18,6 +18,7 @@ interface PurchaseData {
   tempPassword: string | null;
   currency: string;
   amount: number;
+  tenantId?: string;
 }
 
 export default function PurchaseSuccessPage() {
@@ -223,11 +224,26 @@ export default function PurchaseSuccessPage() {
               <h3 className="font-semibold mb-3">Next Steps</h3>
               <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
                 <li>Copy your email and temporary password above</li>
+                <li>Configure your email settings (optional)</li>
                 <li>Click "Log In to Your Account" below</li>
                 <li>Enter your credentials to access your dashboard</li>
                 <li>Change your password when prompted</li>
               </ol>
             </div>
+
+            {purchase.tenantId && (
+              <div className="border-t pt-6">
+                <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
+                  <Mail className="h-5 w-5 text-primary mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-medium mb-1">Email Configuration (After Login)</h4>
+                    <p className="text-sm text-muted-foreground">
+                      After logging in, you can configure email settings to send notifications from VeritasAI's email or your own company domain. Access this from your Settings menu.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

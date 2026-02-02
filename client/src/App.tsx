@@ -28,6 +28,7 @@ import ComplianceExplorer from "@/pages/compliance-explorer";
 import Help from "@/pages/help";
 import CountryLaunch from "@/pages/country-launch";
 import PurchaseSuccess from "@/pages/purchase-success";
+import EmailSetup from "@/pages/email-setup";
 import { Chatbot } from "@/components/Chatbot";
 
 function LoadingScreen() {
@@ -69,6 +70,7 @@ function AuthenticatedApp() {
             <Route path="/country-launch" component={CountryLaunch} />
             <Route path="/billing" component={Billing} />
             <Route path="/api-settings" component={ApiSettings} />
+            <Route path="/email-setup" component={EmailSetup} />
             <Route path="/pricing" component={Pricing} />
             <Route path="/compliance-explorer" component={ComplianceExplorer} />
             <Route path="/help" component={Help} />

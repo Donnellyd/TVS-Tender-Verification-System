@@ -101,6 +101,27 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Templates**: Award letters, rejection letters, document expiry alerts, bid received confirmations
 - **Monthly Limits**: Starter 500, Professional 3,000, Enterprise 15,000 emails (included free)
 
+### Email Domain Authentication
+- **Service**: `server/sendgrid-domain-service.ts` - SendGrid domain whitelabel API integration
+- **Schema**: `tenant_email_settings`, `domain_authentication_logs` tables in `shared/models/tenant.ts`
+- **Setup Wizard**: `/email-setup` page for client onboarding with email choice
+- **Options**:
+  - **Default Email**: Use veritasai@zd-solutions.com (instant, no configuration)
+  - **Custom Domain**: Configure client's own domain with DNS verification
+- **Features**:
+  - Automated DNS record generation for CNAME/DKIM setup
+  - Copy-to-clipboard DNS instructions for easy configuration
+  - Background verification job checks pending domains every 5 minutes
+  - Verification status tracking (pending, verified, failed)
+  - Audit logging for all domain authentication actions
+- **Background Job**: `server/domain-verification-job.ts` - Periodic verification checks
+- **API Endpoints**:
+  - `GET /api/email-settings/:tenantId` - Get tenant email settings
+  - `POST /api/email-settings/initialize` - Initialize email config (default/custom)
+  - `POST /api/email-settings/setup-domain` - Setup custom domain authentication
+  - `POST /api/email-settings/verify-domain` - Trigger DNS verification check
+  - `POST /api/email-settings/use-default` - Switch back to default email
+
 ### Payment Processing (Stripe + Yoco)
 - **Stripe Service**: `server/stripeClient.ts`, `server/stripeService.ts` - International cards via Replit connector
 - **Yoco Service**: `server/yoco-payments.ts` - South African local card payments (ZAR)
@@ -125,6 +146,7 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Enquiry Management**: Stores customer enquiries with follow-up tracking
 
 ## Recent Changes
+- Added email domain authentication system for client onboarding (default VeritasAI email or custom domain)
 - Added country launch control system for phased rollout (SA active first, others enquiry-only)
 - Added Yoco payment integration for South African local card payments (ZAR)
 - Rebranded from GLOBAL-TVS to VeritasAI with Circuit V logo

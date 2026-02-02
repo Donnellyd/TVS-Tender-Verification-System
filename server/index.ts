@@ -5,6 +5,7 @@ import { createServer } from "http";
 import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
+import { startDomainVerificationJob } from './domain-verification-job';
 
 const app = express();
 const httpServer = createServer(app);
@@ -178,6 +179,9 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      
+      // Start background domain verification job
+      startDomainVerificationJob();
     },
   );
 })();
