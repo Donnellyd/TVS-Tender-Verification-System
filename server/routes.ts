@@ -2912,12 +2912,12 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
       }
 
       const zarPricing: Record<string, { amount: number; tier: string; name: string }> = {
-        starter_annual: { amount: 899900, tier: 'starter', name: 'Starter Annual' },
-        starter_monthly: { amount: 89900, tier: 'starter', name: 'Starter Monthly' },
-        professional_annual: { amount: 2699900, tier: 'professional', name: 'Professional Annual' },
-        professional_monthly: { amount: 269900, tier: 'professional', name: 'Professional Monthly' },
-        enterprise_annual: { amount: 7199900, tier: 'enterprise', name: 'Enterprise Annual' },
-        enterprise_monthly: { amount: 719900, tier: 'enterprise', name: 'Enterprise Monthly' },
+        starter_annual: { amount: 1000, tier: 'starter', name: 'Starter Annual' },
+        starter_monthly: { amount: 100, tier: 'starter', name: 'Starter Monthly' },
+        professional_annual: { amount: 1100, tier: 'professional', name: 'Professional Annual' },
+        professional_monthly: { amount: 110, tier: 'professional', name: 'Professional Monthly' },
+        enterprise_annual: { amount: 1200, tier: 'enterprise', name: 'Enterprise Annual' },
+        enterprise_monthly: { amount: 120, tier: 'enterprise', name: 'Enterprise Monthly' },
       };
 
       const pricing = zarPricing[priceId];
