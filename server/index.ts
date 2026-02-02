@@ -17,6 +17,13 @@ declare module "http" {
 }
 
 async function initStripe() {
+  // Stripe temporarily disabled for initial deployment
+  // Re-enable by setting ENABLE_STRIPE=true in environment variables
+  if (process.env.ENABLE_STRIPE !== 'true') {
+    console.log('Stripe disabled (set ENABLE_STRIPE=true to enable)');
+    return;
+  }
+  
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
