@@ -127,8 +127,8 @@ const ZAR_TIERS = [
     id: "starter",
     name: "Starter",
     description: "For small procurement teams getting started",
-    priceMonthly: 1,
-    priceAnnual: 10,
+    priceMonthly: 899,
+    priceAnnual: 8999,
     bidsIncluded: 50,
     documentsIncluded: 500,
     storageGb: 5,
@@ -149,8 +149,8 @@ const ZAR_TIERS = [
     id: "professional",
     name: "Professional",
     description: "For growing organizations with regional needs",
-    priceMonthly: 1,
-    priceAnnual: 11,
+    priceMonthly: 2499,
+    priceAnnual: 24999,
     bidsIncluded: 300,
     documentsIncluded: 3000,
     storageGb: 25,
@@ -172,8 +172,8 @@ const ZAR_TIERS = [
     id: "enterprise",
     name: "Enterprise",
     description: "For large organizations with complex requirements",
-    priceMonthly: 1,
-    priceAnnual: 12,
+    priceMonthly: 6999,
+    priceAnnual: 69999,
     bidsIncluded: 1500,
     documentsIncluded: 15000,
     storageGb: 100,
@@ -229,7 +229,8 @@ export default function PricingPage() {
     email: "",
     companyName: "",
     contactName: "",
-    phone: ""
+    phone: "",
+    testPrice: ""
   });
   const [contactForm, setContactForm] = useState({
     name: "",
@@ -309,7 +310,9 @@ export default function PricingPage() {
       const tier = currentTiers.find(t => t.id === selectedTierId);
       if (!tier) return;
 
-      const amount = isAnnual ? tier.priceAnnual : tier.priceMonthly;
+      const tierAmount = isAnnual ? tier.priceAnnual : tier.priceMonthly;
+      const testPriceValue = checkoutForm.testPrice ? parseFloat(checkoutForm.testPrice) : null;
+      const amount = testPriceValue && testPriceValue > 0 ? testPriceValue : tierAmount;
       
       const response = await fetch("/api/public/checkout", {
         method: "POST",
@@ -740,6 +743,25 @@ export default function PricingPage() {
                 <p className="text-muted-foreground mt-1">
                   {isSADCRegion ? "Pay securely with Yoco (SA local cards)" : "Pay securely with Stripe"}
                 </p>
+              </div>
+              <div className="p-3 border border-dashed border-orange-400 rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                <div className="space-y-2">
+                  <Label htmlFor="test-price" className="text-orange-600 dark:text-orange-400 text-xs font-medium">
+                    Test Mode: Override Price ({currencySymbol})
+                  </Label>
+                  <Input 
+                    id="test-price" 
+                    type="number"
+                    placeholder="e.g. 10 for R10"
+                    value={checkoutForm.testPrice}
+                    onChange={(e) => setCheckoutForm({...checkoutForm, testPrice: e.target.value})}
+                    className="border-orange-300"
+                    data-testid="input-test-price"
+                  />
+                  <p className="text-xs text-orange-600 dark:text-orange-400">
+                    Leave empty to use full price. Enter a small amount (e.g. 10) for testing.
+                  </p>
+                </div>
               </div>
             </div>
             <DialogFooter>
