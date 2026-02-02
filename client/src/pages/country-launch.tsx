@@ -394,7 +394,6 @@ export default function CountryLaunchPage() {
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
                     <SelectItem value="yoco">Yoco (ZAR)</SelectItem>
-                    <SelectItem value="stripe">Stripe (International)</SelectItem>
                     <SelectItem value="paystack">Paystack (Africa)</SelectItem>
                     <SelectItem value="flutterwave">Flutterwave (Africa)</SelectItem>
                   </SelectContent>
