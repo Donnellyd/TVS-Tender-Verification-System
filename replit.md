@@ -146,6 +146,9 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Enquiry Management**: Stores customer enquiries with follow-up tracking
 
 ## Recent Changes
+- Added IP geolocation endpoint for automatic country detection on pricing page (using ip-api.com)
+- Added SendGrid webhook handler for email event tracking (delivered, opened, bounced, spam) with token-based auth
+- Fixed 31 TypeScript LSP errors (imports, type casting, subscription routing)
 - Added email domain authentication system for client onboarding (default VeritasAI email or custom domain)
 - Added country launch control system for phased rollout (SA active first, others enquiry-only)
 - Added Yoco payment integration for South African local card payments (ZAR)
