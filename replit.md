@@ -122,20 +122,18 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
   - `POST /api/email-settings/verify-domain` - Trigger DNS verification check
   - `POST /api/email-settings/use-default` - Switch back to default email
 
-### Payment Processing (Stripe + Yoco)
-- **Stripe Service**: `server/stripeClient.ts`, `server/stripeService.ts` - International cards via Replit connector
+### Payment Processing (Yoco - South Africa)
 - **Yoco Service**: `server/yoco-payments.ts` - South African local card payments (ZAR)
-- **Webhooks**: `server/webhookHandlers.ts` (Stripe), `/api/webhooks/yoco` (Yoco)
-- **Checkout**: Stripe Checkout for USD, Yoco Checkout for ZAR
-- **Pricing**: Annual billing with monthly equivalent display ($49-$399/month, billed annually)
-- **Seed Script**: `server/seed-stripe-products.ts` - Creates products/prices in Stripe
-- **Environment**: `YOCO_SECRET_KEY` required for Yoco, Stripe via Replit connector
+- **Webhooks**: `/api/webhooks/yoco` (Yoco payment events)
+- **Checkout**: Yoco Checkout for ZAR payments
+- **Pricing**: Annual billing with monthly equivalent display (R899-R6,999/month ZAR)
+- **Environment**: `YOCO_SECRET_KEY` required for Yoco
+- **Stripe (Disabled)**: Files preserved in `server/stripe*.ts`, docs in `docs/stripe-setup-guide.md`
 
 ## Development Commands
 - `npm run dev`: Start development server
 - `npm run db:push`: Push schema changes to database
 - `npm run db:push --force`: Force push schema changes
-- `npx tsx server/seed-stripe-products.ts`: Seed Stripe products (run once per Stripe account)
 
 ### Country Launch Control System
 - **Purpose**: Phased country-by-country rollout with payment gateway control
@@ -146,6 +144,9 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Enquiry Management**: Stores customer enquiries with follow-up tracking
 
 ## Recent Changes
+- Removed Stripe integration from server code (files preserved for future re-integration)
+- Created docs/stripe-setup-guide.md with complete re-integration instructions
+- App now uses Yoco only for South African (ZAR) payments
 - Added IP geolocation endpoint for automatic country detection on pricing page (using ip-api.com)
 - Added SendGrid webhook handler for email event tracking (delivered, opened, bounced, spam) with token-based auth
 - Fixed 31 TypeScript LSP errors (imports, type casting, subscription routing)
@@ -153,7 +154,6 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - Added country launch control system for phased rollout (SA active first, others enquiry-only)
 - Added Yoco payment integration for South African local card payments (ZAR)
 - Rebranded from GLOBAL-TVS to VeritasAI with Circuit V logo
-- Integrated Stripe payment processing with webhook handling
 - Implemented SendGrid email notifications with template support
 - Added multi-tenant architecture with complete tenant isolation
 - Implemented subscription billing with 4 tiers ($49-$399/month, billed annually)
