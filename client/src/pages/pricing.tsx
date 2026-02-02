@@ -709,7 +709,7 @@ export default function PricingPage() {
                 Complete Your Purchase
               </DialogTitle>
               <DialogDescription>
-                Enter your details to proceed to {isSADCRegion ? "Yoco" : "Stripe"} checkout for the {currentTiers.find(t => t.id === selectedTierId)?.name} plan.
+                Enter your details to proceed to checkout for the {currentTiers.find(t => t.id === selectedTierId)?.name} plan.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -765,7 +765,7 @@ export default function PricingPage() {
                   </span>
                 </div>
                 <p className="text-muted-foreground mt-1">
-                  {isSADCRegion ? "Pay securely with Yoco (SA local cards)" : "Pay securely with Stripe"}
+                  {isSADCRegion ? "Pay securely with Yoco (SA local cards)" : "Contact us for payment options"}
                 </p>
               </div>
               <div className="p-3 border border-dashed border-orange-400 rounded-lg bg-orange-50 dark:bg-orange-950/20">

@@ -62,35 +62,13 @@ export default function BillingPage() {
     if (!tenantId) return;
     setPaymentLoading(true);
     try {
-      const response = await apiRequest("/api/yoco/create-checkout", {
-        method: "POST",
-        body: JSON.stringify({ priceId, tenantId }),
-      });
+      const response = await apiRequest("POST", "/api/yoco/create-checkout", { priceId, tenantId });
       const data = await response.json();
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
       }
     } catch (error) {
       console.error("Yoco payment error:", error);
-    } finally {
-      setPaymentLoading(false);
-    }
-  };
-
-  const handleStripePayment = async (priceId: string) => {
-    if (!tenantId) return;
-    setPaymentLoading(true);
-    try {
-      const response = await apiRequest("/api/stripe/checkout", {
-        method: "POST",
-        body: JSON.stringify({ priceId, tenantId }),
-      });
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error("Stripe payment error:", error);
     } finally {
       setPaymentLoading(false);
     }
@@ -201,21 +179,6 @@ export default function BillingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center">
-                    <CreditCard className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-medium">International Cards (Stripe)</p>
-                    <p className="text-sm text-muted-foreground">Visa, Mastercard, Amex - USD billing</p>
-                  </div>
-                </div>
-                <Button variant="outline" data-testid="button-pay-stripe">
-                  Pay with Card
-                </Button>
-              </div>
-              
               {yocoConfigured?.configured && (
                 <div className="flex items-center justify-between p-4 border rounded-lg border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
                   <div className="flex items-center gap-4">
