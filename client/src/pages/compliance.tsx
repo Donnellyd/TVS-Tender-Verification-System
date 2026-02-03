@@ -164,6 +164,7 @@ export default function Compliance() {
       <PageHeader
         title="Compliance Management"
         description="Manage compliance checks and verification results"
+        moduleId="compliance"
         action={{
           label: "New Check",
           icon: <Plus className="h-4 w-4 mr-2" />,

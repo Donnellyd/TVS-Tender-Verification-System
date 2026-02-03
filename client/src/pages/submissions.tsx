@@ -498,6 +498,7 @@ export default function Submissions() {
       <PageHeader
         title="Bid Submissions"
         description="Track and manage vendor bid submissions, run compliance checks, and generate award/rejection letters"
+        moduleId="tenders"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

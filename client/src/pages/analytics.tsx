@@ -94,6 +94,7 @@ export default function Analytics() {
       <PageHeader
         title="Analytics & Reporting"
         description="Insights into tender management and compliance performance"
+        moduleId="analytics"
       />
 
       {/* Controls */}

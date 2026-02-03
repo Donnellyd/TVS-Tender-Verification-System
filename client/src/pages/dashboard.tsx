@@ -55,6 +55,7 @@ export default function Dashboard() {
       <PageHeader
         title="Dashboard"
         description="Overview of tender vetting and verification activities"
+        moduleId="dashboard"
       />
 
       {/* Stats Grid */}

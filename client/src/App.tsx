@@ -30,6 +30,9 @@ import CountryLaunch from "@/pages/country-launch";
 import PurchaseSuccess from "@/pages/purchase-success";
 import EmailSetup from "@/pages/email-setup";
 import { Chatbot } from "@/components/Chatbot";
+import { GlobalHelpSearch } from "@/components/GlobalHelpSearch";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import { GuidedTour } from "@/components/GuidedTour";
 
 function LoadingScreen() {
   return (
@@ -113,6 +116,9 @@ function App() {
         <Toaster />
         <Router />
         <Chatbot />
+        <GlobalHelpSearch />
+        <KeyboardShortcuts />
+        <GuidedTour />
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -292,6 +292,7 @@ export default function EmailTemplates() {
       <PageHeader
         title="Email Templates"
         description="Manage email templates for tender communications (award, rejection, clarification letters)"
+        moduleId="email-templates"
         action={{
           label: "Add Template",
           icon: <Plus className="h-4 w-4 mr-2" />,

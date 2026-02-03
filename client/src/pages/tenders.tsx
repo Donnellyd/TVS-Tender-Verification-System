@@ -220,6 +220,7 @@ export default function Tenders() {
       <PageHeader
         title="Tender Management"
         description="Create and manage tenders for procurement"
+        moduleId="tenders"
         action={{
           label: "Add Tender",
           icon: <Plus className="h-4 w-4 mr-2" />,

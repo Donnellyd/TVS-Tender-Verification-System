@@ -3,10 +3,12 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { HelpManual } from "@/components/HelpManual";
 
 interface PageHeaderProps {
   title: string;
   description?: string;
+  moduleId?: string;
   action?: {
     label: string;
     icon?: React.ReactNode;
@@ -15,7 +17,7 @@ interface PageHeaderProps {
   };
 }
 
-export function PageHeader({ title, description, action }: PageHeaderProps) {
+export function PageHeader({ title, description, moduleId, action }: PageHeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-background border-b border-border">
       <div className="flex h-16 items-center justify-between gap-4 px-6">
@@ -35,6 +37,7 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
               {action.label}
             </Button>
           )}
+          <HelpManual moduleId={moduleId || "dashboard"} />
           <Button variant="ghost" size="icon" className="relative" data-testid="button-notifications">
             <Bell className="h-5 w-5" />
             <Badge 

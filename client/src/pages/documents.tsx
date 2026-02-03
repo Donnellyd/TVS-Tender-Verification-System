@@ -189,6 +189,7 @@ export default function Documents() {
       <PageHeader
         title="Document Management"
         description="Manage vendor documents and certificates"
+        moduleId="documents"
         action={{
           label: "Add Document",
           icon: <Plus className="h-4 w-4 mr-2" />,

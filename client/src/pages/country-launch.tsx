@@ -138,6 +138,7 @@ export default function CountryLaunchPage() {
       <PageHeader
         title="Country Launch Management"
         description="Control which countries have active payment vs enquiry-only access"
+        moduleId="country-launch"
       />
 
       <div className="flex-1 overflow-auto p-6">

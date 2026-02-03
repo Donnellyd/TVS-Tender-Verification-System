@@ -179,6 +179,7 @@ export default function Vendors() {
       <PageHeader
         title="Vendor Management"
         description="Register and manage vendors for tender submissions"
+        moduleId="vendors"
         action={{
           label: "Add Vendor",
           icon: <Plus className="h-4 w-4 mr-2" />,
