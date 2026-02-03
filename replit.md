@@ -33,7 +33,7 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
   - SaaS: Billing, ComplianceRules, ApiSettings
   - Communication: EmailTemplates, WhatsappTemplates
   - Public: Pricing, ComplianceExplorer, Help
-- **Components**: AppSidebar, PageHeader, StatsCard, StatusBadge, EmptyState, DataTableSkeleton, ThemeToggle, Chatbot
+- **Components**: AppSidebar, PageHeader, StatsCard, StatusBadge, EmptyState, DataTableSkeleton, ThemeToggle, Chatbot, HelpManual, GlobalHelpSearch, KeyboardShortcuts, GuidedTour, FieldHelp, StatusBadgeHelp
 - **Styling**: Tailwind CSS with professional blue/teal color scheme, dark mode support
 - **State Management**: TanStack Query for server state
 - **Routing**: Wouter
@@ -143,7 +143,21 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Public Flow**: Pricing page checks country status - shows payment for active, enquiry form for others
 - **Enquiry Management**: Stores customer enquiries with follow-up tracking
 
+### Comprehensive Help System
+- **Help Components**: `client/src/components/` - HelpManual, GlobalHelpSearch, KeyboardShortcuts, GuidedTour, FieldHelp, StatusBadgeHelp
+- **Help Content**: `client/src/lib/helpContent.ts` - Comprehensive content for all 12 modules
+- **Features**:
+  - Context-sensitive help: Each page header has a help button opening module-specific documentation
+  - Global search: Ctrl+K opens a command palette to search across all help content
+  - Keyboard shortcuts: Ctrl+/ shows all available keyboard shortcuts
+  - Guided tour: First-time users see an interactive tour (localStorage-persisted)
+  - Form field help: FieldHelp component provides tooltips for form fields
+  - Status explanations: StatusBadgeHelp explains what each status means when clicked
+- **Modules Covered**: Dashboard, Vendors, Tenders, Documents, Compliance, Analytics, Billing, API Settings, Email Templates, Country Launch, Pricing, Help
+- **Integration**: PageHeader accepts moduleId prop for context-sensitive help
+
 ## Recent Changes
+- Added comprehensive help system with context-sensitive documentation, global search (Ctrl+K), keyboard shortcuts (Ctrl+/), and guided tour
 - Removed Stripe integration from server code (files preserved for future re-integration)
 - Created docs/stripe-setup-guide.md with complete re-integration instructions
 - App now uses Yoco only for South African (ZAR) payments
