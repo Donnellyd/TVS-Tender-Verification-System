@@ -28,8 +28,23 @@ import { z } from "zod";
 import OpenAI from "openai";
 import multer from "multer";
 import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const { PDFParse } = require("pdf-parse");
+import { fileURLToPath, pathToFileURL } from "url";
+
+// Handle both ESM and CJS contexts for createRequire
+const getModuleUrl = () => {
+  // @ts-ignore - import.meta.url may be undefined in CJS bundle
+  if (typeof import.meta !== 'undefined' && import.meta.url) {
+    // @ts-ignore
+    return import.meta.url;
+  }
+  // Fallback for CJS context (esbuild bundle)
+  if (typeof __filename !== 'undefined') {
+    return pathToFileURL(__filename).href;
+  }
+  return 'file://';
+};
+const require = createRequire(getModuleUrl());
+const pdfParse = require("pdf-parse");
 
 // Multer config for PDF parsing (tender documents)
 const pdfUpload = multer({ 
@@ -740,9 +755,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ error: "PDF file is required" });
       }
 
-      // Parse PDF to extract text using pdf-parse v2 API
-      const parser = new PDFParse({ data: req.file.buffer });
-      const result = await parser.getText();
+      // Parse PDF to extract text using pdf-parse
+      const result = await pdfParse(req.file.buffer);
       const extractedText = result.text;
 
       if (!extractedText || extractedText.trim().length === 0) {

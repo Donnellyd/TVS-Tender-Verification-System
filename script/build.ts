@@ -54,6 +54,14 @@ async function buildAll() {
     define: {
       "process.env.NODE_ENV": '"production"',
     },
+    banner: {
+      js: `
+const { createRequire: topLevelCreateRequire } = require('module');
+const { fileURLToPath: topLevelFileURLToPath, pathToFileURL: topLevelPathToFileURL } = require('url');
+const topLevelUrl = typeof __filename !== 'undefined' ? topLevelPathToFileURL(__filename).href : 'file://';
+`,
+    },
+    inject: [],
     minify: true,
     external: externals,
     logLevel: "info",
