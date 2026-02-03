@@ -1,0 +1,107 @@
+Help System Implementation Prompt
+Use this prompt to instruct an AI agent to create a comprehensive help system for any Replit application.
+
+Prompt
+Create a comprehensive integrated help system for this application with the following components:
+### 1. HelpManual Component
+Create a `HelpManual` component that displays context-sensitive help in a slide-out Sheet panel. It should include:
+- **Guide tab**: Overview sections explaining the module's purpose and features
+- **Quick Start tab**: Numbered step-by-step instructions to get started
+- **FAQ tab**: Common questions and answers in an accordion
+- **Tips tab**: Best practices and pro tips
+The component should:
+- Accept a `moduleId` prop to load the appropriate help content
+- Use a Sheet component that slides in from the right
+- Include tabs for Guide, Quick Start, FAQ, and Tips
+- Show related modules as clickable badges
+### 2. Help Content File
+Create a `helpContent.ts` file in `lib/` that exports help content for each module. Each module should have:
+```typescript
+interface ModuleHelp {
+  title: string;
+  description: string;
+  sections: Array<{ title: string; content: string }>;
+  faqs: Array<{ question: string; answer: string }>;
+  quickStart: Array<{ step: number; title: string; description: string }>;
+  bestPractices: string[];
+  relatedModules?: string[];
+}
+Create content for every page/module in the application covering:
+
+What the module does
+Key features and capabilities
+Common workflows
+At least 3-5 FAQs per module
+4-5 quick start steps
+3-5 best practices
+3. FieldHelp Component
+Create a FieldHelp component for form field tooltips:
+
+Small info icon (HelpCircle) next to field labels
+Popover on click showing field explanation
+Props: fieldId and content (or lookup from a fieldHelp object)
+Use this for complex fields like:
+
+Financial calculations (depreciation, residual value)
+Date fields with specific requirements
+Fields with business rules or constraints
+4. StatusBadgeHelp Component
+Create a StatusBadgeHelp component that replaces regular status badges:
+
+Clickable badge that shows a popover with status explanation
+Props: status (the status value), type (category like "asset", "workOrder", "transfer")
+Define status definitions for each type with label and description
+Auto-detect badge variant based on status (success, warning, destructive)
+5. GlobalHelpSearch Component
+Create a global help search using Command/CommandPalette pattern:
+
+Trigger with Ctrl+K keyboard shortcut
+Search across all help content (titles, FAQs, sections)
+Show categorized results
+Click to open the relevant help module
+6. KeyboardShortcuts Component
+Create a dialog showing all keyboard shortcuts:
+
+Trigger with Ctrl+/ (or Ctrl+?)
+Display shortcuts in a grid/table format
+Include shortcuts for: Help search, shortcuts dialog, navigation
+7. GuidedTour Component
+Create a first-time user walkthrough:
+
+Highlight key UI elements with tooltips
+Step through main features
+Store completion state in localStorage
+Include skip and restart options
+8. Integration Requirements
+Add HelpManual button to every page header (PageHeader component)
+Add GlobalHelpSearch to the app header
+Add KeyboardShortcuts trigger to the app
+Add StatusBadgeHelp to all status columns in data tables
+Add FieldHelp to complex form fields
+Trigger GuidedTour on first visit
+9. Keyboard Shortcuts to Implement
+Ctrl+K: Open global help search
+Ctrl+/ or Ctrl+?: Open keyboard shortcuts
+Ctrl+H: Open current page help (optional)
+Escape: Close any open help modal/sheet
+10. Styling Guidelines
+Use existing UI components (Sheet, Dialog, Popover, Tabs, Accordion)
+Help button should be clearly labeled "Help" not just an icon
+Use consistent iconography (HelpCircle, Book, Lightbulb, etc.)
+Ensure all help panels are scrollable for long content
+---
+## File Structure
+After implementation, you should have:
+client/src/ ├── components/ │ ├── HelpManual.tsx │ ├── FieldHelp.tsx │ ├── StatusBadgeHelp.tsx │ ├── GlobalHelpSearch.tsx │ ├── KeyboardShortcuts.tsx │ ├── GuidedTour.tsx │ └── PageHeader.tsx (updated) ├── lib/ │ └── helpContent.ts └── App.tsx (updated with global components)
+
+---
+## Verification Checklist
+After implementation, verify:
+- [ ] Every page has a visible "Help" button in the header
+- [ ] Clicking Help opens a sheet with Guide, Quick Start, FAQ, Tips tabs
+- [ ] Ctrl+K opens global help search
+- [ ] Ctrl+/ opens keyboard shortcuts dialog
+- [ ] Status badges in tables are clickable and show explanations
+- [ ] Complex form fields have info icons with tooltips
+- [ ] First-time users see a guided tour
+- [ ] All keyboard shortcuts work correctly
