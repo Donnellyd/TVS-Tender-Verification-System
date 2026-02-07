@@ -18,6 +18,7 @@ import {
   Globe,
   HelpCircle,
   Rocket,
+  Award,
 } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import {
@@ -41,6 +42,7 @@ const mainNavItems = [
   { title: "Vendors", url: "/vendors", icon: Users },
   { title: "Tenders", url: "/tenders", icon: FileText },
   { title: "Submissions", url: "/submissions", icon: Send },
+  { title: "Awards & SLA", url: "/award-management", icon: Award },
   { title: "Documents", url: "/documents", icon: FolderOpen },
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },

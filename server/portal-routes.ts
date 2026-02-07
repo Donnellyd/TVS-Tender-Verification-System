@@ -485,3 +485,174 @@ portalRouter.get('/api/portal/compliance-check/:tenderId', portalAuth, async (re
     res.status(500).json({ error: 'Failed to perform compliance check' });
   }
 });
+
+portalRouter.get('/api/portal/awards', portalAuth, async (req: Request, res: Response) => {
+  try {
+    const vendor = req.portalVendor!;
+    const acceptances = await storage.getVendorAwardAcceptances(vendor.id);
+    
+    const enriched = await Promise.all(acceptances.map(async (a) => {
+      const tender = await storage.getTender(a.tenderId);
+      const slaDocuments = await storage.getTenderSlaDocuments(a.tenderId);
+      return {
+        ...a,
+        tender: tender ? { id: tender.id, title: tender.title, tenderNumber: tender.tenderNumber, estimatedValue: tender.estimatedValue, currency: tender.currency } : null,
+        slaDocuments: slaDocuments.map(s => ({ id: s.id, title: s.title, description: s.description, isRequired: s.isRequired })),
+        hasSla: slaDocuments.length > 0,
+      };
+    }));
+    
+    res.json(enriched);
+  } catch (error) {
+    console.error('Get awards error:', error);
+    res.status(500).json({ error: 'Failed to fetch awards' });
+  }
+});
+
+portalRouter.get('/api/portal/awards/:id', portalAuth, async (req: Request, res: Response) => {
+  try {
+    const vendor = req.portalVendor!;
+    const acceptance = await storage.getAwardAcceptance(req.params.id);
+    
+    if (!acceptance) {
+      return res.status(404).json({ error: 'Award not found' });
+    }
+    
+    if (acceptance.vendorId !== vendor.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const tender = await storage.getTender(acceptance.tenderId);
+    const submission = await storage.getBidSubmission(acceptance.submissionId);
+    const slaDocuments = await storage.getTenderSlaDocuments(acceptance.tenderId);
+    
+    res.json({
+      ...acceptance,
+      tender: tender ? { id: tender.id, title: tender.title, tenderNumber: tender.tenderNumber, estimatedValue: tender.estimatedValue, currency: tender.currency, description: tender.description } : null,
+      submission: submission ? { id: submission.id, bidAmount: submission.bidAmount, currency: submission.currency, totalScore: submission.totalScore } : null,
+      slaDocuments,
+    });
+  } catch (error) {
+    console.error('Get award details error:', error);
+    res.status(500).json({ error: 'Failed to fetch award details' });
+  }
+});
+
+portalRouter.get('/api/portal/awards/:id/sla/:slaId', portalAuth, async (req: Request, res: Response) => {
+  try {
+    const vendor = req.portalVendor!;
+    const acceptance = await storage.getAwardAcceptance(req.params.id);
+    
+    if (!acceptance || acceptance.vendorId !== vendor.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const sla = await storage.getTenderSlaDocument(req.params.slaId);
+    if (!sla || sla.tenderId !== acceptance.tenderId) {
+      return res.status(404).json({ error: 'SLA document not found' });
+    }
+    
+    res.json(sla);
+  } catch (error) {
+    console.error('Get SLA document error:', error);
+    res.status(500).json({ error: 'Failed to fetch SLA document' });
+  }
+});
+
+const signAwardSchema = z.object({
+  signatoryName: z.string().min(2, 'Full name is required'),
+  signatoryTitle: z.string().min(2, 'Job title is required'),
+  signatureData: z.string().min(1, 'Signature is required'),
+  slaAccepted: z.boolean().optional(),
+});
+
+portalRouter.post('/api/portal/awards/:id/sign', portalAuth, async (req: Request, res: Response) => {
+  try {
+    const vendor = req.portalVendor!;
+    const acceptance = await storage.getAwardAcceptance(req.params.id);
+    
+    if (!acceptance) {
+      return res.status(404).json({ error: 'Award not found' });
+    }
+    
+    if (acceptance.vendorId !== vendor.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    if (acceptance.status === 'signed') {
+      return res.status(400).json({ error: 'Award has already been signed' });
+    }
+    
+    if (acceptance.status === 'declined') {
+      return res.status(400).json({ error: 'Award has been declined and cannot be signed' });
+    }
+    
+    const data = signAwardSchema.parse(req.body);
+    
+    const slaDocuments = await storage.getTenderSlaDocuments(acceptance.tenderId);
+    const requiredSlas = slaDocuments.filter(s => s.isRequired);
+    if (requiredSlas.length > 0 && !data.slaAccepted) {
+      return res.status(400).json({ error: 'You must accept the SLA before signing' });
+    }
+    
+    const ipAddress = req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
+    
+    const updated = await storage.updateAwardAcceptance(acceptance.id, {
+      status: 'signed',
+      signatoryName: data.signatoryName,
+      signatoryTitle: data.signatoryTitle,
+      signatureData: data.signatureData,
+      signedAt: new Date(),
+      slaAccepted: requiredSlas.length > 0 ? data.slaAccepted : null,
+      slaAcceptedAt: requiredSlas.length > 0 && data.slaAccepted ? new Date() : null,
+      ipAddress,
+    });
+    
+    res.json(updated);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
+    console.error('Sign award error:', error);
+    res.status(500).json({ error: 'Failed to sign award' });
+  }
+});
+
+const declineAwardSchema = z.object({
+  declineReason: z.string().min(10, 'Please provide a reason for declining'),
+});
+
+portalRouter.post('/api/portal/awards/:id/decline', portalAuth, async (req: Request, res: Response) => {
+  try {
+    const vendor = req.portalVendor!;
+    const acceptance = await storage.getAwardAcceptance(req.params.id);
+    
+    if (!acceptance) {
+      return res.status(404).json({ error: 'Award not found' });
+    }
+    
+    if (acceptance.vendorId !== vendor.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    if (acceptance.status === 'signed') {
+      return res.status(400).json({ error: 'Award has already been signed and cannot be declined' });
+    }
+    
+    const data = declineAwardSchema.parse(req.body);
+    
+    const updated = await storage.updateAwardAcceptance(acceptance.id, {
+      status: 'declined',
+      declinedAt: new Date(),
+      declineReason: data.declineReason,
+    });
+    
+    res.json(updated);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
+    console.error('Decline award error:', error);
+    res.status(500).json({ error: 'Failed to decline award' });
+  }
+});

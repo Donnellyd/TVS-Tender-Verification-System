@@ -34,12 +34,14 @@ import { GlobalHelpSearch } from "@/components/GlobalHelpSearch";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { GuidedTour } from "@/components/GuidedTour";
 import VendorMessages from "@/pages/vendor-messages";
+import AwardManagement from "@/pages/award-management";
 import PortalRegister from "@/pages/portal-register";
 import PortalVerify from "@/pages/portal-verify";
 import PortalDashboard from "@/pages/portal-dashboard";
 import PortalSubmit from "@/pages/portal-submit";
 import PortalSubmissions from "@/pages/portal-submissions";
 import PortalMessages from "@/pages/portal-messages";
+import PortalAwards from "@/pages/portal-awards";
 
 function LoadingScreen() {
   return (
@@ -85,6 +87,7 @@ function AuthenticatedApp() {
             <Route path="/compliance-explorer" component={ComplianceExplorer} />
             <Route path="/help" component={Help} />
             <Route path="/vendor-messages" component={VendorMessages} />
+            <Route path="/award-management" component={AwardManagement} />
             <Route path="/notifications" component={Dashboard} />
             <Route path="/settings" component={Dashboard} />
             <Route component={NotFound} />
@@ -104,6 +107,7 @@ function PortalRouter() {
       <Route path="/portal/submit" component={PortalSubmit} />
       <Route path="/portal/submissions" component={PortalSubmissions} />
       <Route path="/portal/messages" component={PortalMessages} />
+      <Route path="/portal/awards" component={PortalAwards} />
       <Route component={NotFound} />
     </Switch>
   );

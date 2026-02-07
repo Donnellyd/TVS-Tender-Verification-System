@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { portalFetch } from "@/lib/portalApi";
-import { Send, FileText, Clock, CheckCircle, MessageSquare, ArrowRight } from "lucide-react";
+import { Send, FileText, Clock, CheckCircle, MessageSquare, ArrowRight, Award } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   draft: "bg-gray-500 text-white border-gray-600",
@@ -51,11 +51,21 @@ export default function PortalDashboard() {
     },
   });
 
+  const { data: awards } = useQuery({
+    queryKey: ["portal", "awards"],
+    queryFn: async () => {
+      const res = await portalFetch("/api/portal/awards");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
   const totalSubmissions = submissions?.length || 0;
   const pendingCount = submissions?.filter((s: any) => ["submitted", "auto_checking", "manual_review"].includes(s.status)).length || 0;
   const approvedCount = submissions?.filter((s: any) => ["passed", "awarded"].includes(s.status)).length || 0;
   const unreadMessages = profile?.unreadMessages || 0;
   const recentSubmissions = submissions?.slice(0, 5) || [];
+  const pendingAwards = awards?.filter((a: any) => ["pending", "sla_review"].includes(a.status)) || [];
 
   return (
     <PortalLayout>
@@ -148,6 +158,45 @@ export default function PortalDashboard() {
             </Button>
           </Link>
         </div>
+
+        {pendingAwards.length > 0 && (
+          <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Award className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <CardTitle className="text-lg">Awards Pending Your Signature</CardTitle>
+              </div>
+              <Link href="/portal/awards">
+                <Button variant="ghost" size="sm" className="gap-1" data-testid="link-view-awards">
+                  View All
+                  <ArrowRight className="h-3 w-3" />
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {pendingAwards.map((award: any) => (
+                  <div key={award.id} className="flex items-center justify-between gap-4 p-3 rounded-md bg-background border border-border" data-testid={`award-pending-${award.id}`}>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium truncate">{award.tender?.title || "Tender"}</div>
+                      <div className="text-sm text-muted-foreground">{award.tender?.tenderNumber}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {award.hasSla && (
+                        <Badge variant="outline" className="text-xs">SLA Required</Badge>
+                      )}
+                      <Link href="/portal/awards">
+                        <Button size="sm" data-testid={`button-sign-${award.id}`}>
+                          Review & Sign
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">

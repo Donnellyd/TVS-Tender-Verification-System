@@ -1313,6 +1313,119 @@ Return a JSON object with scores for each criterion:
     }
   });
 
+  // SLA Document CRUD for a tender
+  app.get("/api/tenders/:tenderId/sla-documents", async (req, res) => {
+    try {
+      const docs = await storage.getTenderSlaDocuments(req.params.tenderId);
+      res.json(docs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch SLA documents" });
+    }
+  });
+
+  app.post("/api/tenders/:tenderId/sla-documents", async (req, res) => {
+    try {
+      const doc = await storage.createTenderSlaDocument({
+        ...req.body,
+        tenderId: req.params.tenderId,
+      });
+      res.status(201).json(doc);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create SLA document" });
+    }
+  });
+
+  app.put("/api/sla-documents/:id", async (req, res) => {
+    try {
+      const doc = await storage.updateTenderSlaDocument(req.params.id, req.body);
+      if (!doc) return res.status(404).json({ error: "SLA document not found" });
+      res.json(doc);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update SLA document" });
+    }
+  });
+
+  app.delete("/api/sla-documents/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteTenderSlaDocument(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "SLA document not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete SLA document" });
+    }
+  });
+
+  // Get all award acceptances for a tender
+  app.get("/api/tenders/:tenderId/award-acceptances", async (req, res) => {
+    try {
+      const acceptances = await storage.getAwardAcceptances(req.params.tenderId);
+      const enriched = await Promise.all(acceptances.map(async (a) => {
+        const vendor = await storage.getVendor(a.vendorId);
+        const submission = await storage.getBidSubmission(a.submissionId);
+        return {
+          ...a,
+          vendor: vendor ? { id: vendor.id, companyName: vendor.companyName, contactPerson: vendor.contactPerson, contactEmail: vendor.contactEmail } : null,
+          submission: submission ? { id: submission.id, bidAmount: submission.bidAmount, totalScore: submission.totalScore } : null,
+        };
+      }));
+      res.json(enriched);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch award acceptances" });
+    }
+  });
+
+  // Create award acceptance (when admin awards a bid)
+  app.post("/api/award-acceptances", async (req, res) => {
+    try {
+      const { submissionId, awardLetterContent } = req.body;
+      const submission = await storage.getBidSubmission(submissionId);
+      if (!submission) return res.status(404).json({ error: "Submission not found" });
+      
+      const existing = await storage.getAwardAcceptanceBySubmission(submissionId);
+      if (existing) return res.status(400).json({ error: "Award acceptance already exists for this submission" });
+      
+      const acceptance = await storage.createAwardAcceptance({
+        submissionId,
+        tenderId: submission.tenderId,
+        vendorId: submission.vendorId,
+        tenantId: submission.tenantId,
+        status: 'pending',
+        awardLetterContent: awardLetterContent || null,
+      });
+      
+      await storage.updateBidSubmission(submissionId, { 
+        status: 'awarded',
+        awardedAt: new Date(),
+      });
+      
+      res.status(201).json(acceptance);
+    } catch (error) {
+      console.error('Create award acceptance error:', error);
+      res.status(500).json({ error: "Failed to create award acceptance" });
+    }
+  });
+
+  // Send reminder for unsigned award
+  app.post("/api/award-acceptances/:id/remind", async (req, res) => {
+    try {
+      const acceptance = await storage.getAwardAcceptance(req.params.id);
+      if (!acceptance) return res.status(404).json({ error: "Award acceptance not found" });
+      
+      if (acceptance.status === 'signed') {
+        return res.status(400).json({ error: "Award has already been signed" });
+      }
+      
+      const updated = await storage.updateAwardAcceptance(acceptance.id, {
+        reminderSentAt: new Date(),
+        reminderCount: (acceptance.reminderCount || 0) + 1,
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to send reminder" });
+    }
+  });
+
   // Bid Submissions
   app.get("/api/submissions", async (req, res) => {
     try {

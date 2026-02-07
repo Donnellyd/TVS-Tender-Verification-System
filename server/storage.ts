@@ -24,6 +24,8 @@ import {
   tenantEmailSettings,
   domainAuthenticationLogs,
   vendorMessages,
+  tenderSlaDocuments,
+  awardAcceptances,
   type InsertMunicipality,
   type Municipality,
   type InsertVendor,
@@ -79,6 +81,10 @@ import {
   type DomainAuthenticationLog,
   type InsertVendorMessage,
   type VendorMessage,
+  type InsertTenderSlaDocument,
+  type TenderSlaDocument,
+  type InsertAwardAcceptance,
+  type AwardAcceptance,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -240,6 +246,21 @@ export interface IStorage {
   // Portal submissions
   getOpenTendersForPortal(country?: string): Promise<Tender[]>;
   getVendorSubmissions(vendorId: string): Promise<BidSubmission[]>;
+
+  // SLA Documents
+  getTenderSlaDocuments(tenderId: string): Promise<TenderSlaDocument[]>;
+  getTenderSlaDocument(id: string): Promise<TenderSlaDocument | undefined>;
+  createTenderSlaDocument(data: InsertTenderSlaDocument): Promise<TenderSlaDocument>;
+  updateTenderSlaDocument(id: string, data: Partial<InsertTenderSlaDocument>): Promise<TenderSlaDocument | undefined>;
+  deleteTenderSlaDocument(id: string): Promise<boolean>;
+
+  // Award Acceptances
+  getAwardAcceptances(tenderId?: string): Promise<AwardAcceptance[]>;
+  getAwardAcceptance(id: string): Promise<AwardAcceptance | undefined>;
+  getAwardAcceptanceBySubmission(submissionId: string): Promise<AwardAcceptance | undefined>;
+  getVendorAwardAcceptances(vendorId: string): Promise<AwardAcceptance[]>;
+  createAwardAcceptance(data: InsertAwardAcceptance): Promise<AwardAcceptance>;
+  updateAwardAcceptance(id: string, data: Partial<InsertAwardAcceptance>): Promise<AwardAcceptance | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1111,6 +1132,69 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(bidSubmissions)
       .where(eq(bidSubmissions.vendorId, vendorId))
       .orderBy(desc(bidSubmissions.createdAt));
+  }
+
+  // SLA Documents
+  async getTenderSlaDocuments(tenderId: string): Promise<TenderSlaDocument[]> {
+    return await db.select().from(tenderSlaDocuments)
+      .where(eq(tenderSlaDocuments.tenderId, tenderId))
+      .orderBy(desc(tenderSlaDocuments.createdAt));
+  }
+
+  async getTenderSlaDocument(id: string): Promise<TenderSlaDocument | undefined> {
+    const [result] = await db.select().from(tenderSlaDocuments).where(eq(tenderSlaDocuments.id, id));
+    return result;
+  }
+
+  async createTenderSlaDocument(data: InsertTenderSlaDocument): Promise<TenderSlaDocument> {
+    const [result] = await db.insert(tenderSlaDocuments).values(data).returning();
+    return result;
+  }
+
+  async updateTenderSlaDocument(id: string, data: Partial<InsertTenderSlaDocument>): Promise<TenderSlaDocument | undefined> {
+    const [result] = await db.update(tenderSlaDocuments).set({ ...data, updatedAt: new Date() }).where(eq(tenderSlaDocuments.id, id)).returning();
+    return result;
+  }
+
+  async deleteTenderSlaDocument(id: string): Promise<boolean> {
+    const result = await db.delete(tenderSlaDocuments).where(eq(tenderSlaDocuments.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Award Acceptances
+  async getAwardAcceptances(tenderId?: string): Promise<AwardAcceptance[]> {
+    if (tenderId) {
+      return await db.select().from(awardAcceptances)
+        .where(eq(awardAcceptances.tenderId, tenderId))
+        .orderBy(desc(awardAcceptances.createdAt));
+    }
+    return await db.select().from(awardAcceptances).orderBy(desc(awardAcceptances.createdAt));
+  }
+
+  async getAwardAcceptance(id: string): Promise<AwardAcceptance | undefined> {
+    const [result] = await db.select().from(awardAcceptances).where(eq(awardAcceptances.id, id));
+    return result;
+  }
+
+  async getAwardAcceptanceBySubmission(submissionId: string): Promise<AwardAcceptance | undefined> {
+    const [result] = await db.select().from(awardAcceptances).where(eq(awardAcceptances.submissionId, submissionId));
+    return result;
+  }
+
+  async getVendorAwardAcceptances(vendorId: string): Promise<AwardAcceptance[]> {
+    return await db.select().from(awardAcceptances)
+      .where(eq(awardAcceptances.vendorId, vendorId))
+      .orderBy(desc(awardAcceptances.createdAt));
+  }
+
+  async createAwardAcceptance(data: InsertAwardAcceptance): Promise<AwardAcceptance> {
+    const [result] = await db.insert(awardAcceptances).values(data).returning();
+    return result;
+  }
+
+  async updateAwardAcceptance(id: string, data: Partial<InsertAwardAcceptance>): Promise<AwardAcceptance | undefined> {
+    const [result] = await db.update(awardAcceptances).set({ ...data, updatedAt: new Date() }).where(eq(awardAcceptances.id, id)).returning();
+    return result;
   }
 }
 

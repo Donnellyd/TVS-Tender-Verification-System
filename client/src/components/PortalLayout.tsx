@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { clearPortalToken, portalFetch } from "@/lib/portalApi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LayoutDashboard, Send, FileText, MessageSquare, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Send, FileText, MessageSquare, LogOut, Menu, X, Award } from "lucide-react";
 import { useState } from "react";
 import logoImage from "@/assets/logo.png";
 
@@ -33,6 +33,7 @@ export function PortalLayout({ children }: PortalLayoutProps) {
     { label: "Dashboard", href: "/portal/dashboard", icon: LayoutDashboard },
     { label: "Submit", href: "/portal/submit", icon: Send },
     { label: "My Submissions", href: "/portal/submissions", icon: FileText },
+    { label: "Awards", href: "/portal/awards", icon: Award },
     { label: "Messages", href: "/portal/messages", icon: MessageSquare },
   ];
 

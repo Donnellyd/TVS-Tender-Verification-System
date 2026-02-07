@@ -29,10 +29,10 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Entry**: `client/src/App.tsx`
 - **Pages**: 
   - Core: Landing, Dashboard, Vendors, Tenders, Documents, Compliance, Analytics
-  - Admin: Municipalities, Submissions, TenderRequirements, CountryLaunch, VendorMessages
+  - Admin: Municipalities, Submissions, TenderRequirements, CountryLaunch, VendorMessages, AwardManagement
   - SaaS: Billing, ComplianceRules, ApiSettings
   - Communication: EmailTemplates, WhatsappTemplates
-  - Portal: PortalRegister, PortalVerify, PortalDashboard, PortalSubmit, PortalSubmissions, PortalMessages
+  - Portal: PortalRegister, PortalVerify, PortalDashboard, PortalSubmit, PortalSubmissions, PortalMessages, PortalAwards
   - Public: Pricing, ComplianceExplorer, Help
 - **Components**: AppSidebar, PageHeader, StatsCard, StatusBadge, EmptyState, DataTableSkeleton, ThemeToggle, Chatbot, HelpManual, GlobalHelpSearch, KeyboardShortcuts, GuidedTour, FieldHelp, StatusBadgeHelp, PortalLayout
 - **Styling**: Tailwind CSS with professional blue/teal color scheme, dark mode support
@@ -164,16 +164,21 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Routes**: `server/portal-routes.ts` - All portal API endpoints (bypass Replit Auth)
 - **Storage**: Portal-specific methods in `server/storage.ts`
 - **WhatsApp Service**: `server/twilio-whatsapp.ts` - OTP delivery and procurement notifications
-- **Frontend Pages**: `client/src/pages/portal-*.tsx` (register, verify, dashboard, submit, submissions, messages)
+- **Frontend Pages**: `client/src/pages/portal-*.tsx` (register, verify, dashboard, submit, submissions, messages, awards)
 - **Layout**: `client/src/components/PortalLayout.tsx` - Shared portal navigation
 - **API Helper**: `client/src/lib/portalApi.ts` - Token management and authenticated fetch
 - **Compliance Pre-Check**: Traffic-light system (green/amber/red) before submission
-- **Admin Integration**: Vendor Messages page for admin message tracking and sending
+- **Award Signing**: Online acceptance with SLA review, digital signature, and decline option
+- **Admin Integration**: Vendor Messages page, Award & SLA Management page
 - **WhatsApp Templates**: `server/seed-whatsapp-templates.ts` - Procurement notification templates
-- **Schema**: Portal auth fields on vendors table, vendor_messages table
+- **Schema**: Portal auth fields on vendors table, vendor_messages, award_acceptances, tender_sla_documents tables
 - **Multi-tenant**: Messages include tenantId, submissions inherit tender's tenantId
 
 ## Recent Changes
+- Added award signing system: vendors can accept/decline awards online, read and sign SLA documents, with digital signature capture and IP logging
+- Added Award & SLA Management admin page for uploading SLA documents and tracking vendor signing status
+- Added portal awards page with award letter viewing, SLA reading, digital signing, and decline with reason
+- Updated portal dashboard to show pending awards requiring signature
 - Updated documentation: help guide (docs/help-guide.md), help content modules (helpContent.ts), and Help page with Vendor Portal tab, system overview, and getting started guide
 - Added Vendor Portal with WhatsApp OTP authentication, online quote/tender submission, compliance pre-check (traffic-light system), vendor dashboard, message tracking, and admin message management
 - Added comprehensive help system with context-sensitive documentation, global search (Ctrl+K), keyboard shortcuts (Ctrl+/), and guided tour
