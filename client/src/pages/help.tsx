@@ -17,7 +17,13 @@ import {
   Shield,
   Upload,
   BarChart3,
-  Globe
+  Globe,
+  Store,
+  MessageSquare,
+  Phone,
+  Mail,
+  KeyRound,
+  CircleDot
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -72,21 +78,26 @@ export default function HelpPage() {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto" data-testid="tabs-help">
+          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto" data-testid="tabs-help">
             <TabsTrigger value="getting-started" className="flex items-center gap-2" data-testid="tab-getting-started">
               <Rocket className="w-4 h-4" />
               <span className="hidden sm:inline">Getting Started</span>
               <span className="sm:hidden">Start</span>
             </TabsTrigger>
+            <TabsTrigger value="platform" className="flex items-center gap-2" data-testid="tab-platform">
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Platform</span>
+              <span className="sm:hidden">Platform</span>
+            </TabsTrigger>
+            <TabsTrigger value="vendor-portal" className="flex items-center gap-2" data-testid="tab-vendor-portal">
+              <Store className="w-4 h-4" />
+              <span className="hidden sm:inline">Vendor Portal</span>
+              <span className="sm:hidden">Portal</span>
+            </TabsTrigger>
             <TabsTrigger value="billing" className="flex items-center gap-2" data-testid="tab-billing">
               <CreditCard className="w-4 h-4" />
               <span className="hidden sm:inline">Billing</span>
               <span className="sm:hidden">Billing</span>
-            </TabsTrigger>
-            <TabsTrigger value="platform" className="flex items-center gap-2" data-testid="tab-platform">
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Platform Usage</span>
-              <span className="sm:hidden">Platform</span>
             </TabsTrigger>
             <TabsTrigger value="api" className="flex items-center gap-2" data-testid="tab-api">
               <Code className="w-4 h-4" />
@@ -155,25 +166,63 @@ export default function HelpPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
+                      <Store className="w-5 h-5 text-primary" />
+                      Set Up Vendor Portal
+                    </CardTitle>
+                    <CardDescription>Enable online bid submissions</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium shrink-0">1</div>
+                      <div>
+                        <p className="font-medium">Share Portal Link</p>
+                        <p className="text-sm text-muted-foreground">Share the portal URL with your vendor community from the landing page.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium shrink-0">2</div>
+                      <div>
+                        <p className="font-medium">Vendors Register & Verify</p>
+                        <p className="text-sm text-muted-foreground">Vendors enter their details and verify via WhatsApp OTP.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium shrink-0">3</div>
+                      <div>
+                        <p className="font-medium">Vendors Submit Bids</p>
+                        <p className="text-sm text-muted-foreground">Vendors browse tenders, run compliance pre-checks, and submit bids online.</p>
+                      </div>
+                    </div>
+                    <Link href="/portal">
+                      <Button variant="outline" className="w-full mt-2" data-testid="link-vendor-portal">
+                        View Vendor Portal <ArrowRight className="w-3 h-3 ml-1" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
                       <Users className="w-5 h-5 text-primary" />
                       User Roles
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-1">
                         <span className="font-medium">Admin</span>
                         <span className="text-sm text-muted-foreground">Full access to all features</span>
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-1">
                         <span className="font-medium">Manager</span>
                         <span className="text-sm text-muted-foreground">Manage vendors, tenders, users</span>
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-1">
                         <span className="font-medium">Analyst</span>
                         <span className="text-sm text-muted-foreground">Review and score bids</span>
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-1">
                         <span className="font-medium">Viewer</span>
                         <span className="text-sm text-muted-foreground">Read-only access</span>
                       </div>
@@ -190,22 +239,24 @@ export default function HelpPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-3">
-                      We have pre-configured compliance modules for major markets:
+                      Pre-configured compliance modules for 70+ countries:
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="secondary">South Africa</Badge>
                       <Badge variant="secondary">Kenya</Badge>
                       <Badge variant="secondary">Nigeria</Badge>
                       <Badge variant="secondary">Ghana</Badge>
+                      <Badge variant="secondary">Australia</Badge>
                       <Badge variant="secondary">UAE</Badge>
                       <Badge variant="secondary">UK</Badge>
                       <Badge variant="secondary">USA</Badge>
+                      <Badge variant="secondary">EU</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mt-3">
-                      Our Global framework works for any country not specifically configured.
+                      Plus all 54 African nations and a Global framework for any other country.
                     </p>
                     <Link href="/compliance-explorer">
-                      <Button variant="ghost" className="p-0 h-auto mt-2 text-primary">
+                      <Button variant="ghost" className="p-0 h-auto mt-2 text-primary" data-testid="link-compliance-explorer">
                         Explore country compliance <ArrowRight className="w-3 h-3 ml-1" />
                       </Button>
                     </Link>
@@ -380,6 +431,30 @@ export default function HelpPage() {
                         <li>Custom report generation</li>
                       </ul>
                     </div>
+                    <div>
+                      <h4 className="font-semibold flex items-center gap-2 mb-3">
+                        <Store className="w-4 h-4" /> Vendor Portal
+                      </h4>
+                      <ul className="text-sm text-muted-foreground space-y-2">
+                        <li>Self-service vendor registration via WhatsApp OTP</li>
+                        <li>Online bid/tender submission with document upload</li>
+                        <li>Compliance pre-check (green/amber/red traffic light)</li>
+                        <li>Submission tracking and status monitoring</li>
+                        <li>Two-way messaging between vendors and admin</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold flex items-center gap-2 mb-3">
+                        <Mail className="w-4 h-4" /> Communications
+                      </h4>
+                      <ul className="text-sm text-muted-foreground space-y-2">
+                        <li>Email notifications via SendGrid with templates</li>
+                        <li>WhatsApp notifications for key procurement events</li>
+                        <li>Custom or default email domain configuration</li>
+                        <li>Automated award, rejection, and reminder messages</li>
+                        <li>Message tracking and delivery status</li>
+                      </ul>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -419,6 +494,144 @@ export default function HelpPage() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="vendor-portal" data-testid="content-vendor-portal">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Store className="w-5 h-5 text-primary" />
+                    Vendor Portal Overview
+                  </CardTitle>
+                  <CardDescription>How vendors use the self-service portal</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    The Vendor Portal allows vendors to register online, browse open tenders, check their compliance status, submit bids with documents, and track their submissions - all without needing an admin account.
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium shrink-0">1</div>
+                      <div>
+                        <p className="font-medium">Registration</p>
+                        <p className="text-sm text-muted-foreground">Vendors enter company details and WhatsApp number, then verify via OTP.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium shrink-0">2</div>
+                      <div>
+                        <p className="font-medium">Browse Tenders</p>
+                        <p className="text-sm text-muted-foreground">View all open tenders with details, requirements, and closing dates.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium shrink-0">3</div>
+                      <div>
+                        <p className="font-medium">Compliance Pre-Check</p>
+                        <p className="text-sm text-muted-foreground">Run a traffic-light check (green/amber/red) before submitting.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium shrink-0">4</div>
+                      <div>
+                        <p className="font-medium">Submit & Track</p>
+                        <p className="text-sm text-muted-foreground">Submit bids with documents and track status in real-time.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <Link href="/portal">
+                    <Button className="w-full mt-2" data-testid="link-portal-from-help">
+                      Go to Vendor Portal <ArrowRight className="w-3 h-3 ml-1" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Phone className="w-5 h-5 text-primary" />
+                      WhatsApp Authentication
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Portal authentication uses WhatsApp OTP for secure, passwordless verification:
+                    </p>
+                    <ul className="text-sm text-muted-foreground space-y-2">
+                      <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 text-green-500 shrink-0" /> 6-digit OTP sent via WhatsApp</li>
+                      <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 text-green-500 shrink-0" /> OTP valid for 5 minutes</li>
+                      <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 text-green-500 shrink-0" /> Portal session lasts 24 hours</li>
+                      <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 text-green-500 shrink-0" /> No passwords to remember</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CircleDot className="w-5 h-5 text-primary" />
+                      Compliance Traffic Light
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      The pre-check system shows compliance status for each requirement:
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3 p-2 bg-green-50 dark:bg-green-950/30 rounded-md">
+                        <div className="w-4 h-4 rounded-full bg-green-500 shrink-0" />
+                        <div>
+                          <span className="text-sm font-medium">Green - Compliant</span>
+                          <p className="text-xs text-muted-foreground">Vendor meets all requirements for this criterion</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-2 bg-amber-50 dark:bg-amber-950/30 rounded-md">
+                        <div className="w-4 h-4 rounded-full bg-amber-500 shrink-0" />
+                        <div>
+                          <span className="text-sm font-medium">Amber - Partial</span>
+                          <p className="text-xs text-muted-foreground">Partial compliance or documents expiring soon</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-2 bg-red-50 dark:bg-red-950/30 rounded-md">
+                        <div className="w-4 h-4 rounded-full bg-red-500 shrink-0" />
+                        <div>
+                          <span className="text-sm font-medium">Red - Non-Compliant</span>
+                          <p className="text-xs text-muted-foreground">Missing required documents or failed requirement</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-primary" />
+                      Admin Message Management
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Manage vendor communications from the Vendor Messages page:
+                    </p>
+                    <ul className="text-sm text-muted-foreground space-y-2">
+                      <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 text-green-500 shrink-0" /> Send messages via system or WhatsApp</li>
+                      <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 text-green-500 shrink-0" /> Track read/unread status</li>
+                      <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 text-green-500 shrink-0" /> Filter by vendor, channel, or date</li>
+                      <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 text-green-500 shrink-0" /> Automated notifications for key events</li>
+                    </ul>
+                    <Link href="/vendor-messages">
+                      <Button variant="outline" className="w-full mt-3" data-testid="link-vendor-messages-from-help">
+                        Manage Vendor Messages <ArrowRight className="w-3 h-3 ml-1" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
 
@@ -545,6 +758,31 @@ export default function HelpPage() {
                       Absolutely. We use AES-256-GCM encryption for sensitive data, complete audit logging, 
                       role-based access control, and secure cloud infrastructure. We're compliant with POPIA (South Africa), 
                       GDPR (Europe), and other data protection regulations.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-portal-1">
+                    <AccordionTrigger>How do vendors register on the portal?</AccordionTrigger>
+                    <AccordionContent>
+                      Vendors visit the portal link, enter their company details and WhatsApp phone number, 
+                      then verify their identity with a one-time password (OTP) sent to WhatsApp. Once verified, 
+                      they can browse tenders, check compliance, and submit bids online.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-portal-2">
+                    <AccordionTrigger>What is the compliance pre-check?</AccordionTrigger>
+                    <AccordionContent>
+                      Before submitting a bid, vendors can run a compliance pre-check that shows a traffic-light 
+                      assessment (green/amber/red) for each tender requirement. Green means compliant, amber means 
+                      partial, and red means missing documents. This helps vendors address gaps before investing 
+                      time in a full submission.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-portal-3">
+                    <AccordionTrigger>Can I send messages to vendors?</AccordionTrigger>
+                    <AccordionContent>
+                      Yes, use the Vendor Messages page in the admin dashboard to send messages to portal-registered 
+                      vendors. Messages can be sent via the portal (system messages) or WhatsApp. Automated 
+                      notifications are also sent for key events like bid submissions and award decisions.
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="item-6">

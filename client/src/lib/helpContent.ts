@@ -119,8 +119,8 @@ export const helpContent: Record<string, ModuleHelp> = {
         answer: "You'll receive notifications before documents expire. The vendor's compliance status will change to 'At Risk' and then 'Non-Compliant' if not renewed."
       },
       {
-        question: "Can vendors update their own information?",
-        answer: "Yes, with the Enterprise tier, you can enable a vendor portal where vendors can upload their own documents and update their profiles."
+        question: "Can vendors manage their own profiles online?",
+        answer: "Yes, vendors can register on the Vendor Portal using their WhatsApp number. Once registered, they can submit bids, upload documents, track their submissions, and communicate with your procurement team online."
       },
       {
         question: "How do I bulk import vendors?",
@@ -687,6 +687,138 @@ export const helpContent: Record<string, ModuleHelp> = {
     relatedModules: ["billing"]
   },
 
+  "vendor-portal": {
+    title: "Vendor Portal",
+    description: "A self-service portal for vendors to register, submit bids, check compliance, and track submissions online.",
+    sections: [
+      {
+        title: "Portal Overview",
+        content: "The Vendor Portal allows vendors to register online, browse open tenders, run compliance pre-checks, submit bids with supporting documents, and track their submission status. It operates independently with WhatsApp OTP authentication."
+      },
+      {
+        title: "Vendor Registration",
+        content: "Vendors register by entering their company name, registration number, contact person, email, WhatsApp phone number, and country. A one-time password (OTP) is sent to their WhatsApp for verification. Once verified, vendors can log in anytime with their WhatsApp number."
+      },
+      {
+        title: "Compliance Pre-Check",
+        content: "Before submitting a bid, vendors can run a compliance pre-check against tender requirements. The system uses a traffic-light system: Green means the vendor meets the requirement, Amber means partial compliance or documents expiring soon, and Red means the vendor is missing required documents."
+      },
+      {
+        title: "Bid Submission",
+        content: "Vendors can submit bids by selecting an open tender, entering their bid amount, uploading supporting documents, and confirming the submission. Submissions are automatically linked to the correct tenant and tracked in real-time."
+      },
+      {
+        title: "Submission Tracking",
+        content: "Vendors can view all their past and current submissions with status tracking (submitted, under review, shortlisted, awarded, rejected). Each submission shows the tender details, bid amount, and submission date."
+      },
+      {
+        title: "Portal Messages",
+        content: "Vendors receive messages from the procurement team through the portal, including submission confirmations, status updates, document requests, and award or rejection notifications. Messages can also be delivered via WhatsApp."
+      }
+    ],
+    faqs: [
+      {
+        question: "How do vendors register for the portal?",
+        answer: "Vendors visit the portal link, fill in their company details and WhatsApp number, then verify their identity with a one-time password sent to WhatsApp. The OTP is valid for 5 minutes."
+      },
+      {
+        question: "Is WhatsApp required for vendor registration?",
+        answer: "Yes, WhatsApp is used for secure identity verification via OTP. Vendors need an active WhatsApp number to register and log in."
+      },
+      {
+        question: "How long does a portal session last?",
+        answer: "Portal login sessions are valid for 24 hours. After that, the vendor will need to log in again with a new OTP."
+      },
+      {
+        question: "What is the compliance pre-check?",
+        answer: "The compliance pre-check uses a traffic-light system (green/amber/red) to show vendors how well their documents match the tender requirements before they submit a bid."
+      },
+      {
+        question: "Can vendors submit multiple bids?",
+        answer: "Yes, vendors can submit bids to multiple open tenders. Each submission is tracked separately."
+      },
+      {
+        question: "How do I send messages to vendors?",
+        answer: "Use the Vendor Messages page in the admin dashboard to send messages to portal-registered vendors. Messages appear in their portal dashboard."
+      }
+    ],
+    quickStart: [
+      { step: 1, title: "Share the Portal Link", description: "Direct vendors to your portal URL from the landing page or sidebar." },
+      { step: 2, title: "Vendor Registers", description: "Vendors fill in company details and verify via WhatsApp OTP." },
+      { step: 3, title: "Browse Tenders", description: "Vendors view open tenders and check compliance requirements." },
+      { step: 4, title: "Run Pre-Check", description: "Vendors check their compliance status (green/amber/red) before submitting." },
+      { step: 5, title: "Submit Bid", description: "Vendors enter bid details, upload documents, and submit." }
+    ],
+    bestPractices: [
+      "Share the portal link prominently with your vendor community",
+      "Encourage vendors to run the compliance pre-check before submitting bids",
+      "Respond to vendor messages promptly to maintain engagement",
+      "Monitor portal registrations to track vendor adoption",
+      "Use WhatsApp notifications to keep vendors informed about tender updates"
+    ],
+    relatedModules: ["vendors", "tenders", "vendor-messages"]
+  },
+
+  "vendor-messages": {
+    title: "Vendor Messages",
+    description: "Track and manage communications with portal-registered vendors across WhatsApp, email, and system channels.",
+    sections: [
+      {
+        title: "Message Overview",
+        content: "The Vendor Messages page shows all communications with portal-registered vendors. Messages are tracked by channel (WhatsApp, email, system), direction (inbound/outbound), and read status for both admin and vendor sides."
+      },
+      {
+        title: "Sending Messages",
+        content: "Send messages to vendors through multiple channels. System messages appear in the vendor's portal dashboard. WhatsApp messages are delivered directly to the vendor's phone via Twilio."
+      },
+      {
+        title: "Message Tracking",
+        content: "Track message delivery status, read status, and filter by vendor, channel, or date. Unread messages are highlighted for quick identification."
+      },
+      {
+        title: "Automated Notifications",
+        content: "The system automatically sends WhatsApp notifications for key events: bid received confirmations, award notifications, rejection notices, and document expiry reminders."
+      }
+    ],
+    faqs: [
+      {
+        question: "How do I send a message to a vendor?",
+        answer: "Go to Vendor Messages, click 'Send Message', select the vendor, choose the channel (system or WhatsApp), enter your message, and click Send."
+      },
+      {
+        question: "What channels are available for messaging?",
+        answer: "Three channels are available: System (in-portal messages), WhatsApp (via Twilio), and Email (via SendGrid). Each has different use cases and delivery methods."
+      },
+      {
+        question: "How do I know if a vendor has read my message?",
+        answer: "The message list shows read/unread status for both admin and vendor sides. You can filter to show only unread messages."
+      },
+      {
+        question: "Are WhatsApp messages sent automatically?",
+        answer: "Yes, for key events like bid submissions and award notifications. You can also send manual WhatsApp messages from the Vendor Messages page."
+      },
+      {
+        question: "Can vendors reply to messages?",
+        answer: "Vendors can send messages through the portal dashboard. These appear as inbound messages in your Vendor Messages page."
+      }
+    ],
+    quickStart: [
+      { step: 1, title: "View Messages", description: "Open Vendor Messages from the sidebar to see all communications." },
+      { step: 2, title: "Filter Messages", description: "Use filters to find messages by vendor, channel, or status." },
+      { step: 3, title: "Send a Message", description: "Click Send Message, select the vendor and channel, type your message." },
+      { step: 4, title: "Track Delivery", description: "Monitor delivery status and read receipts." },
+      { step: 5, title: "Manage Responses", description: "Review and respond to vendor replies." }
+    ],
+    bestPractices: [
+      "Respond to vendor messages within 24 hours",
+      "Use system messages for general updates and WhatsApp for urgent notifications",
+      "Include clear subject lines for easy message identification",
+      "Check unread messages daily to stay on top of vendor communications",
+      "Use automated notifications to reduce manual messaging workload"
+    ],
+    relatedModules: ["vendor-portal", "vendors", "email-templates"]
+  },
+
   help: {
     title: "Help & Documentation",
     description: "Access guides, tutorials, FAQs, and support resources to get the most out of VeritasAI.",
@@ -802,6 +934,26 @@ export const fieldHelp: FieldHelpContent = {
     title: "Custom Email Domain",
     description: "Your organization's domain for sending emails. Requires DNS configuration for verification.",
     example: "notifications@yourcompany.com"
+  },
+  "whatsapp-phone": {
+    title: "WhatsApp Phone Number",
+    description: "The vendor's WhatsApp phone number used for portal authentication via OTP and receiving procurement notifications.",
+    example: "Enter digits only, e.g., 821234567"
+  },
+  "portal-otp": {
+    title: "One-Time Password (OTP)",
+    description: "A 6-digit verification code sent to the vendor's WhatsApp number. Valid for 5 minutes.",
+    example: "Check your WhatsApp for a message from VeritasAI"
+  },
+  "bid-amount": {
+    title: "Bid Amount",
+    description: "The total price quoted by the vendor for the tender. Enter the amount in the currency specified by the tender.",
+    example: "e.g., 250000.00"
+  },
+  "compliance-status": {
+    title: "Compliance Pre-Check Status",
+    description: "Traffic-light indicator showing vendor compliance: Green (meets requirement), Amber (partial/expiring), Red (missing/non-compliant).",
+    example: "Run the pre-check before submitting to identify gaps"
   }
 };
 

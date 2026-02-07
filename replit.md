@@ -29,11 +29,12 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Entry**: `client/src/App.tsx`
 - **Pages**: 
   - Core: Landing, Dashboard, Vendors, Tenders, Documents, Compliance, Analytics
-  - Admin: Municipalities, Submissions, TenderRequirements, CountryLaunch
+  - Admin: Municipalities, Submissions, TenderRequirements, CountryLaunch, VendorMessages
   - SaaS: Billing, ComplianceRules, ApiSettings
   - Communication: EmailTemplates, WhatsappTemplates
+  - Portal: PortalRegister, PortalVerify, PortalDashboard, PortalSubmit, PortalSubmissions, PortalMessages
   - Public: Pricing, ComplianceExplorer, Help
-- **Components**: AppSidebar, PageHeader, StatsCard, StatusBadge, EmptyState, DataTableSkeleton, ThemeToggle, Chatbot, HelpManual, GlobalHelpSearch, KeyboardShortcuts, GuidedTour, FieldHelp, StatusBadgeHelp
+- **Components**: AppSidebar, PageHeader, StatsCard, StatusBadge, EmptyState, DataTableSkeleton, ThemeToggle, Chatbot, HelpManual, GlobalHelpSearch, KeyboardShortcuts, GuidedTour, FieldHelp, StatusBadgeHelp, PortalLayout
 - **Styling**: Tailwind CSS with professional blue/teal color scheme, dark mode support
 - **State Management**: TanStack Query for server state
 - **Routing**: Wouter
@@ -153,7 +154,7 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
   - Guided tour: First-time users see an interactive tour (localStorage-persisted)
   - Form field help: FieldHelp component provides tooltips for form fields
   - Status explanations: StatusBadgeHelp explains what each status means when clicked
-- **Modules Covered**: Dashboard, Vendors, Tenders, Documents, Compliance, Analytics, Billing, API Settings, Email Templates, Country Launch, Pricing, Help
+- **Modules Covered**: Dashboard, Vendors, Tenders, Documents, Compliance, Analytics, Billing, API Settings, Email Templates, Country Launch, Pricing, Vendor Portal, Vendor Messages, Help
 - **Integration**: PageHeader accepts moduleId prop for context-sensitive help
 
 ### Vendor Portal System
@@ -173,6 +174,7 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Multi-tenant**: Messages include tenantId, submissions inherit tender's tenantId
 
 ## Recent Changes
+- Updated documentation: help guide (docs/help-guide.md), help content modules (helpContent.ts), and Help page with Vendor Portal tab, system overview, and getting started guide
 - Added Vendor Portal with WhatsApp OTP authentication, online quote/tender submission, compliance pre-check (traffic-light system), vendor dashboard, message tracking, and admin message management
 - Added comprehensive help system with context-sensitive documentation, global search (Ctrl+K), keyboard shortcuts (Ctrl+/), and guided tour
 - Removed Stripe integration from server code (files preserved for future re-integration)
