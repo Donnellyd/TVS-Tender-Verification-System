@@ -1028,3 +1028,95 @@ export const insertVendorMessageSchema = createInsertSchema(vendorMessages).omit
 
 export type InsertVendorMessage = z.infer<typeof insertVendorMessageSchema>;
 export type VendorMessage = typeof vendorMessages.$inferSelect;
+
+export const tenderSlaDocuments = pgTable("tender_sla_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenderId: varchar("tender_id").notNull().references(() => tenders.id),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  documentContent: text("document_content").notNull(),
+  version: integer("version").default(1),
+  isRequired: boolean("is_required").default(true),
+  createdBy: varchar("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_sla_tender").on(table.tenderId),
+  index("idx_sla_tenant").on(table.tenantId),
+]);
+
+export const tenderSlaDocumentsRelations = relations(tenderSlaDocuments, ({ one }) => ({
+  tender: one(tenders, {
+    fields: [tenderSlaDocuments.tenderId],
+    references: [tenders.id],
+  }),
+}));
+
+export const insertTenderSlaDocumentSchema = createInsertSchema(tenderSlaDocuments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  title: z.string().min(1, "SLA title is required"),
+  documentContent: z.string().min(10, "SLA content is required"),
+});
+
+export type InsertTenderSlaDocument = z.infer<typeof insertTenderSlaDocumentSchema>;
+export type TenderSlaDocument = typeof tenderSlaDocuments.$inferSelect;
+
+export const awardAcceptanceStatusEnum = z.enum(["pending", "sla_review", "signed", "declined"]);
+
+export const awardAcceptances = pgTable("award_acceptances", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  submissionId: varchar("submission_id").notNull().references(() => bidSubmissions.id),
+  tenderId: varchar("tender_id").notNull().references(() => tenders.id),
+  vendorId: varchar("vendor_id").notNull().references(() => vendors.id),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  status: text("status").notNull().default("pending"),
+  awardLetterContent: text("award_letter_content"),
+  signatoryName: text("signatory_name"),
+  signatoryTitle: text("signatory_title"),
+  signatureData: text("signature_data"),
+  signedAt: timestamp("signed_at"),
+  declinedAt: timestamp("declined_at"),
+  declineReason: text("decline_reason"),
+  slaAccepted: boolean("sla_accepted").default(false),
+  slaAcceptedAt: timestamp("sla_accepted_at"),
+  reminderSentAt: timestamp("reminder_sent_at"),
+  reminderCount: integer("reminder_count").default(0),
+  ipAddress: text("ip_address"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_acceptance_submission").on(table.submissionId),
+  index("idx_acceptance_vendor").on(table.vendorId),
+  index("idx_acceptance_tender").on(table.tenderId),
+  index("idx_acceptance_tenant").on(table.tenantId),
+]);
+
+export const awardAcceptancesRelations = relations(awardAcceptances, ({ one }) => ({
+  submission: one(bidSubmissions, {
+    fields: [awardAcceptances.submissionId],
+    references: [bidSubmissions.id],
+  }),
+  tender: one(tenders, {
+    fields: [awardAcceptances.tenderId],
+    references: [tenders.id],
+  }),
+  vendor: one(vendors, {
+    fields: [awardAcceptances.vendorId],
+    references: [vendors.id],
+  }),
+}));
+
+export const insertAwardAcceptanceSchema = createInsertSchema(awardAcceptances).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  status: awardAcceptanceStatusEnum.optional(),
+});
+
+export type InsertAwardAcceptance = z.infer<typeof insertAwardAcceptanceSchema>;
+export type AwardAcceptance = typeof awardAcceptances.$inferSelect;
