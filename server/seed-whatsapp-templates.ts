@@ -11,7 +11,7 @@ Tender: [TenderNo]
 Title: [TenderTitle]
 Closing: [ClosingDate]
 
-Visit the TVS portal to view full details and submit your bid.
+Visit the VeritasAI Vendor Portal to view full details and submit your bid.
 
 [Municipality]`,
     isActive: true,
@@ -60,7 +60,7 @@ We will notify you of the outcome in due course.
 
 Dear [VendorName],
 
-We require clarification on your bid submission. Please log in to the TVS portal to view the request and respond within the specified timeframe.
+We require clarification on your bid submission. Please log in to the VeritasAI Vendor Portal to view the request and respond within the specified timeframe.
 
 [Municipality]`,
     isActive: true,

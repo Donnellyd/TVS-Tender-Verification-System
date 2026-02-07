@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -33,6 +33,13 @@ import { Chatbot } from "@/components/Chatbot";
 import { GlobalHelpSearch } from "@/components/GlobalHelpSearch";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { GuidedTour } from "@/components/GuidedTour";
+import VendorMessages from "@/pages/vendor-messages";
+import PortalRegister from "@/pages/portal-register";
+import PortalVerify from "@/pages/portal-verify";
+import PortalDashboard from "@/pages/portal-dashboard";
+import PortalSubmit from "@/pages/portal-submit";
+import PortalSubmissions from "@/pages/portal-submissions";
+import PortalMessages from "@/pages/portal-messages";
 
 function LoadingScreen() {
   return (
@@ -77,6 +84,7 @@ function AuthenticatedApp() {
             <Route path="/pricing" component={Pricing} />
             <Route path="/compliance-explorer" component={ComplianceExplorer} />
             <Route path="/help" component={Help} />
+            <Route path="/vendor-messages" component={VendorMessages} />
             <Route path="/notifications" component={Dashboard} />
             <Route path="/settings" component={Dashboard} />
             <Route component={NotFound} />
@@ -87,8 +95,27 @@ function AuthenticatedApp() {
   );
 }
 
+function PortalRouter() {
+  return (
+    <Switch>
+      <Route path="/portal" component={PortalRegister} />
+      <Route path="/portal/verify" component={PortalVerify} />
+      <Route path="/portal/dashboard" component={PortalDashboard} />
+      <Route path="/portal/submit" component={PortalSubmit} />
+      <Route path="/portal/submissions" component={PortalSubmissions} />
+      <Route path="/portal/messages" component={PortalMessages} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
 function Router() {
   const { user, isLoading } = useAuth();
+  const [location] = useLocation();
+
+  if (location.startsWith("/portal")) {
+    return <PortalRouter />;
+  }
 
   if (isLoading) {
     return <LoadingScreen />;

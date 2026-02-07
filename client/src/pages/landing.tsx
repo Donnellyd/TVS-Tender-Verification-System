@@ -58,10 +58,16 @@ export default function Landing() {
               <a href="#compliance" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Compliance</a>
               <a href="#about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</a>
               <Link href="/help" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Help</Link>
+              <Link href="/portal" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Vendor Portal</Link>
             </div>
-            <Button asChild data-testid="button-login">
-              <a href="/api/login">Sign In</a>
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" asChild data-testid="button-vendor-portal">
+                <Link href="/portal">Vendor Portal</Link>
+              </Button>
+              <Button asChild data-testid="button-login">
+                <a href="/api/login">Sign In</a>
+              </Button>
+            </div>
           </div>
         </div>
       </nav>

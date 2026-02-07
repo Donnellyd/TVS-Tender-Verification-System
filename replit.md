@@ -156,7 +156,24 @@ A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation 
 - **Modules Covered**: Dashboard, Vendors, Tenders, Documents, Compliance, Analytics, Billing, API Settings, Email Templates, Country Launch, Pricing, Help
 - **Integration**: PageHeader accepts moduleId prop for context-sensitive help
 
+### Vendor Portal System
+- **Purpose**: Allow vendors to register, submit quotes/tenders online, and track submissions
+- **Authentication**: WhatsApp OTP via Twilio (5min expiry), portal tokens (24hr expiry)
+- **Registration**: Self-service with company details + WhatsApp verification
+- **Routes**: `server/portal-routes.ts` - All portal API endpoints (bypass Replit Auth)
+- **Storage**: Portal-specific methods in `server/storage.ts`
+- **WhatsApp Service**: `server/twilio-whatsapp.ts` - OTP delivery and procurement notifications
+- **Frontend Pages**: `client/src/pages/portal-*.tsx` (register, verify, dashboard, submit, submissions, messages)
+- **Layout**: `client/src/components/PortalLayout.tsx` - Shared portal navigation
+- **API Helper**: `client/src/lib/portalApi.ts` - Token management and authenticated fetch
+- **Compliance Pre-Check**: Traffic-light system (green/amber/red) before submission
+- **Admin Integration**: Vendor Messages page for admin message tracking and sending
+- **WhatsApp Templates**: `server/seed-whatsapp-templates.ts` - Procurement notification templates
+- **Schema**: Portal auth fields on vendors table, vendor_messages table
+- **Multi-tenant**: Messages include tenantId, submissions inherit tender's tenantId
+
 ## Recent Changes
+- Added Vendor Portal with WhatsApp OTP authentication, online quote/tender submission, compliance pre-check (traffic-light system), vendor dashboard, message tracking, and admin message management
 - Added comprehensive help system with context-sensitive documentation, global search (Ctrl+K), keyboard shortcuts (Ctrl+/), and guided tour
 - Removed Stripe integration from server code (files preserved for future re-integration)
 - Created docs/stripe-setup-guide.md with complete re-integration instructions

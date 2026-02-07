@@ -118,6 +118,12 @@ export const vendors = pgTable("vendors", {
   whatsappPhone: text("whatsapp_phone"),
   whatsappOptIn: boolean("whatsapp_opt_in").default(false),
   municipalityId: varchar("municipality_id").references(() => municipalities.id),
+  portalRegistered: boolean("portal_registered").default(false),
+  otpCode: text("otp_code"),
+  otpExpiresAt: timestamp("otp_expires_at"),
+  portalToken: text("portal_token"),
+  portalTokenExpiry: timestamp("portal_token_expiry"),
+  lastPortalLogin: timestamp("last_portal_login"),
   metadata: jsonb("metadata").default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -975,3 +981,50 @@ export const insertCountryEnquirySchema = createInsertSchema(countryEnquiries).o
 
 export type InsertCountryEnquiry = z.infer<typeof insertCountryEnquirySchema>;
 export type CountryEnquiry = typeof countryEnquiries.$inferSelect;
+
+export const vendorMessages = pgTable("vendor_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  vendorId: varchar("vendor_id").notNull().references(() => vendors.id),
+  tenderId: varchar("tender_id").references(() => tenders.id),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  channel: text("channel").notNull(),
+  direction: text("direction").notNull(),
+  subject: text("subject"),
+  body: text("body").notNull(),
+  recipientPhone: text("recipient_phone"),
+  recipientEmail: text("recipient_email"),
+  senderName: text("sender_name"),
+  triggerType: text("trigger_type"),
+  status: text("status").notNull().default("sent"),
+  externalId: text("external_id"),
+  readByVendor: boolean("read_by_vendor").default(false),
+  readByAdmin: boolean("read_by_admin").default(false),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_vendor_message_vendor").on(table.vendorId),
+  index("idx_vendor_message_tenant").on(table.tenantId),
+]);
+
+export const vendorMessagesRelations = relations(vendorMessages, ({ one }) => ({
+  vendor: one(vendors, {
+    fields: [vendorMessages.vendorId],
+    references: [vendors.id],
+  }),
+  tender: one(tenders, {
+    fields: [vendorMessages.tenderId],
+    references: [tenders.id],
+  }),
+}));
+
+export const insertVendorMessageSchema = createInsertSchema(vendorMessages).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  body: z.string().min(1, "Message body is required"),
+  channel: notificationChannelEnum,
+  direction: z.enum(["inbound", "outbound"]),
+});
+
+export type InsertVendorMessage = z.infer<typeof insertVendorMessageSchema>;
+export type VendorMessage = typeof vendorMessages.$inferSelect;

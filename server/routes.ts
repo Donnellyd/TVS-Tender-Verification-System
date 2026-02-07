@@ -9,6 +9,7 @@ import { countryLaunchStorage, seedCountryLaunchStatuses } from "./country-launc
 import { setupAuth, isAuthenticated, registerAuthRoutes } from "./replit_integrations/auth";
 import { tenantRouter } from "./tenant-routes";
 import { apiV1Router } from "./api-v1-routes";
+import { portalRouter } from "./portal-routes";
 import { securityHeaders, createRateLimiter, auditLogger } from "./security-middleware";
 import {
   insertMunicipalitySchema,
@@ -86,8 +87,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Register API v1 routes (uses API key auth, not session auth)
   app.use("/api/v1", apiV1Router);
 
-  // Auth-protected API routes (except auth routes themselves, API v1, and public endpoints)
-  app.use(/^\/api(?!\/auth|\/login|\/logout|\/callback|\/subscription-tiers|\/compliance\/countries|\/chatbot|\/v1|\/country-launch-status|\/country-enquiries|\/public)/, isAuthenticated);
+  // Register portal routes (has its own auth middleware)
+  app.use(portalRouter);
+
+  // Auth-protected API routes (except auth routes themselves, API v1, portal, and public endpoints)
+  app.use(/^\/api(?!\/auth|\/login|\/logout|\/callback|\/subscription-tiers|\/compliance\/countries|\/chatbot|\/v1|\/country-launch-status|\/country-enquiries|\/public|\/portal)/, isAuthenticated);
 
   // Municipalities
   app.get("/api/municipalities", async (req, res) => {
@@ -3281,6 +3285,88 @@ Be helpful, friendly, and concise. If you don't know something, suggest they con
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch purchase" });
+    }
+  });
+
+  // ==========================================
+  // Admin Vendor Messages API
+  // ==========================================
+  app.get("/api/vendor-messages", isAuthenticated, async (req, res) => {
+    try {
+      const tenantId = req.query.tenantId as string | undefined;
+      if (tenantId) {
+        const msgs = await storage.getVendorMessagesByTenant(tenantId);
+        return res.json(msgs);
+      }
+      const allVendors = await storage.getVendors();
+      const portalVendors = allVendors.filter(v => v.portalRegistered);
+      const allMessages = [];
+      for (const vendor of portalVendors) {
+        const msgs = await storage.getVendorMessages(vendor.id);
+        allMessages.push(...msgs);
+      }
+      allMessages.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+      res.json(allMessages);
+    } catch (error) {
+      console.error("Get vendor messages error:", error);
+      res.status(500).json({ error: "Failed to fetch vendor messages" });
+    }
+  });
+
+  app.post("/api/vendor-messages/send", isAuthenticated, async (req, res) => {
+    try {
+      const { vendorId, channel, subject, body } = req.body;
+      if (!vendorId || !body) {
+        return res.status(400).json({ error: "vendorId and body are required" });
+      }
+
+      const vendor = await storage.getVendor(vendorId);
+      if (!vendor) {
+        return res.status(404).json({ error: "Vendor not found" });
+      }
+
+      let externalId: string | undefined;
+      if (channel === "whatsapp" && vendor.whatsappPhone) {
+        try {
+          const { sendWhatsAppMessage } = await import("./twilio-whatsapp");
+          const result = await sendWhatsAppMessage(vendor.whatsappPhone, body);
+          if (result.success) {
+            externalId = result.messageId;
+          }
+        } catch (err) {
+          console.warn("WhatsApp send failed, saving message anyway:", err);
+        }
+      }
+
+      const message = await storage.createVendorMessage({
+        vendorId,
+        tenantId: vendor.tenantId || null,
+        channel: channel || "system",
+        direction: "outbound",
+        subject: subject || null,
+        body,
+        recipientPhone: vendor.whatsappPhone || null,
+        recipientEmail: vendor.contactEmail || null,
+        senderName: "VeritasAI Admin",
+        triggerType: "admin_message",
+        status: externalId ? "sent" : "delivered",
+        externalId: externalId || null,
+      });
+
+      res.json(message);
+    } catch (error) {
+      console.error("Send vendor message error:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  app.post("/api/vendor-messages/:id/read-admin", isAuthenticated, async (req, res) => {
+    try {
+      const message = await storage.markMessageRead(req.params.id, "admin");
+      res.json(message);
+    } catch (error) {
+      console.error("Mark message read error:", error);
+      res.status(500).json({ error: "Failed to mark message as read" });
     }
   });
 }

@@ -44,6 +44,7 @@ const mainNavItems = [
   { title: "Documents", url: "/documents", icon: FolderOpen },
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Vendor Messages", url: "/vendor-messages", icon: MessageCircle },
 ];
 
 const settingsNavItems = [

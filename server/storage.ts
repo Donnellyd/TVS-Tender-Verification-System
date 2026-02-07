@@ -23,6 +23,7 @@ import {
   chatbotConversations,
   tenantEmailSettings,
   domainAuthenticationLogs,
+  vendorMessages,
   type InsertMunicipality,
   type Municipality,
   type InsertVendor,
@@ -76,6 +77,8 @@ import {
   type TenantEmailSettings,
   type InsertDomainAuthenticationLog,
   type DomainAuthenticationLog,
+  type InsertVendorMessage,
+  type VendorMessage,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -220,6 +223,23 @@ export interface IStorage {
   // Domain Authentication Logs
   createDomainAuthLog(data: InsertDomainAuthenticationLog): Promise<DomainAuthenticationLog>;
   getDomainAuthLogs(tenantId: string): Promise<DomainAuthenticationLog[]>;
+
+  // Portal vendor methods
+  getVendorByPhone(phone: string): Promise<Vendor | undefined>;
+  getVendorByEmail(email: string): Promise<Vendor | undefined>;
+  getVendorByPortalToken(token: string): Promise<Vendor | undefined>;
+  updateVendorPortalAuth(vendorId: string, data: { otpCode?: string | null; otpExpiresAt?: Date | null; portalToken?: string | null; portalTokenExpiry?: Date | null; lastPortalLogin?: Date | null; portalRegistered?: boolean }): Promise<Vendor>;
+
+  // Vendor messages
+  createVendorMessage(data: InsertVendorMessage): Promise<VendorMessage>;
+  getVendorMessages(vendorId: string): Promise<VendorMessage[]>;
+  getVendorMessagesByTenant(tenantId: string): Promise<VendorMessage[]>;
+  markMessageRead(messageId: string, readBy: 'vendor' | 'admin'): Promise<VendorMessage>;
+  getUnreadMessageCount(vendorId: string): Promise<number>;
+
+  // Portal submissions
+  getOpenTendersForPortal(country?: string): Promise<Tender[]>;
+  getVendorSubmissions(vendorId: string): Promise<BidSubmission[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1006,6 +1026,91 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(domainAuthenticationLogs)
       .where(eq(domainAuthenticationLogs.tenantId, tenantId))
       .orderBy(desc(domainAuthenticationLogs.createdAt));
+  }
+
+  // Portal vendor methods
+  async getVendorByPhone(phone: string): Promise<Vendor | undefined> {
+    const [result] = await db.select().from(vendors).where(
+      or(eq(vendors.whatsappPhone, phone), eq(vendors.contactPhone, phone))
+    );
+    return result;
+  }
+
+  async getVendorByEmail(email: string): Promise<Vendor | undefined> {
+    const [result] = await db.select().from(vendors).where(eq(vendors.contactEmail, email));
+    return result;
+  }
+
+  async getVendorByPortalToken(token: string): Promise<Vendor | undefined> {
+    const [result] = await db.select().from(vendors).where(eq(vendors.portalToken, token));
+    return result;
+  }
+
+  async updateVendorPortalAuth(vendorId: string, data: { otpCode?: string | null; otpExpiresAt?: Date | null; portalToken?: string | null; portalTokenExpiry?: Date | null; lastPortalLogin?: Date | null; portalRegistered?: boolean }): Promise<Vendor> {
+    const [result] = await db.update(vendors)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(vendors.id, vendorId))
+      .returning();
+    return result;
+  }
+
+  // Vendor messages
+  async createVendorMessage(data: InsertVendorMessage): Promise<VendorMessage> {
+    const [result] = await db.insert(vendorMessages).values(data).returning();
+    return result;
+  }
+
+  async getVendorMessages(vendorId: string): Promise<VendorMessage[]> {
+    return await db.select().from(vendorMessages)
+      .where(eq(vendorMessages.vendorId, vendorId))
+      .orderBy(desc(vendorMessages.createdAt));
+  }
+
+  async getVendorMessagesByTenant(tenantId: string): Promise<VendorMessage[]> {
+    return await db.select().from(vendorMessages)
+      .where(eq(vendorMessages.tenantId, tenantId))
+      .orderBy(desc(vendorMessages.createdAt));
+  }
+
+  async markMessageRead(messageId: string, readBy: 'vendor' | 'admin'): Promise<VendorMessage> {
+    const updateData = readBy === 'vendor' ? { readByVendor: true } : { readByAdmin: true };
+    const [result] = await db.update(vendorMessages)
+      .set(updateData)
+      .where(eq(vendorMessages.id, messageId))
+      .returning();
+    return result;
+  }
+
+  async getUnreadMessageCount(vendorId: string): Promise<number> {
+    const [result] = await db.select({
+      count: sql<number>`count(*)::int`,
+    }).from(vendorMessages)
+      .where(and(
+        eq(vendorMessages.vendorId, vendorId),
+        eq(vendorMessages.readByVendor, false)
+      ));
+    return result.count;
+  }
+
+  // Portal submissions
+  async getOpenTendersForPortal(country?: string): Promise<Tender[]> {
+    if (country) {
+      return await db.select().from(tenders)
+        .where(and(
+          or(eq(tenders.status, 'open'), eq(tenders.status, 'published')),
+          eq(tenders.country, country)
+        ))
+        .orderBy(desc(tenders.closingDate));
+    }
+    return await db.select().from(tenders)
+      .where(or(eq(tenders.status, 'open'), eq(tenders.status, 'published')))
+      .orderBy(desc(tenders.closingDate));
+  }
+
+  async getVendorSubmissions(vendorId: string): Promise<BidSubmission[]> {
+    return await db.select().from(bidSubmissions)
+      .where(eq(bidSubmissions.vendorId, vendorId))
+      .orderBy(desc(bidSubmissions.createdAt));
   }
 }
 
