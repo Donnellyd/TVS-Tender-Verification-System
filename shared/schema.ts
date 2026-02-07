@@ -1120,3 +1120,544 @@ export const insertAwardAcceptanceSchema = createInsertSchema(awardAcceptances).
 
 export type InsertAwardAcceptance = z.infer<typeof insertAwardAcceptanceSchema>;
 export type AwardAcceptance = typeof awardAcceptances.$inferSelect;
+
+// ============================================================
+// Phase 1 Evaluation Engine - Enums
+// ============================================================
+
+export const adjudicationStatusEnum = z.enum(["pending", "in_progress", "completed", "cancelled"]);
+export const adjudicationDecisionEnum = z.enum(["approve", "reject", "send_back"]);
+export const adjudicationLevelTypeEnum = z.enum(["automated", "manual"]);
+export const scoringMethodEnum = z.enum(["manual", "auto_price", "auto_bbbee", "auto_compliance"]);
+export const committeeStatusEnum = z.enum(["draft", "active", "scoring", "completed"]);
+export const committeeMemberRoleEnum = z.enum(["evaluator", "chairperson", "observer"]);
+
+// ============================================================
+// Phase 1 Evaluation Engine - Tables
+// ============================================================
+
+// Scoring Templates table - Reusable scoring template definitions
+export const scoringTemplates = pgTable("scoring_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  scoringSystem: text("scoring_system"),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_scoring_template_tenant").on(table.tenantId),
+]);
+
+export const scoringTemplatesRelations = relations(scoringTemplates, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [scoringTemplates.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const insertScoringTemplateSchema = createInsertSchema(scoringTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertScoringTemplate = z.infer<typeof insertScoringTemplateSchema>;
+export type ScoringTemplate = typeof scoringTemplates.$inferSelect;
+
+// Scoring Template Criteria table - Criteria within a scoring template
+export const scoringTemplateCriteria = pgTable("scoring_template_criteria", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: varchar("template_id").notNull().references(() => scoringTemplates.id),
+  criteriaName: text("criteria_name").notNull(),
+  criteriaCategory: text("criteria_category").notNull(),
+  description: text("description"),
+  maxScore: integer("max_score").notNull(),
+  weight: integer("weight").default(1),
+  scoringMethod: text("scoring_method").default("manual"),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_scoring_template_criteria_template").on(table.templateId),
+]);
+
+export const scoringTemplateCriteriaRelations = relations(scoringTemplateCriteria, ({ one }) => ({
+  template: one(scoringTemplates, {
+    fields: [scoringTemplateCriteria.templateId],
+    references: [scoringTemplates.id],
+  }),
+}));
+
+export const insertScoringTemplateCriteriaSchema = createInsertSchema(scoringTemplateCriteria).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertScoringTemplateCriteria = z.infer<typeof insertScoringTemplateCriteriaSchema>;
+export type ScoringTemplateCriteria = typeof scoringTemplateCriteria.$inferSelect;
+
+// Adjudication Configs table - Adjudication level configuration per tender
+export const adjudicationConfigs = pgTable("adjudication_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenderId: varchar("tender_id").notNull().references(() => tenders.id),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  totalLevels: integer("total_levels").notNull().default(2),
+  level1Type: text("level1_type").notNull().default("automated"),
+  level2Label: text("level2_label").default("Procurement Review"),
+  level3Label: text("level3_label"),
+  currentLevel: integer("current_level").default(0),
+  status: text("status").default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_adjudication_config_tender").on(table.tenderId),
+  index("idx_adjudication_config_tenant").on(table.tenantId),
+]);
+
+export const adjudicationConfigsRelations = relations(adjudicationConfigs, ({ one }) => ({
+  tender: one(tenders, {
+    fields: [adjudicationConfigs.tenderId],
+    references: [tenders.id],
+  }),
+  tenant: one(tenants, {
+    fields: [adjudicationConfigs.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const insertAdjudicationConfigSchema = createInsertSchema(adjudicationConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAdjudicationConfig = z.infer<typeof insertAdjudicationConfigSchema>;
+export type AdjudicationConfig = typeof adjudicationConfigs.$inferSelect;
+
+// Adjudication Assignments table - Who is assigned to adjudicate at each level
+export const adjudicationAssignments = pgTable("adjudication_assignments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  configId: varchar("config_id").notNull().references(() => adjudicationConfigs.id),
+  tenderId: varchar("tender_id").notNull().references(() => tenders.id),
+  level: integer("level").notNull(),
+  userId: varchar("user_id").notNull(),
+  userName: text("user_name"),
+  userEmail: text("user_email"),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+}, (table) => [
+  index("idx_adjudication_assignment_config").on(table.configId),
+]);
+
+export const adjudicationAssignmentsRelations = relations(adjudicationAssignments, ({ one }) => ({
+  config: one(adjudicationConfigs, {
+    fields: [adjudicationAssignments.configId],
+    references: [adjudicationConfigs.id],
+  }),
+  tender: one(tenders, {
+    fields: [adjudicationAssignments.tenderId],
+    references: [tenders.id],
+  }),
+}));
+
+export const insertAdjudicationAssignmentSchema = createInsertSchema(adjudicationAssignments).omit({
+  id: true,
+});
+
+export type InsertAdjudicationAssignment = z.infer<typeof insertAdjudicationAssignmentSchema>;
+export type AdjudicationAssignment = typeof adjudicationAssignments.$inferSelect;
+
+// Adjudication Decisions table - Individual decisions per submission per level
+export const adjudicationDecisions = pgTable("adjudication_decisions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  configId: varchar("config_id").notNull().references(() => adjudicationConfigs.id),
+  tenderId: varchar("tender_id").notNull().references(() => tenders.id),
+  submissionId: varchar("submission_id").notNull().references(() => bidSubmissions.id),
+  level: integer("level").notNull(),
+  decision: text("decision").notNull(),
+  decidedBy: varchar("decided_by").notNull(),
+  decidedByName: text("decided_by_name"),
+  comments: text("comments"),
+  conditions: text("conditions"),
+  decidedAt: timestamp("decided_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_adjudication_decision_config").on(table.configId),
+  index("idx_adjudication_decision_submission").on(table.submissionId),
+]);
+
+export const adjudicationDecisionsRelations = relations(adjudicationDecisions, ({ one }) => ({
+  config: one(adjudicationConfigs, {
+    fields: [adjudicationDecisions.configId],
+    references: [adjudicationConfigs.id],
+  }),
+  tender: one(tenders, {
+    fields: [adjudicationDecisions.tenderId],
+    references: [tenders.id],
+  }),
+  submission: one(bidSubmissions, {
+    fields: [adjudicationDecisions.submissionId],
+    references: [bidSubmissions.id],
+  }),
+}));
+
+export const insertAdjudicationDecisionSchema = createInsertSchema(adjudicationDecisions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAdjudicationDecision = z.infer<typeof insertAdjudicationDecisionSchema>;
+export type AdjudicationDecision = typeof adjudicationDecisions.$inferSelect;
+
+// Evaluation Committees table - Committee definition per tender
+export const evaluationCommittees = pgTable("evaluation_committees", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenderId: varchar("tender_id").notNull().references(() => tenders.id),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  name: text("name").notNull().default("Evaluation Committee"),
+  status: text("status").default("draft"),
+  scoringDeadline: timestamp("scoring_deadline"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_evaluation_committee_tender").on(table.tenderId),
+  index("idx_evaluation_committee_tenant").on(table.tenantId),
+]);
+
+export const evaluationCommitteesRelations = relations(evaluationCommittees, ({ one }) => ({
+  tender: one(tenders, {
+    fields: [evaluationCommittees.tenderId],
+    references: [tenders.id],
+  }),
+  tenant: one(tenants, {
+    fields: [evaluationCommittees.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const insertEvaluationCommitteeSchema = createInsertSchema(evaluationCommittees).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertEvaluationCommittee = z.infer<typeof insertEvaluationCommitteeSchema>;
+export type EvaluationCommittee = typeof evaluationCommittees.$inferSelect;
+
+// Committee Members table - Members of an evaluation committee
+export const committeeMembers = pgTable("committee_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  committeeId: varchar("committee_id").notNull().references(() => evaluationCommittees.id),
+  userId: varchar("user_id").notNull(),
+  userName: text("user_name").notNull(),
+  userEmail: text("user_email"),
+  role: text("role").default("evaluator"),
+  hasSubmittedScores: boolean("has_submitted_scores").default(false),
+  submittedAt: timestamp("submitted_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_committee_member_committee").on(table.committeeId),
+]);
+
+export const committeeMembersRelations = relations(committeeMembers, ({ one }) => ({
+  committee: one(evaluationCommittees, {
+    fields: [committeeMembers.committeeId],
+    references: [evaluationCommittees.id],
+  }),
+}));
+
+export const insertCommitteeMemberSchema = createInsertSchema(committeeMembers).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCommitteeMember = z.infer<typeof insertCommitteeMemberSchema>;
+export type CommitteeMember = typeof committeeMembers.$inferSelect;
+
+// Committee Scores table - Individual scores from committee members
+export const committeeScores = pgTable("committee_scores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  committeeId: varchar("committee_id").notNull().references(() => evaluationCommittees.id),
+  memberId: varchar("member_id").notNull().references(() => committeeMembers.id),
+  submissionId: varchar("submission_id").notNull().references(() => bidSubmissions.id),
+  criteriaId: varchar("criteria_id").notNull().references(() => tenderScoringCriteria.id),
+  score: integer("score").notNull(),
+  maxScore: integer("max_score").notNull(),
+  comments: text("comments"),
+  scoredAt: timestamp("scored_at").defaultNow(),
+}, (table) => [
+  index("idx_committee_score_committee").on(table.committeeId),
+  index("idx_committee_score_submission").on(table.submissionId),
+]);
+
+export const committeeScoresRelations = relations(committeeScores, ({ one }) => ({
+  committee: one(evaluationCommittees, {
+    fields: [committeeScores.committeeId],
+    references: [evaluationCommittees.id],
+  }),
+  member: one(committeeMembers, {
+    fields: [committeeScores.memberId],
+    references: [committeeMembers.id],
+  }),
+  submission: one(bidSubmissions, {
+    fields: [committeeScores.submissionId],
+    references: [bidSubmissions.id],
+  }),
+  criteria: one(tenderScoringCriteria, {
+    fields: [committeeScores.criteriaId],
+    references: [tenderScoringCriteria.id],
+  }),
+}));
+
+export const insertCommitteeScoreSchema = createInsertSchema(committeeScores).omit({
+  id: true,
+});
+
+export type InsertCommitteeScore = z.infer<typeof insertCommitteeScoreSchema>;
+export type CommitteeScore = typeof committeeScores.$inferSelect;
+
+// Phase 2: Panel Evaluation Session enums
+export const panelSessionStatusEnum = z.enum(["draft", "active", "voting", "completed", "cancelled"]);
+export const panelMemberRoleEnum = z.enum(["panelist", "facilitator", "observer"]);
+
+// Panel Sessions table - Panel evaluation session for large tenders
+export const panelSessions = pgTable("panel_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenderId: varchar("tender_id").notNull().references(() => tenders.id),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  name: text("name").notNull().default("Panel Evaluation Session"),
+  description: text("description"),
+  status: text("status").default("draft"),
+  currentSubmissionId: varchar("current_submission_id"),
+  currentRound: integer("current_round").default(1),
+  totalRounds: integer("total_rounds").default(1),
+  facilitatorId: varchar("facilitator_id"),
+  facilitatorName: text("facilitator_name"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_panel_session_tender").on(table.tenderId),
+  index("idx_panel_session_tenant").on(table.tenantId),
+]);
+
+export const panelSessionsRelations = relations(panelSessions, ({ one, many }) => ({
+  tender: one(tenders, {
+    fields: [panelSessions.tenderId],
+    references: [tenders.id],
+  }),
+  members: many(panelMembers),
+  votes: many(panelVotes),
+}));
+
+export const insertPanelSessionSchema = createInsertSchema(panelSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPanelSession = z.infer<typeof insertPanelSessionSchema>;
+export type PanelSession = typeof panelSessions.$inferSelect;
+
+// Panel Members table - Members of a panel session
+export const panelMembers = pgTable("panel_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => panelSessions.id),
+  userId: varchar("user_id").notNull(),
+  userName: text("user_name").notNull(),
+  userEmail: text("user_email"),
+  role: text("role").default("panelist"),
+  isPresent: boolean("is_present").default(false),
+  joinedAt: timestamp("joined_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_panel_member_session").on(table.sessionId),
+]);
+
+export const panelMembersRelations = relations(panelMembers, ({ one, many }) => ({
+  session: one(panelSessions, {
+    fields: [panelMembers.sessionId],
+    references: [panelSessions.id],
+  }),
+  votes: many(panelVotes),
+}));
+
+export const insertPanelMemberSchema = createInsertSchema(panelMembers).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPanelMember = z.infer<typeof insertPanelMemberSchema>;
+export type PanelMember = typeof panelMembers.$inferSelect;
+
+// Panel Votes table - Individual votes per submission per round
+export const panelVotes = pgTable("panel_votes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => panelSessions.id),
+  memberId: varchar("member_id").notNull().references(() => panelMembers.id),
+  submissionId: varchar("submission_id").notNull().references(() => bidSubmissions.id),
+  criteriaId: varchar("criteria_id").notNull().references(() => tenderScoringCriteria.id),
+  round: integer("round").notNull().default(1),
+  score: integer("score").notNull(),
+  maxScore: integer("max_score").notNull(),
+  comments: text("comments"),
+  votedAt: timestamp("voted_at").defaultNow(),
+}, (table) => [
+  index("idx_panel_vote_session").on(table.sessionId),
+  index("idx_panel_vote_submission").on(table.submissionId),
+]);
+
+export const panelVotesRelations = relations(panelVotes, ({ one }) => ({
+  session: one(panelSessions, {
+    fields: [panelVotes.sessionId],
+    references: [panelSessions.id],
+  }),
+  member: one(panelMembers, {
+    fields: [panelVotes.memberId],
+    references: [panelMembers.id],
+  }),
+  submission: one(bidSubmissions, {
+    fields: [panelVotes.submissionId],
+    references: [bidSubmissions.id],
+  }),
+  criteria: one(tenderScoringCriteria, {
+    fields: [panelVotes.criteriaId],
+    references: [tenderScoringCriteria.id],
+  }),
+}));
+
+export const insertPanelVoteSchema = createInsertSchema(panelVotes).omit({
+  id: true,
+});
+
+export type InsertPanelVote = z.infer<typeof insertPanelVoteSchema>;
+export type PanelVote = typeof panelVotes.$inferSelect;
+
+// Phase 3 Enums
+export const documentVaultStatusEnum = z.enum(["pending", "verified", "expired", "rejected"]);
+export const alertTypeEnum = z.enum(["30_day", "14_day", "7_day", "expired"]);
+export const clarificationStatusEnum = z.enum(["pending", "answered", "rejected"]);
+
+// Vendor Document Vault table - Persistent document storage per vendor
+export const vendorDocumentVault = pgTable("vendor_document_vault", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  vendorId: varchar("vendor_id").notNull().references(() => vendors.id),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  documentName: text("document_name").notNull(),
+  documentType: text("document_type").notNull(),
+  filePath: text("file_path"),
+  fileSize: integer("file_size"),
+  expiryDate: timestamp("expiry_date"),
+  issueDate: timestamp("issue_date"),
+  documentNumber: text("document_number"),
+  verificationStatus: text("verification_status").default("pending"),
+  lastUsedAt: timestamp("last_used_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_vault_vendor").on(table.vendorId),
+  index("idx_vault_tenant").on(table.tenantId),
+]);
+
+export const vendorDocumentVaultRelations = relations(vendorDocumentVault, ({ one, many }) => ({
+  vendor: one(vendors, {
+    fields: [vendorDocumentVault.vendorId],
+    references: [vendors.id],
+  }),
+  expiryAlerts: many(documentExpiryAlerts),
+}));
+
+export const insertVendorDocumentVaultSchema = createInsertSchema(vendorDocumentVault).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  documentName: z.string().min(1, "Document name is required"),
+  documentType: z.string().min(1, "Document type is required"),
+});
+
+export type InsertVendorDocumentVault = z.infer<typeof insertVendorDocumentVaultSchema>;
+export type VendorDocumentVault = typeof vendorDocumentVault.$inferSelect;
+
+// Document Expiry Alerts table - Track expiry alert notifications
+export const documentExpiryAlerts = pgTable("document_expiry_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  vaultDocumentId: varchar("vault_document_id").notNull().references(() => vendorDocumentVault.id),
+  vendorId: varchar("vendor_id").notNull().references(() => vendors.id),
+  alertType: text("alert_type").notNull(),
+  channel: text("channel").notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
+  acknowledged: boolean("acknowledged").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_expiry_alert_vendor").on(table.vendorId),
+  index("idx_expiry_alert_vault_doc").on(table.vaultDocumentId),
+]);
+
+export const documentExpiryAlertsRelations = relations(documentExpiryAlerts, ({ one }) => ({
+  vaultDocument: one(vendorDocumentVault, {
+    fields: [documentExpiryAlerts.vaultDocumentId],
+    references: [vendorDocumentVault.id],
+  }),
+  vendor: one(vendors, {
+    fields: [documentExpiryAlerts.vendorId],
+    references: [vendors.id],
+  }),
+}));
+
+export const insertDocumentExpiryAlertSchema = createInsertSchema(documentExpiryAlerts).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  alertType: alertTypeEnum,
+  channel: notificationChannelEnum,
+});
+
+export type InsertDocumentExpiryAlert = z.infer<typeof insertDocumentExpiryAlertSchema>;
+export type DocumentExpiryAlert = typeof documentExpiryAlerts.$inferSelect;
+
+// Tender Clarifications table - Q&A system for tenders
+export const tenderClarifications = pgTable("tender_clarifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenderId: varchar("tender_id").notNull().references(() => tenders.id),
+  tenantId: varchar("tenant_id").references(() => tenants.id),
+  vendorId: varchar("vendor_id").references(() => vendors.id),
+  vendorName: text("vendor_name"),
+  question: text("question").notNull(),
+  answer: text("answer"),
+  answeredBy: varchar("answered_by"),
+  answeredByName: text("answered_by_name"),
+  answeredAt: timestamp("answered_at"),
+  isPublic: boolean("is_public").default(true),
+  questionDeadline: timestamp("question_deadline"),
+  status: text("status").default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_clarification_tender").on(table.tenderId),
+  index("idx_clarification_vendor").on(table.vendorId),
+]);
+
+export const tenderClarificationsRelations = relations(tenderClarifications, ({ one }) => ({
+  tender: one(tenders, {
+    fields: [tenderClarifications.tenderId],
+    references: [tenders.id],
+  }),
+  vendor: one(vendors, {
+    fields: [tenderClarifications.vendorId],
+    references: [vendors.id],
+  }),
+}));
+
+export const insertTenderClarificationSchema = createInsertSchema(tenderClarifications).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  question: z.string().min(5, "Question must be at least 5 characters"),
+});
+
+export type InsertTenderClarification = z.infer<typeof insertTenderClarificationSchema>;
+export type TenderClarification = typeof tenderClarifications.$inferSelect;

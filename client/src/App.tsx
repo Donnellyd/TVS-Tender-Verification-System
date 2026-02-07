@@ -35,6 +35,19 @@ import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { GuidedTour } from "@/components/GuidedTour";
 import VendorMessages from "@/pages/vendor-messages";
 import AwardManagement from "@/pages/award-management";
+import Evaluation from "@/pages/evaluation";
+import PanelSession from "@/pages/panel-session";
+import VendorVault from "@/pages/vendor-vault";
+import TenderClarifications from "@/pages/tender-clarifications";
+import BidAnalysis from "@/pages/bid-analysis";
+import TenderCalendar from "@/pages/tender-calendar";
+import NotificationWorkflows from "@/pages/notification-workflows";
+import SpendAnalytics from "@/pages/spend-analytics";
+import VendorPerformance from "@/pages/vendor-performance";
+import AuditExport from "@/pages/audit-export";
+import ReportBuilder from "@/pages/report-builder";
+import WhiteLabel from "@/pages/white-label";
+import MobilePwa from "@/pages/mobile-pwa";
 import PortalRegister from "@/pages/portal-register";
 import PortalVerify from "@/pages/portal-verify";
 import PortalDashboard from "@/pages/portal-dashboard";
@@ -88,6 +101,19 @@ function AuthenticatedApp() {
             <Route path="/help" component={Help} />
             <Route path="/vendor-messages" component={VendorMessages} />
             <Route path="/award-management" component={AwardManagement} />
+            <Route path="/evaluation" component={Evaluation} />
+            <Route path="/panel-sessions" component={PanelSession} />
+            <Route path="/vendor-vault" component={VendorVault} />
+            <Route path="/tender-clarifications" component={TenderClarifications} />
+            <Route path="/bid-analysis" component={BidAnalysis} />
+            <Route path="/tender-calendar" component={TenderCalendar} />
+            <Route path="/notification-workflows" component={NotificationWorkflows} />
+            <Route path="/spend-analytics" component={SpendAnalytics} />
+            <Route path="/vendor-performance" component={VendorPerformance} />
+            <Route path="/audit-export" component={AuditExport} />
+            <Route path="/report-builder" component={ReportBuilder} />
+            <Route path="/white-label" component={WhiteLabel} />
+            <Route path="/mobile-pwa" component={MobilePwa} />
             <Route path="/notifications" component={Dashboard} />
             <Route path="/settings" component={Dashboard} />
             <Route component={NotFound} />

@@ -1,209 +1,93 @@
 # VeritasAI - VeritasAI
 
 ## Overview
-A comprehensive AI-powered multi-tenant SaaS platform for global bid evaluation and procurement compliance. The system handles vendor management, tender tracking, AI-powered document processing, country-specific compliance rules, and enterprise-grade security with full API integration.
+VeritasAI is a comprehensive AI-powered multi-tenant SaaS platform designed for global bid evaluation and procurement compliance. It streamlines vendor management, tender tracking, and ensures adherence to country-specific compliance rules. The platform leverages AI for document processing, including extraction, classification, and fraud detection, and features enterprise-grade security with full API integration. Its primary purpose is to serve governments and large enterprises in managing complex procurement processes, initially targeting African nations and the Middle East with a vision for global expansion.
 
-## Current State
-- **Status**: Global SaaS Platform MVP (Phase 1-6 Complete)
-- **Last Updated**: February 2026
-- **Target Markets**: All 54 African nations, Middle East (UAE), with global expansion potential
-- **Languages**: English, French, Portuguese, Arabic (EN/FR/PT/AR)
+## User Preferences
+I prefer iterative development with clear communication at each step.
+I want to be asked before any major architectural changes are made.
+I prefer detailed explanations for complex features and design choices.
+Do not make changes to the `server/stripe*.ts` files or `docs/stripe-setup-guide.md` as they are preserved for future re-integration.
 
-## Platform Architecture
+## System Architecture
 
 ### Multi-Tenant SaaS Features
-- **Tenant Isolation**: Complete data separation with tenant_id on all tables
-- **Subscription Tiers**: Starter ($499), Professional ($1,499), Enterprise ($3,999), Government (Custom Pricing)
-- **Usage-Based Billing**: Track bids, documents, storage, API calls per tenant
-- **API Integration**: REST API v1 with API key authentication and OAuth support
-
-### Supported Countries (70 total)
-- **All 54 African Nations**: Including ZA, KE, NG, GH, EG, MA, DZ, TN, ET, TZ, UG, RW, CI, SN, CM, AO, MZ, ZW, ZM, BW, NA, and more
-- **Australia (AU)**: Commonwealth Procurement Rules, Indigenous Procurement Policy
-- **UAE (AE)**: Local ICV requirements
-- **EU Countries**: Germany, France, Netherlands, Italy, Spain, Belgium, Portugal, Sweden, Denmark, Poland
-- **UK**: Public Contracts Regulations
-- **USA (US)**: FAR/DFAR, SBA preferences
+The platform supports multi-tenancy with complete data isolation via a `tenant_id` on all tables. It offers subscription tiers (Starter, Professional, Enterprise, Government) and implements usage-based billing for bids, documents, storage, and API calls. A REST API v1 is available with API key authentication and OAuth support.
 
 ### Frontend (React + TypeScript)
-- **Entry**: `client/src/App.tsx`
-- **Pages**: 
-  - Core: Landing, Dashboard, Vendors, Tenders, Documents, Compliance, Analytics
-  - Admin: Municipalities, Submissions, TenderRequirements, CountryLaunch, VendorMessages, AwardManagement
-  - SaaS: Billing, ComplianceRules, ApiSettings
-  - Communication: EmailTemplates, WhatsappTemplates
-  - Portal: PortalRegister, PortalVerify, PortalDashboard, PortalSubmit, PortalSubmissions, PortalMessages, PortalAwards
-  - Public: Pricing, ComplianceExplorer, Help
-- **Components**: AppSidebar, PageHeader, StatsCard, StatusBadge, EmptyState, DataTableSkeleton, ThemeToggle, Chatbot, HelpManual, GlobalHelpSearch, KeyboardShortcuts, GuidedTour, FieldHelp, StatusBadgeHelp, PortalLayout
-- **Styling**: Tailwind CSS with professional blue/teal color scheme, dark mode support
-- **State Management**: TanStack Query for server state
-- **Routing**: Wouter
+The frontend, developed with React and TypeScript, utilizes Tailwind CSS for styling with a professional blue/teal color scheme and dark mode support. State management is handled by TanStack Query, and Wouter is used for routing. Key pages include Dashboard, Vendors, Tenders, Documents, Compliance, Analytics, and a dedicated Vendor Portal. Core UI components provide a consistent user experience, including a chatbot, help manual, and guided tours.
 
 ### Backend (Express + TypeScript)
-- **Entry**: `server/index.ts`
-- **Routes**:
-  - `server/routes.ts`: Core CRUD + AI endpoints + analytics
-  - `server/tenant-routes.ts`: Multi-tenant, billing, compliance rules
-  - `server/api-v1-routes.ts`: External API v1 endpoints
-- **Storage**:
-  - `server/storage.ts`: Core DatabaseStorage class
-  - `server/tenant-storage.ts`: Tenant-specific operations
-  - `server/compliance-storage.ts`: Compliance rules engine
-  - `server/country-launch-storage.ts`: Country launch status and enquiries
-- **AI Integration**: 
-  - `server/ai-document-processor.ts`: Document analysis, OCR, fraud detection
-- **Security**:
-  - `server/security-middleware.ts`: Rate limiting, RBAC, audit logging
-- **Auth**: Replit Auth integration with session management
+The backend is built with Express and TypeScript, organizing routes for core CRUD operations, AI endpoints, analytics, multi-tenancy, billing, and external API v1. It integrates with an AI document processor for analysis, OCR, and fraud detection. Security features include rate limiting, RBAC, audit logging, and field encryption. Authentication is managed via Replit Auth with session management.
 
 ### Database (PostgreSQL)
-- **Schema**: `shared/schema.ts`
-- **Core Tables**: municipalities, vendors, tenders, documents, compliance_rules, compliance_checks, audit_logs, notifications, sessions, users
-- **Submission Tables**: tender_requirements, bid_submissions, submission_documents, evaluation_scores, letter_templates, generated_letters
-- **Multi-Tenant Tables**: tenants, subscriptions, usage_tracking, invoices, api_keys, tenant_users
-- **Compliance Engine Tables**: compliance_rule_sets, compliance_rule_definitions, rule_version_history, rule_execution_logs
-- **Country Launch Tables**: country_launch_status, country_enquiries
+The PostgreSQL database schema supports core entities like municipalities, vendors, tenders, documents, and compliance rules. It includes specific tables for submission management, multi-tenancy (tenants, subscriptions, usage_tracking), and a robust compliance engine.
 
 ### AI-Powered Features
-- **Document Analysis**: AI-powered extraction of document data (tax clearance, company registration, BBBEE, etc.)
-- **Document Classification**: Automatic detection of document types
-- **Fraud Detection**: AI-based detection of document anomalies and fraud indicators
-- **Compliance Validation**: Automated validation against configurable compliance rules
-- **Multi-Language Support**: Document processing in multiple languages
-- **PDF Requirement Extraction**: Upload tender PDF → AI extracts compliance requirements automatically
-- **Letter Generation**: AI-powered or template-based award/rejection letter generation
-- **AI Chatbot**: GPT-4o powered assistant for answering user questions about the platform
-
-### API v1 Endpoints
-- `POST /api/v1/bids`: Submit bid for evaluation
-- `GET /api/v1/bids`: List bids with pagination
-- `GET /api/v1/bids/:id`: Get bid details and results
-- `POST /api/v1/documents/verify`: Verify a single document
-- `GET /api/v1/compliance/rules`: List compliance rules by country
-- `POST /api/v1/webhooks`: Register webhook endpoints
-- `GET /api/v1/usage`: Get current usage stats
+The platform incorporates advanced AI for:
+- **Document Analysis**: Extraction of critical data from various document types.
+- **Document Classification**: Automatic categorization of uploaded documents.
+- **Fraud Detection**: Identification of anomalies and fraud indicators in documents.
+- **Compliance Validation**: Automated checks against configurable compliance rules.
+- **Multi-Language Support**: Processing documents in English, French, Portuguese, and Arabic.
+- **PDF Requirement Extraction**: AI-driven extraction of compliance requirements from tender PDFs.
+- **Letter Generation**: AI-powered or template-based generation of award/rejection letters.
+- **AI Chatbot**: A GPT-4o powered assistant for user support.
 
 ### Security Features
-- **Rate Limiting**: Configurable per-tenant rate limits
-- **RBAC**: Role-based access control (admin, owner, manager, analyst, viewer)
-- **Audit Logging**: Complete audit trail of all actions
-- **Field Encryption**: AES-256-GCM encryption for sensitive data
-- **API Key Management**: Secure API key generation and validation
-- **Security Headers**: HSTS, XSS protection, content type sniffing prevention
-
-## Development Commands
-- `npm run dev`: Start development server
-- `npm run db:push`: Push schema changes to database
-- `npm run db:push --force`: Force push schema changes
-
-### Email Notifications (SendGrid)
-- **Service**: `server/email-notifications.ts` - SendGrid integration via Replit connector
-- **Features**: Templated emails, bulk sending, notification logging
-- **Templates**: Award letters, rejection letters, document expiry alerts, bid received confirmations
-- **Monthly Limits**: Starter 500, Professional 3,000, Enterprise 15,000 emails (included free)
-
-### Email Domain Authentication
-- **Service**: `server/sendgrid-domain-service.ts` - SendGrid domain whitelabel API integration
-- **Schema**: `tenant_email_settings`, `domain_authentication_logs` tables in `shared/models/tenant.ts`
-- **Setup Wizard**: `/email-setup` page for client onboarding with email choice
-- **Options**:
-  - **Default Email**: Use veritasai@zd-solutions.com (instant, no configuration)
-  - **Custom Domain**: Configure client's own domain with DNS verification
-- **Features**:
-  - Automated DNS record generation for CNAME/DKIM setup
-  - Copy-to-clipboard DNS instructions for easy configuration
-  - Background verification job checks pending domains every 5 minutes
-  - Verification status tracking (pending, verified, failed)
-  - Audit logging for all domain authentication actions
-- **Background Job**: `server/domain-verification-job.ts` - Periodic verification checks
-- **API Endpoints**:
-  - `GET /api/email-settings/:tenantId` - Get tenant email settings
-  - `POST /api/email-settings/initialize` - Initialize email config (default/custom)
-  - `POST /api/email-settings/setup-domain` - Setup custom domain authentication
-  - `POST /api/email-settings/verify-domain` - Trigger DNS verification check
-  - `POST /api/email-settings/use-default` - Switch back to default email
-
-### Payment Processing (Yoco - South Africa)
-- **Yoco Service**: `server/yoco-payments.ts` - South African local card payments (ZAR)
-- **Webhooks**: `/api/webhooks/yoco` (Yoco payment events)
-- **Checkout**: Yoco Checkout for ZAR payments
-- **Pricing**: Annual billing with monthly equivalent display (R899-R6,999/month ZAR)
-- **Environment**: `YOCO_SECRET_KEY` required for Yoco
-- **Stripe (Disabled)**: Files preserved in `server/stripe*.ts`, docs in `docs/stripe-setup-guide.md`
-
-## Development Commands
-- `npm run dev`: Start development server
-- `npm run db:push`: Push schema changes to database
-- `npm run db:push --force`: Force push schema changes
-
-### Country Launch Control System
-- **Purpose**: Phased country-by-country rollout with payment gateway control
-- **Status Types**: active (full payment), enquiry_only (contact form), coming_soon, disabled
-- **Initial Launch**: South Africa (ZA) is active with Yoco gateway, all other countries are enquiry_only
-- **Admin UI**: `/country-launch` page for managing country statuses and viewing enquiries
-- **Public Flow**: Pricing page checks country status - shows payment for active, enquiry form for others
-- **Enquiry Management**: Stores customer enquiries with follow-up tracking
+Enterprise-grade security is implemented through:
+- Configurable per-tenant rate limiting.
+- Role-based access control (RBAC) with distinct roles.
+- Comprehensive audit logging of all user actions.
+- AES-256-GCM encryption for sensitive data.
+- Secure API key management.
+- Implementation of security headers (HSTS, XSS protection).
 
 ### Comprehensive Help System
-- **Help Components**: `client/src/components/` - HelpManual, GlobalHelpSearch, KeyboardShortcuts, GuidedTour, FieldHelp, StatusBadgeHelp
-- **Help Content**: `client/src/lib/helpContent.ts` - Comprehensive content for all 12 modules
-- **Features**:
-  - Context-sensitive help: Each page header has a help button opening module-specific documentation
-  - Global search: Ctrl+K opens a command palette to search across all help content
-  - Keyboard shortcuts: Ctrl+/ shows all available keyboard shortcuts
-  - Guided tour: First-time users see an interactive tour (localStorage-persisted)
-  - Form field help: FieldHelp component provides tooltips for form fields
-  - Status explanations: StatusBadgeHelp explains what each status means when clicked
-- **Modules Covered**: Dashboard, Vendors, Tenders, Documents, Compliance, Analytics, Billing, API Settings, Email Templates, Country Launch, Pricing, Vendor Portal, Vendor Messages, Help
-- **Integration**: PageHeader accepts moduleId prop for context-sensitive help
+A robust help system provides:
+- Context-sensitive help accessible from each page.
+- A global search functionality for help content.
+- Keyboard shortcuts and an interactive guided tour for new users.
+- Field-level help and status explanations.
+
+### Multi-Phase Evaluation System
+A comprehensive evaluation engine supporting:
+- **Automated Scoring**: Reusable scoring templates with weighted criteria, auto-scoring for price/BBBEE/compliance
+- **Multi-Level Adjudication**: Configurable 2-3 level approval workflows (Level 1 automated compliance, Level 2+ manual review)
+- **Evaluation Committees**: Independent scoring by committee members with weighted aggregation
+- **Panel Sessions**: Real-time synchronized voting for 8-10 panelists with facilitator/projector view
+- **Comparative Bid Analysis**: Side-by-side bid comparison with charts and price analysis
+- **Tables**: scoring_templates, adjudication_configs/assignments/decisions, evaluation_committees/members/scores, panel_sessions/members/votes
+
+### Vendor Experience Features
+- **Document Vault**: Persistent document storage per vendor with categorization, expiry tracking, and verification status
+- **Document Expiry Alerts**: Automated tracking with WhatsApp/email notification scheduling (30/14/7 days, expired)
+- **Tender Q&A System**: Structured clarification Q&A on active tenders with public/private visibility
+- **Bid Status Timeline**: Visual progress tracker showing submission through adjudication to award
+- **Tables**: vendor_document_vault, document_expiry_alerts, tender_clarifications
+
+### Analytics & Reporting
+- **Spend Analytics**: Monthly trends, category breakdown, top vendor analysis with interactive charts
+- **Vendor Performance**: Win rates, compliance rates, performance ratings across all vendors
+- **Report Builder**: Custom reports from any data source with column selection, filters, CSV/JSON/TXT export
+- **Audit Trail Export**: Full audit log with date/action/user filters and downloadable exports
+- **Tender Calendar**: Month/list view of all tender deadlines and milestones
+
+### Platform Configuration
+- **Notification Workflows**: Configurable automated notification triggers for document expiry, bid received, tender closing, award decisions
+- **White-Label Portal**: Tenant branding customization (logo, colors, content, domain)
+- **Mobile PWA Settings**: Progressive Web App configuration and installation guides
 
 ### Vendor Portal System
-- **Purpose**: Allow vendors to register, submit quotes/tenders online, and track submissions
-- **Authentication**: WhatsApp OTP via Twilio (5min expiry), portal tokens (24hr expiry)
-- **Registration**: Self-service with company details + WhatsApp verification
-- **Routes**: `server/portal-routes.ts` - All portal API endpoints (bypass Replit Auth)
-- **Storage**: Portal-specific methods in `server/storage.ts`
-- **WhatsApp Service**: `server/twilio-whatsapp.ts` - OTP delivery and procurement notifications
-- **Frontend Pages**: `client/src/pages/portal-*.tsx` (register, verify, dashboard, submit, submissions, messages, awards)
-- **Layout**: `client/src/components/PortalLayout.tsx` - Shared portal navigation
-- **API Helper**: `client/src/lib/portalApi.ts` - Token management and authenticated fetch
-- **Compliance Pre-Check**: Traffic-light system (green/amber/red) before submission
-- **Award Signing**: Online acceptance with SLA review, digital signature, and decline option
-- **Admin Integration**: Vendor Messages page, Award & SLA Management page
-- **WhatsApp Templates**: `server/seed-whatsapp-templates.ts` - Procurement notification templates
-- **Schema**: Portal auth fields on vendors table, vendor_messages, award_acceptances, tender_sla_documents tables
-- **Multi-tenant**: Messages include tenantId, submissions inherit tender's tenantId
+The Vendor Portal allows vendors to register, submit bids, and track submissions. It uses WhatsApp OTP for authentication, offers a compliance pre-check, and supports online award acceptance with digital signatures.
 
-## Recent Changes
-- Added award signing system: vendors can accept/decline awards online, read and sign SLA documents, with digital signature capture and IP logging
-- Added Award & SLA Management admin page for uploading SLA documents and tracking vendor signing status
-- Added portal awards page with award letter viewing, SLA reading, digital signing, and decline with reason
-- Updated portal dashboard to show pending awards requiring signature
-- Updated documentation: help guide (docs/help-guide.md), help content modules (helpContent.ts), and Help page with Vendor Portal tab, system overview, and getting started guide
-- Added Vendor Portal with WhatsApp OTP authentication, online quote/tender submission, compliance pre-check (traffic-light system), vendor dashboard, message tracking, and admin message management
-- Added comprehensive help system with context-sensitive documentation, global search (Ctrl+K), keyboard shortcuts (Ctrl+/), and guided tour
-- Removed Stripe integration from server code (files preserved for future re-integration)
-- Created docs/stripe-setup-guide.md with complete re-integration instructions
-- App now uses Yoco only for South African (ZAR) payments
-- Added IP geolocation endpoint for automatic country detection on pricing page (using ip-api.com)
-- Added SendGrid webhook handler for email event tracking (delivered, opened, bounced, spam) with token-based auth
-- Fixed 31 TypeScript LSP errors (imports, type casting, subscription routing)
-- Added email domain authentication system for client onboarding (default VeritasAI email or custom domain)
-- Added country launch control system for phased rollout (SA active first, others enquiry-only)
-- Added Yoco payment integration for South African local card payments (ZAR)
-- Rebranded from GLOBAL-TVS to VeritasAI with Circuit V logo
-- Implemented SendGrid email notifications with template support
-- Added multi-tenant architecture with complete tenant isolation
-- Implemented subscription billing with 4 tiers ($49-$399/month, billed annually)
-- Changed Government tier to "Contact Us" with custom pricing (relationship-based enterprise sales)
-- Added country selector to Pricing page showing relevant compliance features for selected country
-- Created country-specific compliance modules (ZA, KE, NG, GH, AE, UK, US) with GLOBAL fallback
-- Built AI document processing pipeline with multi-language support (EN/FR/PT/AR)
-- Added API v1 for external integrations
-- Built Country Compliance Explorer page with interactive country selector and detailed compliance info
-- Added Help/Documentation page with 5 tabs (Getting Started, Billing, Platform Usage, API, FAQ)
-- Created docs/help-guide.md with comprehensive platform documentation
-- Integrated AI Chatbot (GPT-4o) as floating widget on all pages for user assistance
-- Added Help link to landing page header and authenticated user sidebar
-- Implemented security middleware (rate limiting, RBAC, audit logging)
-- Configured autoscale deployment for production
+### Country Launch Control System
+A phased country-by-country rollout is managed through a control system, allowing activation of full payment capabilities or "enquiry-only" status based on country readiness.
+
+## External Dependencies
+
+- **SendGrid**: For email notifications, including templated emails, bulk sending, and domain authentication.
+- **Yoco**: Integrated for local card payments in South Africa (ZAR).
+- **Twilio**: Used for WhatsApp OTP verification in the Vendor Portal.
+- **ip-api.com**: For IP geolocation to automatically detect user country.
+- **GPT-4o**: Powers the AI chatbot for user assistance.

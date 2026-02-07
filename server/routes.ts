@@ -1426,6 +1426,780 @@ Return a JSON object with scores for each criterion:
     }
   });
 
+  // Scoring Templates
+  app.get("/api/scoring-templates", async (req, res) => {
+    try {
+      const tenantId = req.query.tenantId as string | undefined;
+      const templates = await storage.getScoringTemplates(tenantId);
+      res.json(templates);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch scoring templates" });
+    }
+  });
+
+  app.get("/api/scoring-templates/:id", async (req, res) => {
+    try {
+      const template = await storage.getScoringTemplate(req.params.id);
+      if (!template) return res.status(404).json({ error: "Scoring template not found" });
+      const criteria = await storage.getScoringTemplateCriteria(template.id);
+      res.json({ ...template, criteria });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch scoring template" });
+    }
+  });
+
+  app.post("/api/scoring-templates", async (req, res) => {
+    try {
+      const { criteria, ...templateData } = req.body;
+      const template = await storage.createScoringTemplate(templateData);
+      if (criteria && Array.isArray(criteria)) {
+        for (const c of criteria) {
+          await storage.createScoringTemplateCriteria({ ...c, templateId: template.id });
+        }
+      }
+      const savedCriteria = await storage.getScoringTemplateCriteria(template.id);
+      res.status(201).json({ ...template, criteria: savedCriteria });
+    } catch (error) {
+      console.error("Error creating scoring template:", error);
+      res.status(500).json({ error: "Failed to create scoring template" });
+    }
+  });
+
+  app.put("/api/scoring-templates/:id", async (req, res) => {
+    try {
+      const { criteria, ...templateData } = req.body;
+      const template = await storage.updateScoringTemplate(req.params.id, templateData);
+      if (!template) return res.status(404).json({ error: "Scoring template not found" });
+      if (criteria && Array.isArray(criteria)) {
+        await storage.deleteScoringTemplateCriteriaByTemplate(template.id);
+        for (const c of criteria) {
+          await storage.createScoringTemplateCriteria({ ...c, templateId: template.id });
+        }
+      }
+      const savedCriteria = await storage.getScoringTemplateCriteria(template.id);
+      res.json({ ...template, criteria: savedCriteria });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update scoring template" });
+    }
+  });
+
+  app.delete("/api/scoring-templates/:id", async (req, res) => {
+    try {
+      await storage.deleteScoringTemplateCriteriaByTemplate(req.params.id);
+      const deleted = await storage.deleteScoringTemplate(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Scoring template not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete scoring template" });
+    }
+  });
+
+  // Apply scoring template to a tender
+  app.post("/api/tenders/:tenderId/apply-scoring-template", async (req, res) => {
+    try {
+      const { templateId } = req.body;
+      const template = await storage.getScoringTemplate(templateId);
+      if (!template) return res.status(404).json({ error: "Template not found" });
+      const criteria = await storage.getScoringTemplateCriteria(templateId);
+      await storage.deleteTenderScoringCriteriaByTender(req.params.tenderId);
+      const tenderCriteria = [];
+      for (const c of criteria) {
+        const tc = await storage.createTenderScoringCriteria({
+          tenderId: req.params.tenderId,
+          criteriaName: c.criteriaName,
+          criteriaCategory: c.criteriaCategory as any,
+          description: c.description,
+          maxScore: c.maxScore,
+          weight: c.weight,
+          sortOrder: c.sortOrder,
+        });
+        tenderCriteria.push(tc);
+      }
+      res.json(tenderCriteria);
+    } catch (error) {
+      console.error("Error applying scoring template:", error);
+      res.status(500).json({ error: "Failed to apply scoring template" });
+    }
+  });
+
+  // Adjudication Configuration
+  app.get("/api/tenders/:tenderId/adjudication", async (req, res) => {
+    try {
+      const config = await storage.getAdjudicationConfig(req.params.tenderId);
+      if (!config) return res.json(null);
+      const assignments = await storage.getAdjudicationAssignments(config.id);
+      const decisions = await storage.getAdjudicationDecisions(config.id);
+      res.json({ ...config, assignments, decisions });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch adjudication config" });
+    }
+  });
+
+  app.post("/api/tenders/:tenderId/adjudication", async (req, res) => {
+    try {
+      const existing = await storage.getAdjudicationConfig(req.params.tenderId);
+      if (existing) return res.status(400).json({ error: "Adjudication config already exists for this tender" });
+      const config = await storage.createAdjudicationConfig({
+        ...req.body,
+        tenderId: req.params.tenderId,
+      });
+      if (req.body.assignments && Array.isArray(req.body.assignments)) {
+        for (const a of req.body.assignments) {
+          await storage.createAdjudicationAssignment({
+            ...a,
+            configId: config.id,
+            tenderId: req.params.tenderId,
+          });
+        }
+      }
+      const assignments = await storage.getAdjudicationAssignments(config.id);
+      res.status(201).json({ ...config, assignments });
+    } catch (error) {
+      console.error("Error creating adjudication config:", error);
+      res.status(500).json({ error: "Failed to create adjudication config" });
+    }
+  });
+
+  app.put("/api/adjudication/:id", async (req, res) => {
+    try {
+      const { assignments, ...configData } = req.body;
+      const config = await storage.updateAdjudicationConfig(req.params.id, configData);
+      if (!config) return res.status(404).json({ error: "Adjudication config not found" });
+      if (assignments && Array.isArray(assignments)) {
+        await storage.deleteAdjudicationAssignments(config.id);
+        for (const a of assignments) {
+          await storage.createAdjudicationAssignment({
+            ...a,
+            configId: config.id,
+            tenderId: config.tenderId,
+          });
+        }
+      }
+      const savedAssignments = await storage.getAdjudicationAssignments(config.id);
+      res.json({ ...config, assignments: savedAssignments });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update adjudication config" });
+    }
+  });
+
+  // Submit adjudication decision
+  app.post("/api/adjudication/:configId/decide", async (req, res) => {
+    try {
+      const config = await storage.getAdjudicationConfigById(req.params.configId);
+      if (!config) return res.status(404).json({ error: "Adjudication config not found" });
+      const decision = await storage.createAdjudicationDecision({
+        ...req.body,
+        configId: req.params.configId,
+        tenderId: config.tenderId,
+      });
+      const allDecisions = await storage.getAdjudicationDecisions(config.id, req.body.submissionId);
+      const submissions = await storage.getBidSubmissions(config.tenderId);
+      const totalSubmissions = submissions.length;
+      const levelDecisions = allDecisions.filter(d => d.level === req.body.level);
+      if (levelDecisions.length >= totalSubmissions) {
+        const nextLevel = req.body.level + 1;
+        if (nextLevel <= config.totalLevels) {
+          await storage.updateAdjudicationConfig(config.id, { currentLevel: nextLevel });
+        } else {
+          await storage.updateAdjudicationConfig(config.id, { status: 'completed', currentLevel: config.totalLevels });
+        }
+      }
+      res.status(201).json(decision);
+    } catch (error) {
+      console.error("Error creating adjudication decision:", error);
+      res.status(500).json({ error: "Failed to submit adjudication decision" });
+    }
+  });
+
+  // Get adjudication decisions for a specific submission
+  app.get("/api/adjudication/:configId/submissions/:submissionId/decisions", async (req, res) => {
+    try {
+      const decisions = await storage.getAdjudicationDecisions(req.params.configId, req.params.submissionId);
+      res.json(decisions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch adjudication decisions" });
+    }
+  });
+
+  // Evaluation Committees
+  app.get("/api/evaluation-committees", async (req, res) => {
+    try {
+      const tenderId = req.query.tenderId as string | undefined;
+      const tenantId = req.query.tenantId as string | undefined;
+      const committees = await storage.getEvaluationCommittees(tenderId, tenantId);
+      res.json(committees);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch evaluation committees" });
+    }
+  });
+
+  app.get("/api/evaluation-committees/:id", async (req, res) => {
+    try {
+      const committee = await storage.getEvaluationCommittee(req.params.id);
+      if (!committee) return res.status(404).json({ error: "Committee not found" });
+      const members = await storage.getCommitteeMembers(committee.id);
+      res.json({ ...committee, members });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch committee" });
+    }
+  });
+
+  app.post("/api/evaluation-committees", async (req, res) => {
+    try {
+      const { members, ...committeeData } = req.body;
+      const committee = await storage.createEvaluationCommittee(committeeData);
+      if (members && Array.isArray(members)) {
+        for (const m of members) {
+          await storage.createCommitteeMember({ ...m, committeeId: committee.id });
+        }
+      }
+      const savedMembers = await storage.getCommitteeMembers(committee.id);
+      res.status(201).json({ ...committee, members: savedMembers });
+    } catch (error) {
+      console.error("Error creating committee:", error);
+      res.status(500).json({ error: "Failed to create committee" });
+    }
+  });
+
+  app.put("/api/evaluation-committees/:id", async (req, res) => {
+    try {
+      const { members, ...committeeData } = req.body;
+      const committee = await storage.updateEvaluationCommittee(req.params.id, committeeData);
+      if (!committee) return res.status(404).json({ error: "Committee not found" });
+      res.json(committee);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update committee" });
+    }
+  });
+
+  app.delete("/api/evaluation-committees/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteEvaluationCommittee(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Committee not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete committee" });
+    }
+  });
+
+  // Committee Members
+  app.get("/api/evaluation-committees/:committeeId/members", async (req, res) => {
+    try {
+      const members = await storage.getCommitteeMembers(req.params.committeeId);
+      res.json(members);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch committee members" });
+    }
+  });
+
+  app.post("/api/evaluation-committees/:committeeId/members", async (req, res) => {
+    try {
+      const member = await storage.createCommitteeMember({
+        ...req.body,
+        committeeId: req.params.committeeId,
+      });
+      res.status(201).json(member);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to add committee member" });
+    }
+  });
+
+  app.put("/api/committee-members/:id", async (req, res) => {
+    try {
+      const member = await storage.updateCommitteeMember(req.params.id, req.body);
+      if (!member) return res.status(404).json({ error: "Member not found" });
+      res.json(member);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update committee member" });
+    }
+  });
+
+  app.delete("/api/committee-members/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteCommitteeMember(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Member not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete committee member" });
+    }
+  });
+
+  // Committee Scoring
+  app.get("/api/evaluation-committees/:committeeId/scores", async (req, res) => {
+    try {
+      const submissionId = req.query.submissionId as string | undefined;
+      const scores = await storage.getCommitteeScores(req.params.committeeId, submissionId);
+      res.json(scores);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch committee scores" });
+    }
+  });
+
+  app.post("/api/evaluation-committees/:committeeId/scores", async (req, res) => {
+    try {
+      const { memberId, submissionId, scores } = req.body;
+      if (!scores || !Array.isArray(scores)) {
+        return res.status(400).json({ error: "Scores array is required" });
+      }
+      const savedScores = await storage.createBulkCommitteeScores(
+        scores.map((s: any) => ({
+          ...s,
+          committeeId: req.params.committeeId,
+          memberId,
+          submissionId,
+        }))
+      );
+      await storage.updateCommitteeMember(memberId, {
+        hasSubmittedScores: true,
+        submittedAt: new Date(),
+      });
+      res.status(201).json(savedScores);
+    } catch (error) {
+      console.error("Error submitting committee scores:", error);
+      res.status(500).json({ error: "Failed to submit scores" });
+    }
+  });
+
+  // Get aggregated scores for a tender's committee
+  app.get("/api/evaluation-committees/:committeeId/aggregated-scores", async (req, res) => {
+    try {
+      const committee = await storage.getEvaluationCommittee(req.params.committeeId);
+      if (!committee) return res.status(404).json({ error: "Committee not found" });
+      const members = await storage.getCommitteeMembers(committee.id);
+      const allScores = await storage.getCommitteeScores(committee.id);
+      const submissions = await storage.getBidSubmissions(committee.tenderId);
+      const criteria = await storage.getTenderScoringCriteria(committee.tenderId);
+      const aggregated = submissions.map(sub => {
+        const subScores = allScores.filter(s => s.submissionId === sub.id);
+        const criteriaAgg = criteria.map(c => {
+          const criteriaScores = subScores.filter(s => s.criteriaId === c.id);
+          const avgScore = criteriaScores.length > 0
+            ? criteriaScores.reduce((sum, s) => sum + s.score, 0) / criteriaScores.length
+            : 0;
+          return {
+            criteriaId: c.id,
+            criteriaName: c.criteriaName,
+            criteriaCategory: c.criteriaCategory,
+            maxScore: c.maxScore,
+            weight: c.weight,
+            averageScore: Math.round(avgScore * 100) / 100,
+            individualScores: criteriaScores.map(s => ({
+              memberId: s.memberId,
+              memberName: members.find(m => m.id === s.memberId)?.userName || 'Unknown',
+              score: s.score,
+              comments: s.comments,
+            })),
+          };
+        });
+        const totalWeightedScore = criteriaAgg.reduce((sum, c) => {
+          const weightedScore = (c.averageScore / c.maxScore) * (c.weight || 1);
+          return sum + weightedScore;
+        }, 0);
+        const totalWeight = criteriaAgg.reduce((sum, c) => sum + (c.weight || 1), 0);
+        const normalizedScore = totalWeight > 0 ? Math.round((totalWeightedScore / totalWeight) * 100) : 0;
+        return {
+          submissionId: sub.id,
+          vendorId: sub.vendorId,
+          bidAmount: sub.bidAmount,
+          totalWeightedScore: normalizedScore,
+          criteriaScores: criteriaAgg,
+          evaluatorCount: members.filter(m => m.hasSubmittedScores).length,
+          totalEvaluators: members.length,
+        };
+      });
+      aggregated.sort((a, b) => b.totalWeightedScore - a.totalWeightedScore);
+      res.json({
+        committeeId: committee.id,
+        tenderName: committee.name,
+        status: committee.status,
+        submissions: aggregated,
+      });
+    } catch (error) {
+      console.error("Error fetching aggregated scores:", error);
+      res.status(500).json({ error: "Failed to fetch aggregated scores" });
+    }
+  });
+
+  // Panel Evaluation Sessions
+  app.get("/api/panel-sessions", async (req, res) => {
+    try {
+      const tenderId = req.query.tenderId as string | undefined;
+      const sessions = await storage.getPanelSessions(tenderId);
+      res.json(sessions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch panel sessions" });
+    }
+  });
+
+  app.get("/api/panel-sessions/:id", async (req, res) => {
+    try {
+      const session = await storage.getPanelSession(req.params.id);
+      if (!session) return res.status(404).json({ error: "Panel session not found" });
+      const members = await storage.getPanelMembers(session.id);
+      const votes = await storage.getPanelVotes(session.id);
+      const submissions = await storage.getBidSubmissions(session.tenderId);
+      const criteria = await storage.getTenderScoringCriteria(session.tenderId);
+      res.json({ ...session, members, votes, submissions, criteria });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch panel session" });
+    }
+  });
+
+  app.post("/api/panel-sessions", async (req, res) => {
+    try {
+      const { members, ...sessionData } = req.body;
+      const session = await storage.createPanelSession(sessionData);
+      if (members && Array.isArray(members)) {
+        for (const m of members) {
+          await storage.createPanelMember({ ...m, sessionId: session.id });
+        }
+      }
+      const savedMembers = await storage.getPanelMembers(session.id);
+      res.status(201).json({ ...session, members: savedMembers });
+    } catch (error) {
+      console.error("Error creating panel session:", error);
+      res.status(500).json({ error: "Failed to create panel session" });
+    }
+  });
+
+  app.put("/api/panel-sessions/:id", async (req, res) => {
+    try {
+      const session = await storage.updatePanelSession(req.params.id, req.body);
+      if (!session) return res.status(404).json({ error: "Panel session not found" });
+      res.json(session);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update panel session" });
+    }
+  });
+
+  app.delete("/api/panel-sessions/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deletePanelSession(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Panel session not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete panel session" });
+    }
+  });
+
+  // Panel Members
+  app.get("/api/panel-sessions/:sessionId/members", async (req, res) => {
+    try {
+      const members = await storage.getPanelMembers(req.params.sessionId);
+      res.json(members);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch panel members" });
+    }
+  });
+
+  app.post("/api/panel-sessions/:sessionId/members", async (req, res) => {
+    try {
+      const member = await storage.createPanelMember({
+        ...req.body,
+        sessionId: req.params.sessionId,
+      });
+      res.status(201).json(member);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to add panel member" });
+    }
+  });
+
+  app.put("/api/panel-members/:id", async (req, res) => {
+    try {
+      const member = await storage.updatePanelMember(req.params.id, req.body);
+      if (!member) return res.status(404).json({ error: "Panel member not found" });
+      res.json(member);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update panel member" });
+    }
+  });
+
+  app.delete("/api/panel-members/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deletePanelMember(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Panel member not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete panel member" });
+    }
+  });
+
+  // Panel Voting
+  app.get("/api/panel-sessions/:sessionId/votes", async (req, res) => {
+    try {
+      const submissionId = req.query.submissionId as string | undefined;
+      const votes = await storage.getPanelVotes(req.params.sessionId, submissionId);
+      res.json(votes);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch panel votes" });
+    }
+  });
+
+  app.post("/api/panel-sessions/:sessionId/votes", async (req, res) => {
+    try {
+      const { memberId, submissionId, scores, round } = req.body;
+      if (!scores || !Array.isArray(scores)) {
+        return res.status(400).json({ error: "Scores array is required" });
+      }
+      const savedVotes = await storage.createBulkPanelVotes(
+        scores.map((s: any) => ({
+          ...s,
+          sessionId: req.params.sessionId,
+          memberId,
+          submissionId,
+          round: round || 1,
+        }))
+      );
+      res.status(201).json(savedVotes);
+    } catch (error) {
+      console.error("Error submitting panel votes:", error);
+      res.status(500).json({ error: "Failed to submit votes" });
+    }
+  });
+
+  // Panel aggregated results (for facilitator screen)
+  app.get("/api/panel-sessions/:sessionId/results", async (req, res) => {
+    try {
+      const session = await storage.getPanelSession(req.params.sessionId);
+      if (!session) return res.status(404).json({ error: "Session not found" });
+      const members = await storage.getPanelMembers(session.id);
+      const votes = await storage.getPanelVotes(session.id);
+      const submissions = await storage.getBidSubmissions(session.tenderId);
+      const criteria = await storage.getTenderScoringCriteria(session.tenderId);
+      const results = submissions.map(sub => {
+        const subVotes = votes.filter(v => v.submissionId === sub.id && v.round === session.currentRound);
+        const criteriaResults = criteria.map(c => {
+          const cVotes = subVotes.filter(v => v.criteriaId === c.id);
+          const avgScore = cVotes.length > 0
+            ? cVotes.reduce((sum, v) => sum + v.score, 0) / cVotes.length
+            : 0;
+          return {
+            criteriaId: c.id,
+            criteriaName: c.criteriaName,
+            criteriaCategory: c.criteriaCategory,
+            maxScore: c.maxScore,
+            weight: c.weight,
+            averageScore: Math.round(avgScore * 100) / 100,
+            voteCount: cVotes.length,
+            totalPanelists: members.filter(m => m.role !== 'observer').length,
+            votes: cVotes.map(v => ({
+              memberId: v.memberId,
+              memberName: members.find(m => m.id === v.memberId)?.userName || 'Unknown',
+              score: v.score,
+              comments: v.comments,
+            })),
+          };
+        });
+        const totalWeightedScore = criteriaResults.reduce((sum, c) => {
+          const weightedScore = (c.averageScore / c.maxScore) * (c.weight || 1);
+          return sum + weightedScore;
+        }, 0);
+        const totalWeight = criteriaResults.reduce((sum, c) => sum + (c.weight || 1), 0);
+        const normalizedScore = totalWeight > 0 ? Math.round((totalWeightedScore / totalWeight) * 100) : 0;
+        return {
+          submissionId: sub.id,
+          vendorId: sub.vendorId,
+          bidAmount: sub.bidAmount,
+          totalScore: normalizedScore,
+          criteriaScores: criteriaResults,
+          allVotesIn: criteriaResults.every(c => c.voteCount >= c.totalPanelists),
+        };
+      });
+      results.sort((a, b) => b.totalScore - a.totalScore);
+      res.json({
+        session: { id: session.id, name: session.name, status: session.status, currentRound: session.currentRound, totalRounds: session.totalRounds },
+        members: members.map(m => ({ id: m.id, userName: m.userName, role: m.role, isPresent: m.isPresent })),
+        results,
+      });
+    } catch (error) {
+      console.error("Error fetching panel results:", error);
+      res.status(500).json({ error: "Failed to fetch panel results" });
+    }
+  });
+
+  // Advance to next submission
+  app.post("/api/panel-sessions/:sessionId/advance", async (req, res) => {
+    try {
+      const { submissionId, nextRound } = req.body;
+      const updateData: any = {};
+      if (submissionId) updateData.currentSubmissionId = submissionId;
+      if (nextRound) updateData.currentRound = nextRound;
+      const session = await storage.updatePanelSession(req.params.sessionId, updateData);
+      if (!session) return res.status(404).json({ error: "Session not found" });
+      res.json(session);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to advance session" });
+    }
+  });
+
+  // Vendor Document Vault
+  app.get("/api/vendors/:vendorId/vault", async (req, res) => {
+    try {
+      const docs = await storage.getVendorDocumentVault(req.params.vendorId);
+      res.json(docs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch vault documents" });
+    }
+  });
+
+  app.get("/api/vault-documents/:id", async (req, res) => {
+    try {
+      const doc = await storage.getVaultDocument(req.params.id);
+      if (!doc) return res.status(404).json({ error: "Vault document not found" });
+      res.json(doc);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch vault document" });
+    }
+  });
+
+  app.post("/api/vendors/:vendorId/vault", async (req, res) => {
+    try {
+      const doc = await storage.createVaultDocument({
+        ...req.body,
+        vendorId: req.params.vendorId,
+      });
+      res.status(201).json(doc);
+    } catch (error) {
+      console.error("Error creating vault document:", error);
+      res.status(500).json({ error: "Failed to create vault document" });
+    }
+  });
+
+  app.put("/api/vault-documents/:id", async (req, res) => {
+    try {
+      const doc = await storage.updateVaultDocument(req.params.id, req.body);
+      if (!doc) return res.status(404).json({ error: "Vault document not found" });
+      res.json(doc);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update vault document" });
+    }
+  });
+
+  app.delete("/api/vault-documents/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteVaultDocument(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Vault document not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete vault document" });
+    }
+  });
+
+  app.get("/api/vault-documents/expiring/:days", async (req, res) => {
+    try {
+      const days = parseInt(req.params.days) || 30;
+      const docs = await storage.getExpiringDocuments(days);
+      res.json(docs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch expiring documents" });
+    }
+  });
+
+  // Document Expiry Alerts
+  app.get("/api/expiry-alerts", async (req, res) => {
+    try {
+      const vendorId = req.query.vendorId as string | undefined;
+      const alerts = await storage.getDocumentExpiryAlerts(vendorId);
+      res.json(alerts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch expiry alerts" });
+    }
+  });
+
+  app.post("/api/expiry-alerts", async (req, res) => {
+    try {
+      const alert = await storage.createDocumentExpiryAlert(req.body);
+      res.status(201).json(alert);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create expiry alert" });
+    }
+  });
+
+  app.post("/api/expiry-alerts/:id/acknowledge", async (req, res) => {
+    try {
+      const alert = await storage.acknowledgeExpiryAlert(req.params.id);
+      if (!alert) return res.status(404).json({ error: "Alert not found" });
+      res.json(alert);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to acknowledge alert" });
+    }
+  });
+
+  // Tender Clarifications (Q&A)
+  app.get("/api/tenders/:tenderId/clarifications", async (req, res) => {
+    try {
+      const clarifications = await storage.getTenderClarifications(req.params.tenderId);
+      res.json(clarifications);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch clarifications" });
+    }
+  });
+
+  app.post("/api/tenders/:tenderId/clarifications", async (req, res) => {
+    try {
+      const clarification = await storage.createTenderClarification({
+        ...req.body,
+        tenderId: req.params.tenderId,
+      });
+      res.status(201).json(clarification);
+    } catch (error) {
+      console.error("Error creating clarification:", error);
+      res.status(500).json({ error: "Failed to create clarification" });
+    }
+  });
+
+  app.put("/api/clarifications/:id", async (req, res) => {
+    try {
+      const clarification = await storage.updateTenderClarification(req.params.id, req.body);
+      if (!clarification) return res.status(404).json({ error: "Clarification not found" });
+      res.json(clarification);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update clarification" });
+    }
+  });
+
+  app.delete("/api/clarifications/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteTenderClarification(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Clarification not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete clarification" });
+    }
+  });
+
+  // Bid Status Timeline - Get submission status progression
+  app.get("/api/submissions/:id/timeline", async (req, res) => {
+    try {
+      const submission = await storage.getBidSubmission(req.params.id);
+      if (!submission) return res.status(404).json({ error: "Submission not found" });
+      const tender = await storage.getTender(submission.tenderId);
+      const adjConfig = await storage.getAdjudicationConfig(submission.tenderId);
+      const adjDecisions = adjConfig ? await storage.getAdjudicationDecisions(adjConfig.id, submission.id) : [];
+      const timeline = [];
+      timeline.push({ step: 1, label: "Submitted", status: "completed", date: submission.submissionDate || submission.createdAt, description: "Bid submission received" });
+      const complianceStatus = submission.complianceResult === "passed" ? "completed" : submission.complianceResult === "failed" ? "failed" : submission.autoCheckCompletedAt ? "completed" : submission.status === "auto_checking" ? "in_progress" : "pending";
+      timeline.push({ step: 2, label: "Compliance Check", status: complianceStatus, date: submission.autoCheckCompletedAt, description: `Automated compliance verification - ${submission.complianceResult || "pending"}` });
+      if (adjConfig) {
+        for (let level = 2; level <= adjConfig.totalLevels; level++) {
+          const levelDecisions = adjDecisions.filter(d => d.level === level);
+          const levelLabel = level === 2 ? (adjConfig.level2Label || "Procurement Review") : (adjConfig.level3Label || "Final Approval");
+          const levelStatus = levelDecisions.length > 0 ? (levelDecisions.some(d => d.decision === "reject") ? "failed" : "completed") : ((adjConfig.currentLevel || 0) >= level ? "in_progress" : "pending");
+          timeline.push({ step: level + 1, label: levelLabel, status: levelStatus, date: levelDecisions.length > 0 ? levelDecisions[0].decidedAt : null, description: levelDecisions.length > 0 ? `Decision: ${levelDecisions[0].decision}${levelDecisions[0].comments ? " - " + levelDecisions[0].comments : ""}` : "Awaiting review" });
+        }
+      } else {
+        timeline.push({ step: 3, label: "Manual Review", status: submission.manualReviewCompletedAt ? "completed" : submission.status === "manual_review" ? "in_progress" : "pending", date: submission.manualReviewCompletedAt, description: "Manual review by procurement officer" });
+      }
+      const finalStep = timeline.length + 1;
+      const awardStatus = submission.status === "awarded" ? "completed" : submission.status === "rejected" ? "failed" : "pending";
+      timeline.push({ step: finalStep, label: "Award Decision", status: awardStatus, date: submission.awardedAt || submission.rejectedAt, description: submission.status === "awarded" ? "Bid awarded" : submission.status === "rejected" ? "Bid not successful" : "Pending final decision" });
+      res.json({ submissionId: submission.id, tenderId: submission.tenderId, tenderTitle: tender?.title || "Unknown", currentStatus: submission.status, timeline });
+    } catch (error) {
+      console.error("Error building timeline:", error);
+      res.status(500).json({ error: "Failed to build submission timeline" });
+    }
+  });
+
   // Bid Submissions
   app.get("/api/submissions", async (req, res) => {
     try {

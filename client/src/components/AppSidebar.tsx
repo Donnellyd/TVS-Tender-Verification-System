@@ -19,6 +19,19 @@ import {
   HelpCircle,
   Rocket,
   Award,
+  Scale,
+  MonitorPlay,
+  Vault,
+  HelpCircle as CircleHelp,
+  CalendarDays,
+  BellRing,
+  TrendingUp,
+  Wallet,
+  UserCheck,
+  FileOutput,
+  FileSpreadsheet,
+  Palette,
+  Smartphone,
 } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import {
@@ -42,11 +55,18 @@ const mainNavItems = [
   { title: "Vendors", url: "/vendors", icon: Users },
   { title: "Tenders", url: "/tenders", icon: FileText },
   { title: "Submissions", url: "/submissions", icon: Send },
+  { title: "Evaluation", url: "/evaluation", icon: Scale },
+  { title: "Panel Sessions", url: "/panel-sessions", icon: MonitorPlay },
+  { title: "Bid Analysis", url: "/bid-analysis", icon: TrendingUp },
+  { title: "Spend Analytics", url: "/spend-analytics", icon: Wallet },
   { title: "Awards & SLA", url: "/award-management", icon: Award },
   { title: "Documents", url: "/documents", icon: FolderOpen },
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Vendor Messages", url: "/vendor-messages", icon: MessageCircle },
+  { title: "Document Vault", url: "/vendor-vault", icon: Vault },
+  { title: "Tender Q&A", url: "/tender-clarifications", icon: CircleHelp },
+  { title: "Tender Calendar", url: "/tender-calendar", icon: CalendarDays },
 ];
 
 const settingsNavItems = [
@@ -58,7 +78,13 @@ const settingsNavItems = [
   { title: "Billing", url: "/billing", icon: CreditCard },
   { title: "API Settings", url: "/api-settings", icon: Key },
   { title: "Notifications", url: "/notifications", icon: Bell },
+  { title: "Notification Workflows", url: "/notification-workflows", icon: BellRing },
   { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Vendor Performance", url: "/vendor-performance", icon: UserCheck },
+  { title: "Audit Export", url: "/audit-export", icon: FileOutput },
+  { title: "Report Builder", url: "/report-builder", icon: FileSpreadsheet },
+  { title: "White-Label", url: "/white-label", icon: Palette },
+  { title: "Mobile PWA", url: "/mobile-pwa", icon: Smartphone },
   { title: "Help & Docs", url: "/help", icon: HelpCircle },
 ];
 

@@ -85,6 +85,48 @@ import {
   type TenderSlaDocument,
   type InsertAwardAcceptance,
   type AwardAcceptance,
+  scoringTemplates,
+  scoringTemplateCriteria,
+  adjudicationConfigs,
+  adjudicationAssignments,
+  adjudicationDecisions,
+  evaluationCommittees,
+  committeeMembers,
+  committeeScores,
+  type InsertScoringTemplate,
+  type ScoringTemplate,
+  type InsertScoringTemplateCriteria,
+  type ScoringTemplateCriteria,
+  type InsertAdjudicationConfig,
+  type AdjudicationConfig,
+  type InsertAdjudicationAssignment,
+  type AdjudicationAssignment,
+  type InsertAdjudicationDecision,
+  type AdjudicationDecision,
+  type InsertEvaluationCommittee,
+  type EvaluationCommittee,
+  type InsertCommitteeMember,
+  type CommitteeMember,
+  type InsertCommitteeScore,
+  type CommitteeScore,
+  panelSessions,
+  panelMembers,
+  panelVotes,
+  type InsertPanelSession,
+  type PanelSession,
+  type InsertPanelMember,
+  type PanelMember,
+  type InsertPanelVote,
+  type PanelVote,
+  vendorDocumentVault,
+  documentExpiryAlerts,
+  tenderClarifications,
+  type InsertVendorDocumentVault,
+  type VendorDocumentVault,
+  type InsertDocumentExpiryAlert,
+  type DocumentExpiryAlert,
+  type InsertTenderClarification,
+  type TenderClarification,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -261,6 +303,99 @@ export interface IStorage {
   getVendorAwardAcceptances(vendorId: string): Promise<AwardAcceptance[]>;
   createAwardAcceptance(data: InsertAwardAcceptance): Promise<AwardAcceptance>;
   updateAwardAcceptance(id: string, data: Partial<InsertAwardAcceptance>): Promise<AwardAcceptance | undefined>;
+
+  // Scoring Templates
+  getScoringTemplates(tenantId?: string): Promise<ScoringTemplate[]>;
+  getScoringTemplate(id: string): Promise<ScoringTemplate | undefined>;
+  createScoringTemplate(data: InsertScoringTemplate): Promise<ScoringTemplate>;
+  updateScoringTemplate(id: string, data: Partial<InsertScoringTemplate>): Promise<ScoringTemplate | undefined>;
+  deleteScoringTemplate(id: string): Promise<boolean>;
+
+  // Scoring Template Criteria
+  getScoringTemplateCriteria(templateId: string): Promise<ScoringTemplateCriteria[]>;
+  createScoringTemplateCriteria(data: InsertScoringTemplateCriteria): Promise<ScoringTemplateCriteria>;
+  updateScoringTemplateCriteria(id: string, data: Partial<InsertScoringTemplateCriteria>): Promise<ScoringTemplateCriteria | undefined>;
+  deleteScoringTemplateCriteria(id: string): Promise<boolean>;
+  deleteScoringTemplateCriteriaByTemplate(templateId: string): Promise<boolean>;
+
+  // Adjudication Configs
+  getAdjudicationConfig(tenderId: string): Promise<AdjudicationConfig | undefined>;
+  getAdjudicationConfigById(id: string): Promise<AdjudicationConfig | undefined>;
+  createAdjudicationConfig(data: InsertAdjudicationConfig): Promise<AdjudicationConfig>;
+  updateAdjudicationConfig(id: string, data: Partial<InsertAdjudicationConfig>): Promise<AdjudicationConfig | undefined>;
+
+  // Adjudication Assignments
+  getAdjudicationAssignments(configId: string): Promise<AdjudicationAssignment[]>;
+  createAdjudicationAssignment(data: InsertAdjudicationAssignment): Promise<AdjudicationAssignment>;
+  deleteAdjudicationAssignments(configId: string): Promise<boolean>;
+
+  // Adjudication Decisions
+  getAdjudicationDecisions(configId: string, submissionId?: string): Promise<AdjudicationDecision[]>;
+  createAdjudicationDecision(data: InsertAdjudicationDecision): Promise<AdjudicationDecision>;
+
+  // Evaluation Committees
+  getEvaluationCommittees(tenderId?: string, tenantId?: string): Promise<EvaluationCommittee[]>;
+  getEvaluationCommittee(id: string): Promise<EvaluationCommittee | undefined>;
+  getEvaluationCommitteeByTender(tenderId: string): Promise<EvaluationCommittee | undefined>;
+  createEvaluationCommittee(data: InsertEvaluationCommittee): Promise<EvaluationCommittee>;
+  updateEvaluationCommittee(id: string, data: Partial<InsertEvaluationCommittee>): Promise<EvaluationCommittee | undefined>;
+  deleteEvaluationCommittee(id: string): Promise<boolean>;
+
+  // Committee Members
+  getCommitteeMembers(committeeId: string): Promise<CommitteeMember[]>;
+  getCommitteeMember(id: string): Promise<CommitteeMember | undefined>;
+  createCommitteeMember(data: InsertCommitteeMember): Promise<CommitteeMember>;
+  updateCommitteeMember(id: string, data: Partial<InsertCommitteeMember>): Promise<CommitteeMember | undefined>;
+  deleteCommitteeMember(id: string): Promise<boolean>;
+
+  // Committee Scores
+  getCommitteeScores(committeeId: string, submissionId?: string): Promise<CommitteeScore[]>;
+  getCommitteeScoresByMember(memberId: string): Promise<CommitteeScore[]>;
+  createCommitteeScore(data: InsertCommitteeScore): Promise<CommitteeScore>;
+  createBulkCommitteeScores(data: InsertCommitteeScore[]): Promise<CommitteeScore[]>;
+  deleteCommitteeScoresByMember(memberId: string): Promise<boolean>;
+
+  // Panel Sessions
+  getPanelSessions(tenderId?: string): Promise<PanelSession[]>;
+  getPanelSession(id: string): Promise<PanelSession | undefined>;
+  createPanelSession(data: InsertPanelSession): Promise<PanelSession>;
+  updatePanelSession(id: string, data: Partial<InsertPanelSession>): Promise<PanelSession | undefined>;
+  deletePanelSession(id: string): Promise<boolean>;
+
+  // Panel Members
+  getPanelMembers(sessionId: string): Promise<PanelMember[]>;
+  getPanelMember(id: string): Promise<PanelMember | undefined>;
+  createPanelMember(data: InsertPanelMember): Promise<PanelMember>;
+  updatePanelMember(id: string, data: Partial<InsertPanelMember>): Promise<PanelMember | undefined>;
+  deletePanelMember(id: string): Promise<boolean>;
+
+  // Panel Votes
+  getPanelVotes(sessionId: string, submissionId?: string): Promise<PanelVote[]>;
+  getPanelVotesByMember(memberId: string): Promise<PanelVote[]>;
+  createPanelVote(data: InsertPanelVote): Promise<PanelVote>;
+  createBulkPanelVotes(data: InsertPanelVote[]): Promise<PanelVote[]>;
+  deletePanelVotesByRound(sessionId: string, round: number): Promise<boolean>;
+
+  // Vendor Document Vault
+  getVendorDocumentVault(vendorId: string): Promise<VendorDocumentVault[]>;
+  getVaultDocument(id: string): Promise<VendorDocumentVault | undefined>;
+  createVaultDocument(data: InsertVendorDocumentVault): Promise<VendorDocumentVault>;
+  updateVaultDocument(id: string, data: Partial<InsertVendorDocumentVault>): Promise<VendorDocumentVault | undefined>;
+  deleteVaultDocument(id: string): Promise<boolean>;
+  getExpiringDocuments(daysAhead: number): Promise<VendorDocumentVault[]>;
+
+  // Document Expiry Alerts
+  getDocumentExpiryAlerts(vendorId?: string): Promise<DocumentExpiryAlert[]>;
+  createDocumentExpiryAlert(data: InsertDocumentExpiryAlert): Promise<DocumentExpiryAlert>;
+  acknowledgeExpiryAlert(id: string): Promise<DocumentExpiryAlert | undefined>;
+
+  // Tender Clarifications
+  getTenderClarifications(tenderId: string): Promise<TenderClarification[]>;
+  getTenderClarification(id: string): Promise<TenderClarification | undefined>;
+  createTenderClarification(data: InsertTenderClarification): Promise<TenderClarification>;
+  updateTenderClarification(id: string, data: Partial<InsertTenderClarification>): Promise<TenderClarification | undefined>;
+  deleteTenderClarification(id: string): Promise<boolean>;
+  getPublicClarifications(tenderId: string): Promise<TenderClarification[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1195,6 +1330,378 @@ export class DatabaseStorage implements IStorage {
   async updateAwardAcceptance(id: string, data: Partial<InsertAwardAcceptance>): Promise<AwardAcceptance | undefined> {
     const [result] = await db.update(awardAcceptances).set({ ...data, updatedAt: new Date() }).where(eq(awardAcceptances.id, id)).returning();
     return result;
+  }
+
+  // Scoring Templates
+  async getScoringTemplates(tenantId?: string): Promise<ScoringTemplate[]> {
+    if (tenantId) {
+      return await db.select().from(scoringTemplates).where(eq(scoringTemplates.tenantId, tenantId)).orderBy(desc(scoringTemplates.createdAt));
+    }
+    return await db.select().from(scoringTemplates).orderBy(desc(scoringTemplates.createdAt));
+  }
+
+  async getScoringTemplate(id: string): Promise<ScoringTemplate | undefined> {
+    const [result] = await db.select().from(scoringTemplates).where(eq(scoringTemplates.id, id));
+    return result;
+  }
+
+  async createScoringTemplate(data: InsertScoringTemplate): Promise<ScoringTemplate> {
+    const [result] = await db.insert(scoringTemplates).values(data).returning();
+    return result;
+  }
+
+  async updateScoringTemplate(id: string, data: Partial<InsertScoringTemplate>): Promise<ScoringTemplate | undefined> {
+    const [result] = await db.update(scoringTemplates).set({ ...data, updatedAt: new Date() }).where(eq(scoringTemplates.id, id)).returning();
+    return result;
+  }
+
+  async deleteScoringTemplate(id: string): Promise<boolean> {
+    const result = await db.delete(scoringTemplates).where(eq(scoringTemplates.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Scoring Template Criteria
+  async getScoringTemplateCriteria(templateId: string): Promise<ScoringTemplateCriteria[]> {
+    return await db.select().from(scoringTemplateCriteria).where(eq(scoringTemplateCriteria.templateId, templateId));
+  }
+
+  async createScoringTemplateCriteria(data: InsertScoringTemplateCriteria): Promise<ScoringTemplateCriteria> {
+    const [result] = await db.insert(scoringTemplateCriteria).values(data).returning();
+    return result;
+  }
+
+  async updateScoringTemplateCriteria(id: string, data: Partial<InsertScoringTemplateCriteria>): Promise<ScoringTemplateCriteria | undefined> {
+    const [result] = await db.update(scoringTemplateCriteria).set(data).where(eq(scoringTemplateCriteria.id, id)).returning();
+    return result;
+  }
+
+  async deleteScoringTemplateCriteria(id: string): Promise<boolean> {
+    const result = await db.delete(scoringTemplateCriteria).where(eq(scoringTemplateCriteria.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async deleteScoringTemplateCriteriaByTemplate(templateId: string): Promise<boolean> {
+    const result = await db.delete(scoringTemplateCriteria).where(eq(scoringTemplateCriteria.templateId, templateId));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Adjudication Configs
+  async getAdjudicationConfig(tenderId: string): Promise<AdjudicationConfig | undefined> {
+    const [result] = await db.select().from(adjudicationConfigs).where(eq(adjudicationConfigs.tenderId, tenderId));
+    return result;
+  }
+
+  async getAdjudicationConfigById(id: string): Promise<AdjudicationConfig | undefined> {
+    const [result] = await db.select().from(adjudicationConfigs).where(eq(adjudicationConfigs.id, id));
+    return result;
+  }
+
+  async createAdjudicationConfig(data: InsertAdjudicationConfig): Promise<AdjudicationConfig> {
+    const [result] = await db.insert(adjudicationConfigs).values(data).returning();
+    return result;
+  }
+
+  async updateAdjudicationConfig(id: string, data: Partial<InsertAdjudicationConfig>): Promise<AdjudicationConfig | undefined> {
+    const [result] = await db.update(adjudicationConfigs).set({ ...data, updatedAt: new Date() }).where(eq(adjudicationConfigs.id, id)).returning();
+    return result;
+  }
+
+  // Adjudication Assignments
+  async getAdjudicationAssignments(configId: string): Promise<AdjudicationAssignment[]> {
+    return await db.select().from(adjudicationAssignments).where(eq(adjudicationAssignments.configId, configId));
+  }
+
+  async createAdjudicationAssignment(data: InsertAdjudicationAssignment): Promise<AdjudicationAssignment> {
+    const [result] = await db.insert(adjudicationAssignments).values(data).returning();
+    return result;
+  }
+
+  async deleteAdjudicationAssignments(configId: string): Promise<boolean> {
+    const result = await db.delete(adjudicationAssignments).where(eq(adjudicationAssignments.configId, configId));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Adjudication Decisions
+  async getAdjudicationDecisions(configId: string, submissionId?: string): Promise<AdjudicationDecision[]> {
+    if (submissionId) {
+      return await db.select().from(adjudicationDecisions).where(and(eq(adjudicationDecisions.configId, configId), eq(adjudicationDecisions.submissionId, submissionId)));
+    }
+    return await db.select().from(adjudicationDecisions).where(eq(adjudicationDecisions.configId, configId));
+  }
+
+  async createAdjudicationDecision(data: InsertAdjudicationDecision): Promise<AdjudicationDecision> {
+    const [result] = await db.insert(adjudicationDecisions).values(data).returning();
+    return result;
+  }
+
+  // Evaluation Committees
+  async getEvaluationCommittees(tenderId?: string, tenantId?: string): Promise<EvaluationCommittee[]> {
+    const conditions = [];
+    if (tenderId) conditions.push(eq(evaluationCommittees.tenderId, tenderId));
+    if (tenantId) conditions.push(eq(evaluationCommittees.tenantId, tenantId));
+    if (conditions.length > 0) {
+      return await db.select().from(evaluationCommittees).where(and(...conditions)).orderBy(desc(evaluationCommittees.createdAt));
+    }
+    return await db.select().from(evaluationCommittees).orderBy(desc(evaluationCommittees.createdAt));
+  }
+
+  async getEvaluationCommittee(id: string): Promise<EvaluationCommittee | undefined> {
+    const [result] = await db.select().from(evaluationCommittees).where(eq(evaluationCommittees.id, id));
+    return result;
+  }
+
+  async getEvaluationCommitteeByTender(tenderId: string): Promise<EvaluationCommittee | undefined> {
+    const [result] = await db.select().from(evaluationCommittees).where(eq(evaluationCommittees.tenderId, tenderId));
+    return result;
+  }
+
+  async createEvaluationCommittee(data: InsertEvaluationCommittee): Promise<EvaluationCommittee> {
+    const [result] = await db.insert(evaluationCommittees).values(data).returning();
+    return result;
+  }
+
+  async updateEvaluationCommittee(id: string, data: Partial<InsertEvaluationCommittee>): Promise<EvaluationCommittee | undefined> {
+    const [result] = await db.update(evaluationCommittees).set({ ...data, updatedAt: new Date() }).where(eq(evaluationCommittees.id, id)).returning();
+    return result;
+  }
+
+  async deleteEvaluationCommittee(id: string): Promise<boolean> {
+    const result = await db.delete(evaluationCommittees).where(eq(evaluationCommittees.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Committee Members
+  async getCommitteeMembers(committeeId: string): Promise<CommitteeMember[]> {
+    return await db.select().from(committeeMembers).where(eq(committeeMembers.committeeId, committeeId));
+  }
+
+  async getCommitteeMember(id: string): Promise<CommitteeMember | undefined> {
+    const [result] = await db.select().from(committeeMembers).where(eq(committeeMembers.id, id));
+    return result;
+  }
+
+  async createCommitteeMember(data: InsertCommitteeMember): Promise<CommitteeMember> {
+    const [result] = await db.insert(committeeMembers).values(data).returning();
+    return result;
+  }
+
+  async updateCommitteeMember(id: string, data: Partial<InsertCommitteeMember>): Promise<CommitteeMember | undefined> {
+    const [result] = await db.update(committeeMembers).set(data).where(eq(committeeMembers.id, id)).returning();
+    return result;
+  }
+
+  async deleteCommitteeMember(id: string): Promise<boolean> {
+    const result = await db.delete(committeeMembers).where(eq(committeeMembers.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Committee Scores
+  async getCommitteeScores(committeeId: string, submissionId?: string): Promise<CommitteeScore[]> {
+    if (submissionId) {
+      return await db.select().from(committeeScores).where(and(eq(committeeScores.committeeId, committeeId), eq(committeeScores.submissionId, submissionId)));
+    }
+    return await db.select().from(committeeScores).where(eq(committeeScores.committeeId, committeeId));
+  }
+
+  async getCommitteeScoresByMember(memberId: string): Promise<CommitteeScore[]> {
+    return await db.select().from(committeeScores).where(eq(committeeScores.memberId, memberId));
+  }
+
+  async createCommitteeScore(data: InsertCommitteeScore): Promise<CommitteeScore> {
+    const [result] = await db.insert(committeeScores).values(data).returning();
+    return result;
+  }
+
+  async createBulkCommitteeScores(data: InsertCommitteeScore[]): Promise<CommitteeScore[]> {
+    return await db.insert(committeeScores).values(data).returning();
+  }
+
+  async deleteCommitteeScoresByMember(memberId: string): Promise<boolean> {
+    const result = await db.delete(committeeScores).where(eq(committeeScores.memberId, memberId));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Panel Sessions
+  async getPanelSessions(tenderId?: string): Promise<PanelSession[]> {
+    if (tenderId) {
+      return await db.select().from(panelSessions).where(eq(panelSessions.tenderId, tenderId)).orderBy(desc(panelSessions.createdAt));
+    }
+    return await db.select().from(panelSessions).orderBy(desc(panelSessions.createdAt));
+  }
+
+  async getPanelSession(id: string): Promise<PanelSession | undefined> {
+    const [result] = await db.select().from(panelSessions).where(eq(panelSessions.id, id));
+    return result;
+  }
+
+  async createPanelSession(data: InsertPanelSession): Promise<PanelSession> {
+    const [result] = await db.insert(panelSessions).values(data).returning();
+    return result;
+  }
+
+  async updatePanelSession(id: string, data: Partial<InsertPanelSession>): Promise<PanelSession | undefined> {
+    const [result] = await db.update(panelSessions).set({ ...data, updatedAt: new Date() }).where(eq(panelSessions.id, id)).returning();
+    return result;
+  }
+
+  async deletePanelSession(id: string): Promise<boolean> {
+    const result = await db.delete(panelSessions).where(eq(panelSessions.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Panel Members
+  async getPanelMembers(sessionId: string): Promise<PanelMember[]> {
+    return await db.select().from(panelMembers).where(eq(panelMembers.sessionId, sessionId));
+  }
+
+  async getPanelMember(id: string): Promise<PanelMember | undefined> {
+    const [result] = await db.select().from(panelMembers).where(eq(panelMembers.id, id));
+    return result;
+  }
+
+  async createPanelMember(data: InsertPanelMember): Promise<PanelMember> {
+    const [result] = await db.insert(panelMembers).values(data).returning();
+    return result;
+  }
+
+  async updatePanelMember(id: string, data: Partial<InsertPanelMember>): Promise<PanelMember | undefined> {
+    const [result] = await db.update(panelMembers).set(data).where(eq(panelMembers.id, id)).returning();
+    return result;
+  }
+
+  async deletePanelMember(id: string): Promise<boolean> {
+    const result = await db.delete(panelMembers).where(eq(panelMembers.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Panel Votes
+  async getPanelVotes(sessionId: string, submissionId?: string): Promise<PanelVote[]> {
+    if (submissionId) {
+      return await db.select().from(panelVotes).where(and(eq(panelVotes.sessionId, sessionId), eq(panelVotes.submissionId, submissionId)));
+    }
+    return await db.select().from(panelVotes).where(eq(panelVotes.sessionId, sessionId));
+  }
+
+  async getPanelVotesByMember(memberId: string): Promise<PanelVote[]> {
+    return await db.select().from(panelVotes).where(eq(panelVotes.memberId, memberId));
+  }
+
+  async createPanelVote(data: InsertPanelVote): Promise<PanelVote> {
+    const [result] = await db.insert(panelVotes).values(data).returning();
+    return result;
+  }
+
+  async createBulkPanelVotes(data: InsertPanelVote[]): Promise<PanelVote[]> {
+    return await db.insert(panelVotes).values(data).returning();
+  }
+
+  async deletePanelVotesByRound(sessionId: string, round: number): Promise<boolean> {
+    const result = await db.delete(panelVotes).where(and(eq(panelVotes.sessionId, sessionId), eq(panelVotes.round, round)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Vendor Document Vault
+  async getVendorDocumentVault(vendorId: string): Promise<VendorDocumentVault[]> {
+    return await db.select().from(vendorDocumentVault)
+      .where(eq(vendorDocumentVault.vendorId, vendorId))
+      .orderBy(desc(vendorDocumentVault.createdAt));
+  }
+
+  async getVaultDocument(id: string): Promise<VendorDocumentVault | undefined> {
+    const [result] = await db.select().from(vendorDocumentVault).where(eq(vendorDocumentVault.id, id));
+    return result;
+  }
+
+  async createVaultDocument(data: InsertVendorDocumentVault): Promise<VendorDocumentVault> {
+    const [result] = await db.insert(vendorDocumentVault).values(data).returning();
+    return result;
+  }
+
+  async updateVaultDocument(id: string, data: Partial<InsertVendorDocumentVault>): Promise<VendorDocumentVault | undefined> {
+    const [result] = await db.update(vendorDocumentVault)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(vendorDocumentVault.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteVaultDocument(id: string): Promise<boolean> {
+    const result = await db.delete(vendorDocumentVault).where(eq(vendorDocumentVault.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getExpiringDocuments(daysAhead: number): Promise<VendorDocumentVault[]> {
+    return await db.select().from(vendorDocumentVault)
+      .where(and(
+        sql`${vendorDocumentVault.expiryDate} IS NOT NULL`,
+        sql`${vendorDocumentVault.expiryDate} <= NOW() + INTERVAL '${sql.raw(String(daysAhead))} days'`,
+        sql`${vendorDocumentVault.expiryDate} >= NOW()`
+      ))
+      .orderBy(vendorDocumentVault.expiryDate);
+  }
+
+  // Document Expiry Alerts
+  async getDocumentExpiryAlerts(vendorId?: string): Promise<DocumentExpiryAlert[]> {
+    if (vendorId) {
+      return await db.select().from(documentExpiryAlerts)
+        .where(eq(documentExpiryAlerts.vendorId, vendorId))
+        .orderBy(desc(documentExpiryAlerts.createdAt));
+    }
+    return await db.select().from(documentExpiryAlerts)
+      .orderBy(desc(documentExpiryAlerts.createdAt));
+  }
+
+  async createDocumentExpiryAlert(data: InsertDocumentExpiryAlert): Promise<DocumentExpiryAlert> {
+    const [result] = await db.insert(documentExpiryAlerts).values(data).returning();
+    return result;
+  }
+
+  async acknowledgeExpiryAlert(id: string): Promise<DocumentExpiryAlert | undefined> {
+    const [result] = await db.update(documentExpiryAlerts)
+      .set({ acknowledged: true })
+      .where(eq(documentExpiryAlerts.id, id))
+      .returning();
+    return result;
+  }
+
+  // Tender Clarifications
+  async getTenderClarifications(tenderId: string): Promise<TenderClarification[]> {
+    return await db.select().from(tenderClarifications)
+      .where(eq(tenderClarifications.tenderId, tenderId))
+      .orderBy(desc(tenderClarifications.createdAt));
+  }
+
+  async getTenderClarification(id: string): Promise<TenderClarification | undefined> {
+    const [result] = await db.select().from(tenderClarifications).where(eq(tenderClarifications.id, id));
+    return result;
+  }
+
+  async createTenderClarification(data: InsertTenderClarification): Promise<TenderClarification> {
+    const [result] = await db.insert(tenderClarifications).values(data).returning();
+    return result;
+  }
+
+  async updateTenderClarification(id: string, data: Partial<InsertTenderClarification>): Promise<TenderClarification | undefined> {
+    const [result] = await db.update(tenderClarifications)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tenderClarifications.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteTenderClarification(id: string): Promise<boolean> {
+    const result = await db.delete(tenderClarifications).where(eq(tenderClarifications.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getPublicClarifications(tenderId: string): Promise<TenderClarification[]> {
+    return await db.select().from(tenderClarifications)
+      .where(and(
+        eq(tenderClarifications.tenderId, tenderId),
+        eq(tenderClarifications.isPublic, true),
+        eq(tenderClarifications.status, 'answered')
+      ))
+      .orderBy(desc(tenderClarifications.createdAt));
   }
 }
 
