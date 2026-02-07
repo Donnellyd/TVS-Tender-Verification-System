@@ -1,0 +1,1045 @@
+# WhatsApp & Email Notification System - Complete Setup Guide
+
+This document contains everything needed to implement a WhatsApp and Email notification system for a dance application. Upload this to your Replit Agent to set up the complete system.
+
+---f
+
+## Overview
+
+This notification system provides:
+- **Email notifications** via SendGrid
+- **WhatsApp notifications** via Twilio
+- **Configurable templates** with variable substitution
+- **Per-event toggle settings** (enable/disable notifications per event type)
+- **Notification logging** for tracking and debugging
+- **WhatsApp opt-in consent** tracking per customer
+
+---
+
+## Required Environment Variables
+
+```bash
+# SendGrid (Email)
+SENDGRID_API_KEY=your_sendgrid_api_key
+SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+
+# Twilio (WhatsApp)
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_WHATSAPP_FROM=+27110200938  # Your Twilio WhatsApp number (without "whatsapp:" prefix)
+```
+
+---
+
+## Database Schema (Drizzle ORM)
+
+Add these tables to your `shared/schema.ts`:
+
+```typescript
+import { pgTable, text, varchar, boolean, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// Notification Enums
+export const notificationChannelEnum = pgEnum("notification_channel", ["email", "whatsapp"]);
+export const notificationTriggerEnum = pgEnum("notification_trigger", [
+  "booking-confirmed",
+  "booking-cancelled",
+  "booking-reminder",
+  "class-cancelled",
+  "class-rescheduled",
+  "payment-received",
+  "payment-reminder",
+  "event-registration",
+  "welcome"
+]);
+
+// Notification templates - unified templates for email and whatsapp notifications
+export const notificationTemplates = pgTable("notification_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  channel: notificationChannelEnum("channel").notNull(), // email or whatsapp
+  trigger: notificationTriggerEnum("trigger").notNull(), // what event triggers this notification
+  subject: text("subject"), // email subject (null for whatsapp)
+  body: text("body").notNull(), // message body with template variables
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: varchar("updated_by"),
+});
+
+// Notification settings - global settings for notification behavior
+export const notificationSettings = pgTable("notification_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  channel: notificationChannelEnum("channel").notNull(), // email or whatsapp
+  // Per-trigger toggles as JSON object: { "booking-confirmed": true, "class-cancelled": false, ... }
+  triggerToggles: text("trigger_toggles").notNull().default('{}'),
+  // Channel-specific settings stored as JSON
+  channelConfig: text("channel_config").default('{}'),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Notification logs - track sent notifications for debugging and analytics
+export const notificationLogs = pgTable("notification_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id"), // Reference to your customers/users table
+  bookingId: varchar("booking_id"), // Reference to bookings table (optional)
+  channel: notificationChannelEnum("channel").notNull(),
+  trigger: notificationTriggerEnum("trigger").notNull(),
+  recipientEmail: text("recipient_email"),
+  recipientPhone: text("recipient_phone"),
+  subject: text("subject"),
+  body: text("body").notNull(),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+  deliveryStatus: text("delivery_status").default("pending").notNull(), // pending, sent, delivered, failed
+  errorMessage: text("error_message"),
+  externalId: text("external_id"), // SendGrid message ID or Twilio SID
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Insert schemas
+export const insertNotificationTemplateSchema = createInsertSchema(notificationTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNotificationSettingsSchema = createInsertSchema(notificationSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNotificationLogSchema = createInsertSchema(notificationLogs).omit({
+  id: true,
+  sentAt: true,
+  createdAt: true,
+});
+
+// Types
+export type NotificationTemplate = typeof notificationTemplates.$inferSelect;
+export type NotificationSettings = typeof notificationSettings.$inferSelect;
+export type NotificationLog = typeof notificationLogs.$inferSelect;
+export type InsertNotificationTemplate = z.infer<typeof insertNotificationTemplateSchema>;
+export type InsertNotificationSettings = z.infer<typeof insertNotificationSettingsSchema>;
+export type InsertNotificationLog = z.infer<typeof insertNotificationLogSchema>;
+export type NotificationChannel = NotificationTemplate["channel"];
+export type NotificationTrigger = NotificationTemplate["trigger"];
+```
+
+### Customer WhatsApp Opt-In Field
+
+Add this field to your customers/users table:
+
+```typescript
+// In your customers or users table definition
+whatsappOptIn: boolean("whatsapp_opt_in").default(true),
+```
+
+---
+
+## Notification Service (server/notification-service.ts)
+
+```typescript
+import sgMail from "@sendgrid/mail";
+import { storage } from "./storage";
+import type { NotificationChannel, NotificationTrigger } from "@shared/schema";
+
+interface NotificationData {
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  className?: string;
+  classDate?: string;
+  classTime?: string;
+  instructorName?: string;
+  bookingReference?: string;
+  amount?: string;
+  dueDate?: string;
+  studioName?: string;
+  studioAddress?: string;
+  eventName?: string;
+  eventDate?: string;
+}
+
+interface SendNotificationParams {
+  customerId?: string;
+  bookingId?: string;
+  trigger: NotificationTrigger;
+  data: NotificationData;
+  whatsappOptIn?: boolean;
+}
+
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM;
+const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "noreply@example.com";
+
+if (SENDGRID_API_KEY) {
+  sgMail.setApiKey(SENDGRID_API_KEY);
+}
+
+function replaceTemplateVariables(template: string, data: NotificationData): string {
+  return template
+    .replace(/\{\{customerName\}\}/g, data.customerName || "")
+    .replace(/\{\{className\}\}/g, data.className || "")
+    .replace(/\{\{classDate\}\}/g, data.classDate || "")
+    .replace(/\{\{classTime\}\}/g, data.classTime || "")
+    .replace(/\{\{instructorName\}\}/g, data.instructorName || "")
+    .replace(/\{\{bookingReference\}\}/g, data.bookingReference || "")
+    .replace(/\{\{amount\}\}/g, data.amount || "")
+    .replace(/\{\{dueDate\}\}/g, data.dueDate || "")
+    .replace(/\{\{studioName\}\}/g, data.studioName || "")
+    .replace(/\{\{studioAddress\}\}/g, data.studioAddress || "")
+    .replace(/\{\{eventName\}\}/g, data.eventName || "")
+    .replace(/\{\{eventDate\}\}/g, data.eventDate || "");
+}
+
+async function sendEmail(
+  to: string,
+  subject: string,
+  body: string,
+  customerId: string | undefined,
+  bookingId: string | undefined,
+  trigger: NotificationTrigger
+): Promise<{ success: boolean; externalId?: string; error?: string }> {
+  if (!SENDGRID_API_KEY) {
+    console.warn("SendGrid API key not configured. Email not sent.");
+    return { success: false, error: "SendGrid API key not configured" };
+  }
+
+  try {
+    const response = await sgMail.send({
+      to,
+      from: FROM_EMAIL,
+      subject,
+      text: body,
+      html: body.replace(/\n/g, "<br>"),
+    });
+
+    const messageId = response[0]?.headers?.["x-message-id"] || "";
+    
+    await storage.createNotificationLog({
+      customerId,
+      bookingId,
+      channel: "email",
+      trigger,
+      recipientEmail: to,
+      subject,
+      body,
+      deliveryStatus: "sent",
+      externalId: messageId,
+    });
+
+    console.log(`Email sent successfully to ${to}`);
+    return { success: true, externalId: messageId };
+  } catch (error: any) {
+    console.error("Failed to send email:", error.message);
+    
+    await storage.createNotificationLog({
+      customerId,
+      bookingId,
+      channel: "email",
+      trigger,
+      recipientEmail: to,
+      subject,
+      body,
+      deliveryStatus: "failed",
+      errorMessage: error.message,
+    });
+
+    return { success: false, error: error.message };
+  }
+}
+
+async function sendWhatsApp(
+  to: string,
+  body: string,
+  customerId: string | undefined,
+  bookingId: string | undefined,
+  trigger: NotificationTrigger
+): Promise<{ success: boolean; externalId?: string; error?: string }> {
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
+    console.warn("Twilio credentials not configured. WhatsApp not sent.");
+    return { success: false, error: "Twilio credentials not configured" };
+  }
+
+  try {
+    // Format phone number for South Africa (adjust country code as needed)
+    const formattedPhone = to.startsWith("+") ? to : `+27${to.substring(1)}`;
+    
+    const twilio = await import("twilio");
+    const client = twilio.default(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+    
+    const message = await client.messages.create({
+      body,
+      from: `whatsapp:${TWILIO_WHATSAPP_FROM}`,
+      to: `whatsapp:${formattedPhone}`,
+    });
+
+    await storage.createNotificationLog({
+      customerId,
+      bookingId,
+      channel: "whatsapp",
+      trigger,
+      recipientPhone: to,
+      body,
+      deliveryStatus: "sent",
+      externalId: message.sid,
+    });
+
+    console.log(`WhatsApp sent successfully to ${to}`);
+    return { success: true, externalId: message.sid };
+  } catch (error: any) {
+    console.error("Failed to send WhatsApp:", error.message);
+    
+    await storage.createNotificationLog({
+      customerId,
+      bookingId,
+      channel: "whatsapp",
+      trigger,
+      recipientPhone: to,
+      body,
+      deliveryStatus: "failed",
+      errorMessage: error.message,
+    });
+
+    return { success: false, error: error.message };
+  }
+}
+
+async function shouldSendNotification(
+  channel: NotificationChannel,
+  trigger: NotificationTrigger
+): Promise<boolean> {
+  const settings = await storage.getNotificationSettingsByChannel(channel);
+  
+  if (!settings || !settings.isActive) {
+    return false;
+  }
+
+  try {
+    const toggles = JSON.parse(settings.triggerToggles || "{}");
+    return toggles[trigger] === true;
+  } catch {
+    return false;
+  }
+}
+
+export async function sendNotification(params: SendNotificationParams): Promise<void> {
+  const { customerId, bookingId, trigger, data, whatsappOptIn = true } = params;
+
+  const channels: NotificationChannel[] = ["email", "whatsapp"];
+
+  for (const channel of channels) {
+    const shouldSend = await shouldSendNotification(channel, trigger);
+    
+    if (!shouldSend) {
+      console.log(`Notification skipped for ${channel} - ${trigger}`);
+      continue;
+    }
+
+    const template = await storage.getNotificationTemplateByChannelAndTrigger(channel, trigger);
+
+    if (!template) {
+      console.log(`No template found for ${channel} - ${trigger}`);
+      continue;
+    }
+
+    const processedBody = replaceTemplateVariables(template.body, data);
+    const processedSubject = template.subject ? replaceTemplateVariables(template.subject, data) : undefined;
+
+    if (channel === "email") {
+      if (data.customerEmail) {
+        await sendEmail(
+          data.customerEmail,
+          processedSubject || "Notification",
+          processedBody,
+          customerId,
+          bookingId,
+          trigger
+        );
+      } else {
+        console.log(`Email notification skipped: no customer email`);
+      }
+    } else if (channel === "whatsapp") {
+      if (!data.customerPhone) {
+        console.log(`WhatsApp notification skipped: no customer phone`);
+      } else if (!whatsappOptIn) {
+        console.log(`WhatsApp notification skipped: customer opted out`);
+      } else {
+        await sendWhatsApp(
+          data.customerPhone,
+          processedBody,
+          customerId,
+          bookingId,
+          trigger
+        );
+      }
+    }
+  }
+}
+
+// Convenience functions for common notifications
+export async function notifyBookingConfirmed(
+  customerId: string,
+  bookingId: string,
+  data: NotificationData
+): Promise<void> {
+  await sendNotification({ customerId, bookingId, trigger: "booking-confirmed", data });
+}
+
+export async function notifyBookingCancelled(
+  customerId: string,
+  bookingId: string,
+  data: NotificationData
+): Promise<void> {
+  await sendNotification({ customerId, bookingId, trigger: "booking-cancelled", data });
+}
+
+export async function notifyBookingReminder(
+  customerId: string,
+  bookingId: string,
+  data: NotificationData
+): Promise<void> {
+  await sendNotification({ customerId, bookingId, trigger: "booking-reminder", data });
+}
+
+export async function notifyClassCancelled(
+  customerId: string,
+  data: NotificationData
+): Promise<void> {
+  await sendNotification({ customerId, trigger: "class-cancelled", data });
+}
+
+export async function notifyClassRescheduled(
+  customerId: string,
+  data: NotificationData
+): Promise<void> {
+  await sendNotification({ customerId, trigger: "class-rescheduled", data });
+}
+
+export async function notifyPaymentReceived(
+  customerId: string,
+  bookingId: string,
+  data: NotificationData
+): Promise<void> {
+  await sendNotification({ customerId, bookingId, trigger: "payment-received", data });
+}
+
+export async function notifyPaymentReminder(
+  customerId: string,
+  data: NotificationData
+): Promise<void> {
+  await sendNotification({ customerId, trigger: "payment-reminder", data });
+}
+
+export async function notifyEventRegistration(
+  customerId: string,
+  data: NotificationData
+): Promise<void> {
+  await sendNotification({ customerId, trigger: "event-registration", data });
+}
+
+export async function notifyWelcome(
+  customerId: string,
+  data: NotificationData
+): Promise<void> {
+  await sendNotification({ customerId, trigger: "welcome", data });
+}
+```
+
+---
+
+## Storage Interface Methods
+
+Add these methods to your storage interface:
+
+```typescript
+// In your IStorage interface
+interface IStorage {
+  // ... existing methods ...
+
+  // Notification Template operations
+  getNotificationTemplates(): Promise<NotificationTemplate[]>;
+  getNotificationTemplate(id: string): Promise<NotificationTemplate | undefined>;
+  getNotificationTemplateByChannelAndTrigger(
+    channel: NotificationChannel, 
+    trigger: NotificationTrigger
+  ): Promise<NotificationTemplate | undefined>;
+  createNotificationTemplate(template: InsertNotificationTemplate): Promise<NotificationTemplate>;
+  updateNotificationTemplate(id: string, updates: Partial<InsertNotificationTemplate>): Promise<NotificationTemplate>;
+  deleteNotificationTemplate(id: string): Promise<void>;
+  
+  // Notification Settings operations
+  getNotificationSettings(): Promise<NotificationSettings[]>;
+  getNotificationSettingsByChannel(channel: NotificationChannel): Promise<NotificationSettings | undefined>;
+  updateNotificationSettings(id: string, updates: Partial<InsertNotificationSettings>): Promise<NotificationSettings>;
+  
+  // Notification Log operations
+  createNotificationLog(log: InsertNotificationLog): Promise<NotificationLog>;
+  getNotificationLogs(filters?: { customerId?: string; bookingId?: string }): Promise<NotificationLog[]>;
+  updateNotificationLog(id: string, updates: Partial<NotificationLog>): Promise<NotificationLog>;
+}
+```
+
+---
+
+## Storage Implementation
+
+```typescript
+import { eq, desc, and, asc } from "drizzle-orm";
+import { db } from "./db";
+import { 
+  notificationTemplates, 
+  notificationSettings, 
+  notificationLogs,
+  NotificationTemplate,
+  NotificationSettings,
+  NotificationLog,
+  InsertNotificationTemplate,
+  InsertNotificationSettings,
+  InsertNotificationLog,
+  NotificationChannel,
+  NotificationTrigger
+} from "@shared/schema";
+
+// Notification Template operations
+async getNotificationTemplates(): Promise<NotificationTemplate[]> {
+  return await db
+    .select()
+    .from(notificationTemplates)
+    .orderBy(asc(notificationTemplates.channel), asc(notificationTemplates.trigger));
+}
+
+async getNotificationTemplate(id: string): Promise<NotificationTemplate | undefined> {
+  const [template] = await db
+    .select()
+    .from(notificationTemplates)
+    .where(eq(notificationTemplates.id, id));
+  return template;
+}
+
+async getNotificationTemplateByChannelAndTrigger(
+  channel: NotificationChannel, 
+  trigger: NotificationTrigger
+): Promise<NotificationTemplate | undefined> {
+  const [template] = await db
+    .select()
+    .from(notificationTemplates)
+    .where(
+      and(
+        eq(notificationTemplates.channel, channel),
+        eq(notificationTemplates.trigger, trigger),
+        eq(notificationTemplates.isActive, true)
+      )
+    );
+  return template;
+}
+
+async createNotificationTemplate(template: InsertNotificationTemplate): Promise<NotificationTemplate> {
+  const [created] = await db
+    .insert(notificationTemplates)
+    .values(template)
+    .returning();
+  return created;
+}
+
+async updateNotificationTemplate(id: string, updates: Partial<InsertNotificationTemplate>): Promise<NotificationTemplate> {
+  const [updated] = await db
+    .update(notificationTemplates)
+    .set({ ...updates, updatedAt: new Date() })
+    .where(eq(notificationTemplates.id, id))
+    .returning();
+  return updated;
+}
+
+async deleteNotificationTemplate(id: string): Promise<void> {
+  await db.delete(notificationTemplates).where(eq(notificationTemplates.id, id));
+}
+
+// Notification Settings operations
+async getNotificationSettings(): Promise<NotificationSettings[]> {
+  return await db
+    .select()
+    .from(notificationSettings)
+    .orderBy(asc(notificationSettings.channel));
+}
+
+async getNotificationSettingsByChannel(channel: NotificationChannel): Promise<NotificationSettings | undefined> {
+  const [settings] = await db
+    .select()
+    .from(notificationSettings)
+    .where(eq(notificationSettings.channel, channel));
+  return settings;
+}
+
+async updateNotificationSettings(id: string, updates: Partial<InsertNotificationSettings>): Promise<NotificationSettings> {
+  const [updated] = await db
+    .update(notificationSettings)
+    .set({ ...updates, updatedAt: new Date() })
+    .where(eq(notificationSettings.id, id))
+    .returning();
+  return updated;
+}
+
+// Notification Log operations
+async createNotificationLog(log: InsertNotificationLog): Promise<NotificationLog> {
+  const [created] = await db
+    .insert(notificationLogs)
+    .values(log)
+    .returning();
+  return created;
+}
+
+async getNotificationLogs(filters?: { customerId?: string; bookingId?: string }): Promise<NotificationLog[]> {
+  let query = db.select().from(notificationLogs);
+  
+  if (filters?.customerId) {
+    query = query.where(eq(notificationLogs.customerId, filters.customerId));
+  }
+  if (filters?.bookingId) {
+    query = query.where(eq(notificationLogs.bookingId, filters.bookingId));
+  }
+  
+  return await query.orderBy(desc(notificationLogs.sentAt)).limit(100);
+}
+
+async updateNotificationLog(id: string, updates: Partial<NotificationLog>): Promise<NotificationLog> {
+  const [updated] = await db
+    .update(notificationLogs)
+    .set(updates)
+    .where(eq(notificationLogs.id, id))
+    .returning();
+  return updated;
+}
+```
+
+---
+
+## Default Templates (Seed Data)
+
+Use these as your starting templates for a dance application:
+
+### Email Templates
+
+```typescript
+const defaultEmailTemplates = [
+  // Booking Confirmed
+  {
+    channel: "email" as const,
+    trigger: "booking-confirmed" as const,
+    subject: "Booking Confirmed - {{className}}",
+    body: `Dear {{customerName}},
+
+Your booking has been confirmed!
+
+Class: {{className}}
+Date: {{classDate}}
+Time: {{classTime}}
+Instructor: {{instructorName}}
+Location: {{studioName}}, {{studioAddress}}
+Reference: {{bookingReference}}
+
+We look forward to seeing you!
+
+Best regards,
+The Dance Studio Team`,
+    isActive: true,
+  },
+  // Booking Cancelled
+  {
+    channel: "email" as const,
+    trigger: "booking-cancelled" as const,
+    subject: "Booking Cancelled - {{className}}",
+    body: `Dear {{customerName}},
+
+Your booking for {{className}} on {{classDate}} at {{classTime}} has been cancelled.
+
+If you did not request this cancellation, please contact us immediately.
+
+Reference: {{bookingReference}}
+
+Best regards,
+The Dance Studio Team`,
+    isActive: true,
+  },
+  // Booking Reminder
+  {
+    channel: "email" as const,
+    trigger: "booking-reminder" as const,
+    subject: "Reminder: {{className}} Tomorrow!",
+    body: `Dear {{customerName}},
+
+This is a reminder about your upcoming class:
+
+Class: {{className}}
+Date: {{classDate}}
+Time: {{classTime}}
+Instructor: {{instructorName}}
+Location: {{studioName}}, {{studioAddress}}
+
+Please arrive 10 minutes early to prepare. Remember to bring comfortable dance attire!
+
+See you soon!
+
+Best regards,
+The Dance Studio Team`,
+    isActive: true,
+  },
+  // Class Cancelled
+  {
+    channel: "email" as const,
+    trigger: "class-cancelled" as const,
+    subject: "Class Cancelled - {{className}} on {{classDate}}",
+    body: `Dear {{customerName}},
+
+We regret to inform you that {{className}} scheduled for {{classDate}} at {{classTime}} has been cancelled.
+
+We apologize for any inconvenience. Your booking will be credited to your account, or you can reschedule to another class.
+
+Please contact us if you have any questions.
+
+Best regards,
+The Dance Studio Team`,
+    isActive: true,
+  },
+  // Class Rescheduled
+  {
+    channel: "email" as const,
+    trigger: "class-rescheduled" as const,
+    subject: "Class Rescheduled - {{className}}",
+    body: `Dear {{customerName}},
+
+{{className}} has been rescheduled:
+
+New Date: {{classDate}}
+New Time: {{classTime}}
+Instructor: {{instructorName}}
+Location: {{studioName}}, {{studioAddress}}
+
+If you cannot make the new time, please contact us to arrange an alternative or credit.
+
+Best regards,
+The Dance Studio Team`,
+    isActive: true,
+  },
+  // Payment Received
+  {
+    channel: "email" as const,
+    trigger: "payment-received" as const,
+    subject: "Payment Received - Thank You!",
+    body: `Dear {{customerName}},
+
+Thank you for your payment of {{amount}}.
+
+Reference: {{bookingReference}}
+
+Your payment has been successfully processed.
+
+Best regards,
+The Dance Studio Team`,
+    isActive: true,
+  },
+  // Payment Reminder
+  {
+    channel: "email" as const,
+    trigger: "payment-reminder" as const,
+    subject: "Payment Reminder - {{amount}} Due",
+    body: `Dear {{customerName}},
+
+This is a friendly reminder that a payment of {{amount}} is due on {{dueDate}}.
+
+Reference: {{bookingReference}}
+
+Please make your payment at your earliest convenience to avoid any interruption to your classes.
+
+Best regards,
+The Dance Studio Team`,
+    isActive: true,
+  },
+  // Event Registration
+  {
+    channel: "email" as const,
+    trigger: "event-registration" as const,
+    subject: "You're Registered for {{eventName}}!",
+    body: `Dear {{customerName}},
+
+Congratulations! You're registered for {{eventName}} on {{eventDate}}.
+
+Location: {{studioName}}, {{studioAddress}}
+
+More details will be sent closer to the event date. We can't wait to see you there!
+
+Best regards,
+The Dance Studio Team`,
+    isActive: true,
+  },
+  // Welcome
+  {
+    channel: "email" as const,
+    trigger: "welcome" as const,
+    subject: "Welcome to Our Dance Family!",
+    body: `Dear {{customerName}},
+
+Welcome to {{studioName}}! We're thrilled to have you join our dance community.
+
+Browse our class schedule and book your first class today. Whether you're a beginner or experienced dancer, we have something for everyone.
+
+If you have any questions, don't hesitate to reach out.
+
+Let's dance!
+
+Best regards,
+The Dance Studio Team`,
+    isActive: true,
+  },
+];
+```
+
+### WhatsApp Templates
+
+```typescript
+const defaultWhatsAppTemplates = [
+  // Booking Confirmed
+  {
+    channel: "whatsapp" as const,
+    trigger: "booking-confirmed" as const,
+    subject: null,
+    body: `Hi {{customerName}}! Your booking for {{className}} on {{classDate}} at {{classTime}} is confirmed. See you at {{studioName}}! Ref: {{bookingReference}}`,
+    isActive: true,
+  },
+  // Booking Cancelled
+  {
+    channel: "whatsapp" as const,
+    trigger: "booking-cancelled" as const,
+    subject: null,
+    body: `Hi {{customerName}}, your booking for {{className}} on {{classDate}} has been cancelled. Ref: {{bookingReference}}. Contact us if you need help.`,
+    isActive: true,
+  },
+  // Booking Reminder
+  {
+    channel: "whatsapp" as const,
+    trigger: "booking-reminder" as const,
+    subject: null,
+    body: `Reminder: {{customerName}}, you have {{className}} tomorrow at {{classTime}} with {{instructorName}}. Don't forget your dance shoes!`,
+    isActive: true,
+  },
+  // Class Cancelled
+  {
+    channel: "whatsapp" as const,
+    trigger: "class-cancelled" as const,
+    subject: null,
+    body: `Hi {{customerName}}, unfortunately {{className}} on {{classDate}} has been cancelled. We apologize for any inconvenience. Your credit will be applied to your account.`,
+    isActive: true,
+  },
+  // Class Rescheduled
+  {
+    channel: "whatsapp" as const,
+    trigger: "class-rescheduled" as const,
+    subject: null,
+    body: `Hi {{customerName}}, {{className}} has been rescheduled to {{classDate}} at {{classTime}}. Let us know if you can still make it!`,
+    isActive: true,
+  },
+  // Payment Received
+  {
+    channel: "whatsapp" as const,
+    trigger: "payment-received" as const,
+    subject: null,
+    body: `Thank you {{customerName}}! We've received your payment of {{amount}}. Ref: {{bookingReference}}`,
+    isActive: true,
+  },
+  // Payment Reminder
+  {
+    channel: "whatsapp" as const,
+    trigger: "payment-reminder" as const,
+    subject: null,
+    body: `Hi {{customerName}}, reminder: {{amount}} is due on {{dueDate}}. Please make your payment to continue enjoying our classes. Ref: {{bookingReference}}`,
+    isActive: true,
+  },
+  // Event Registration
+  {
+    channel: "whatsapp" as const,
+    trigger: "event-registration" as const,
+    subject: null,
+    body: `Exciting news {{customerName}}! You're registered for {{eventName}} on {{eventDate}}. More details coming soon!`,
+    isActive: true,
+  },
+  // Welcome
+  {
+    channel: "whatsapp" as const,
+    trigger: "welcome" as const,
+    subject: null,
+    body: `Welcome to {{studioName}}, {{customerName}}! We're so excited to have you join our dance family. Book your first class today!`,
+    isActive: true,
+  },
+];
+```
+
+### Default Settings
+
+```typescript
+const defaultNotificationSettings = [
+  {
+    channel: "email" as const,
+    triggerToggles: JSON.stringify({
+      "booking-confirmed": true,
+      "booking-cancelled": true,
+      "booking-reminder": true,
+      "class-cancelled": true,
+      "class-rescheduled": true,
+      "payment-received": true,
+      "payment-reminder": true,
+      "event-registration": true,
+      "welcome": true,
+    }),
+    isActive: true,
+  },
+  {
+    channel: "whatsapp" as const,
+    triggerToggles: JSON.stringify({
+      "booking-confirmed": true,
+      "booking-cancelled": true,
+      "booking-reminder": true,
+      "class-cancelled": true,
+      "class-rescheduled": true,
+      "payment-received": false,
+      "payment-reminder": false,
+      "event-registration": true,
+      "welcome": true,
+    }),
+    isActive: true,
+  },
+];
+```
+
+---
+
+## Template Variables
+
+Use these variables in your templates:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `{{customerName}}` | Customer's name | Sarah Johnson |
+| `{{className}}` | Name of the dance class | Contemporary Dance - Intermediate |
+| `{{classDate}}` | Date of the class | Monday, 15 January 2026 |
+| `{{classTime}}` | Time of the class | 6:00 PM |
+| `{{instructorName}}` | Instructor's name | Emma Williams |
+| `{{bookingReference}}` | Unique booking reference | BK-2026-0001 |
+| `{{amount}}` | Payment amount | R350.00 |
+| `{{dueDate}}` | Payment due date | 20 January 2026 |
+| `{{studioName}}` | Name of the studio | Dance Academy |
+| `{{studioAddress}}` | Studio address | 123 Main Street, Sandton |
+| `{{eventName}}` | Name of event | Annual Dance Showcase |
+| `{{eventDate}}` | Date of event | Saturday, 15 March 2026 |
+
+---
+
+## Usage Examples
+
+### When confirming a booking:
+```typescript
+import { notifyBookingConfirmed } from "./notification-service";
+
+// After creating/confirming booking
+await notifyBookingConfirmed(customer.id, booking.id, {
+  customerName: customer.name,
+  customerEmail: customer.email,
+  customerPhone: customer.phone,
+  className: danceClass.name,
+  classDate: formatDate(booking.date),
+  classTime: formatTime(booking.time),
+  instructorName: instructor.name,
+  bookingReference: booking.reference,
+  studioName: "Dance Academy",
+  studioAddress: "123 Main Street, Sandton",
+});
+```
+
+### When cancelling a class:
+```typescript
+import { notifyClassCancelled } from "./notification-service";
+
+// For each affected booking
+for (const booking of affectedBookings) {
+  await notifyClassCancelled(booking.customerId, {
+    customerName: booking.customerName,
+    customerEmail: booking.customerEmail,
+    customerPhone: booking.customerPhone,
+    className: danceClass.name,
+    classDate: formatDate(danceClass.date),
+    classTime: formatTime(danceClass.time),
+  });
+}
+```
+
+### When receiving a payment:
+```typescript
+import { notifyPaymentReceived } from "./notification-service";
+
+await notifyPaymentReceived(customer.id, booking.id, {
+  customerName: customer.name,
+  customerEmail: customer.email,
+  customerPhone: customer.phone,
+  amount: formatCurrency(payment.amount),
+  bookingReference: booking.reference,
+});
+```
+
+---
+
+## WhatsApp Business API Notes
+
+**Important Limitations:**
+1. For business-initiated messages (first contact), you MUST use Twilio-approved Content Templates
+2. Customers must message your business first for freeform messages to work
+3. Use the Twilio Content Template Builder to create approved templates
+4. The `TWILIO_WHATSAPP_FROM` should be the plain phone number (e.g., `+27110200938`) without `whatsapp:` prefix
+
+**To enable business-initiated WhatsApp:**
+1. Go to Twilio Console > Messaging > Content Template Builder
+2. Create templates for each notification type
+3. Use template SID instead of freeform messages for outbound notifications
+
+---
+
+## Required Packages
+
+```bash
+npm install @sendgrid/mail twilio
+```
+
+---
+
+## API Endpoints
+
+Add these to your routes:
+
+```typescript
+// GET /api/notification-templates - List all templates
+// POST /api/notification-templates - Create template
+// PATCH /api/notification-templates/:id - Update template
+// DELETE /api/notification-templates/:id - Delete template
+
+// GET /api/notification-settings - List all settings
+// PATCH /api/notification-settings/:id - Update settings
+
+// GET /api/notification-logs - List logs (optional ?customerId=xxx or ?bookingId=xxx filter)
+```
+
+---
+
+## Admin UI Components Needed
+
+1. **Notification Settings Page** - Toggle channels on/off, configure per-trigger toggles
+2. **Template Editor** - Create/edit email and WhatsApp templates with variable preview
+3. **Notification Logs Viewer** - View sent notifications, delivery status, errors
+
+---
+
+This document contains everything needed to implement the complete notification system for a dance application. Upload it to your Replit Agent to set up the functionality.
+
