@@ -1,0 +1,27 @@
+Evaluation & Scoring
+
+Automated Bid Scoring Engine - Weight-based scoring system where admins define criteria (price, experience, compliance, BBBEE level, etc.) and the system auto-scores submissions
+Comparative Bid Analysis Dashboard - Side-by-side comparison of vendor bids with visual charts showing strengths/weaknesses
+Vendor Experience
+
+Vendor Document Vault - Persistent storage for commonly required documents (tax clearance, company registration, BBBEE certificates) so vendors don't re-upload for every tender
+Document Expiry Alerts - Notify vendors via WhatsApp/email when their compliance documents are about to expire
+Bid Status Timeline - Visual timeline showing vendors exactly where their submission is in the evaluation process
+Admin & Operations
+
+Evaluation Committee Module - Assign multiple evaluators to a tender, collect independent scores, and aggregate results with conflict resolution
+Tender Calendar - Visual calendar view of all open/closing/upcoming tenders with deadline reminders
+Custom Report Builder - Generate PDF reports for audit purposes (evaluation summaries, compliance reports, award justifications)
+Communication
+
+Automated Notification Workflows - Trigger sequences like: tender published → notify qualified vendors → submission deadline reminder → evaluation complete → award notification
+Vendor Q&A / Clarification System - Structured Q&A where vendors ask questions about tenders and admins respond (visible to all bidders for transparency)
+Analytics & Compliance
+
+Spend Analytics Dashboard - Track procurement spending by category, vendor, region over time
+Vendor Performance Tracking - Rate vendors on past contract delivery, quality, and timeliness to inform future awards
+Audit Trail Export - Export complete audit logs for regulatory review
+Platform Growth
+
+White-Label Portal - Let tenants customize the vendor portal with their own logo, colors, and domain
+Mobile App (PWA) - Progressive Web App for vendors to check statuses and receive push notifications on mobile
