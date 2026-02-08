@@ -691,6 +691,118 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Dashboard drill-down: tenders filtered by status
+  app.get("/api/analytics/drill-down/tenders", async (req, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const tenders = await storage.getTenders();
+      const filtered = status ? tenders.filter((t: any) => t.status?.toLowerCase() === status.toLowerCase()) : tenders;
+      const result = filtered.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        referenceNumber: t.referenceNumber || t.tenderNumber,
+        status: t.status,
+        budget: t.budget,
+        closingDate: t.closingDate,
+        category: t.category,
+        municipality: t.municipality,
+        createdAt: t.createdAt,
+      }));
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch drill-down data" });
+    }
+  });
+
+  // Dashboard drill-down: vendors filtered by status
+  app.get("/api/analytics/drill-down/vendors", async (req, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const vendors = await storage.getVendors();
+      const filtered = status ? vendors.filter((v: any) => v.status?.toLowerCase() === status.toLowerCase()) : vendors;
+      const result = filtered.map((v: any) => ({
+        id: v.id,
+        companyName: v.companyName,
+        tradingName: v.tradingName,
+        contactPerson: v.contactPerson,
+        contactEmail: v.contactEmail,
+        contactPhone: v.contactPhone,
+        status: v.status,
+        bbbeeLevel: v.bbbeeLevel,
+        registrationNumber: v.registrationNumber,
+        createdAt: v.createdAt,
+      }));
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch drill-down data" });
+    }
+  });
+
+  // Dashboard drill-down: compliance details
+  app.get("/api/analytics/drill-down/compliance", async (req, res) => {
+    try {
+      const submissions = await storage.getSubmissions();
+      const vendors = await storage.getVendors();
+      const tenders = await storage.getTenders();
+      const vendorMap = new Map(vendors.map((v: any) => [String(v.id), v.companyName]));
+      const tenderMap = new Map(tenders.map((t: any) => [String(t.id), t.title]));
+
+      const pass = submissions.filter((s: any) => s.complianceResult === "pass");
+      const fail = submissions.filter((s: any) => s.complianceResult === "fail");
+      const pending = submissions.filter((s: any) => !s.complianceResult || s.complianceResult === "pending");
+      res.json({
+        passRate: submissions.length > 0 ? Math.round((pass.length / submissions.length) * 100) : 0,
+        totalChecked: submissions.length,
+        passed: pass.length,
+        failed: fail.length,
+        pending: pending.length,
+        recentResults: submissions.slice(0, 20).map((s: any) => ({
+          id: s.id,
+          vendorName: s.vendorName || vendorMap.get(String(s.vendorId)) || "Unknown Vendor",
+          tenderTitle: s.tenderTitle || tenderMap.get(String(s.tenderId)) || "Unknown Tender",
+          complianceResult: s.complianceResult || "pending",
+          totalScore: s.totalScore,
+          submittedAt: s.submittedAt || s.createdAt,
+        })),
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch compliance drill-down" });
+    }
+  });
+
+  // Dashboard drill-down: submission pipeline
+  app.get("/api/analytics/drill-down/pipeline", async (req, res) => {
+    try {
+      const submissions = await storage.getSubmissions();
+      const vendors = await storage.getVendors();
+      const tenders = await storage.getTenders();
+      const vendorMap = new Map(vendors.map((v: any) => [String(v.id), v.companyName]));
+      const tenderMap = new Map(tenders.map((t: any) => [String(t.id), t.title]));
+
+      const statusCounts: Record<string, number> = {};
+      for (const s of submissions) {
+        const st = (s as any).status || "submitted";
+        statusCounts[st] = (statusCounts[st] || 0) + 1;
+      }
+      const pipeline = Object.entries(statusCounts).map(([status, count]) => ({ status, count }));
+      res.json({
+        total: submissions.length,
+        pipeline,
+        recent: submissions.slice(0, 15).map((s: any) => ({
+          id: s.id,
+          vendorName: s.vendorName || vendorMap.get(String(s.vendorId)) || "Unknown Vendor",
+          tenderTitle: s.tenderTitle || tenderMap.get(String(s.tenderId)) || "Unknown Tender",
+          status: s.status || "submitted",
+          bidAmount: s.bidAmount,
+          totalScore: s.totalScore,
+          submittedAt: s.submittedAt || s.createdAt,
+        })),
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch pipeline drill-down" });
+    }
+  });
+
   // Tender Requirements
   app.get("/api/tenders/:tenderId/requirements", async (req, res) => {
     try {
