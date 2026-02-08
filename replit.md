@@ -81,6 +81,18 @@ A comprehensive evaluation engine supporting:
 ### Vendor Portal System
 The Vendor Portal allows vendors to register, submit bids, and track submissions. It uses WhatsApp OTP for authentication, offers a compliance pre-check, and supports online award acceptance with digital signatures.
 
+### Government API Integrations
+A dedicated showcase of all API integrations available to clients:
+- **SA ID Number Validation**: Real-time Luhn checksum validation with DOB, gender, and citizenship extraction
+- **DHA e-Verification**: Department of Home Affairs integration for identity verification against National Population Register
+- **CIPC Company Verification**: Companies and Intellectual Property Commission integration for company registration, directors, B-BBEE status
+- **Utility Bill Validation**: City of Johannesburg, Eskom, Cape Town, eThekwini municipality utility account verification
+- **Duplicate Vendor Detection**: Cross-reference vendor registrations to detect duplicate entries
+- **Vendor Fraud Risk Scoring**: Automated risk scoring engine analyzing bid patterns and behavioral signals
+- **Geolocation Audit Trail**: GPS coordinate capture for audit and compliance verification
+- **WhatsApp OTP Verification**: Twilio-powered identity confirmation
+- **SendGrid Email Notifications**: Transactional email delivery with custom templates
+
 ### Country Launch Control System
 A phased country-by-country rollout is managed through a control system, allowing activation of full payment capabilities or "enquiry-only" status based on country readiness.
 

@@ -1,0 +1,53 @@
+1. Geolocation Tracking
+
+Store GPS coordinates for key actions like:
+
+Learner registration (where they enrolled from)
+Attendance check-ins (prove they're physically at the training site)
+Stipend collection confirmations
+Provider site visits by auditors
+This helps detect patterns like a learner supposedly attending training in Johannesburg but registering from Cape Town, or 50 learners all "attending" from the same residential address instead of the training facility.
+
+2. Ghost Student / Fraud Prevention
+
+Several layers would help here:
+
+ID number validation — South African ID numbers have a built-in checksum (Luhn algorithm). We can validate the format and check digit immediately on input.
+Duplicate detection — Flag when the same ID number, phone number, or email appears across multiple enrollments or providers.
+Attendance anomaly detection — Flag learners with suspiciously perfect attendance or zero attendance, or providers where all learners have identical attendance patterns.
+Cross-reference checks — Compare learner lists across providers to catch individuals enrolled in multiple programmes simultaneously.
+Risk scoring — Automatically calculate a fraud risk score based on multiple signals (geolocation mismatch, attendance patterns, provider history).
+3. Photo Verification / Selfie Check
+
+This would work as a two-step process:
+
+At registration — Learner takes a selfie that gets stored with their profile alongside their ID document photo.
+At attendance — Learner takes a selfie check-in. The system compares it against their registration photo to confirm identity.
+Liveness detection — Require a specific action (blink, turn head) to prevent someone holding up a printed photo.
+For implementation, this would need a facial recognition API service (like AWS Rekognition, Azure Face API, or a South African provider). The selfie comparison would happen server-side.
+
+4. Department of Home Affairs Integration
+
+This is critical for verifying that:
+
+The ID number belongs to a real person
+The name matches what was provided
+The person is alive (not deceased)
+Age verification (for youth programmes)
+The DHA has an API through the National Population Register. Integration would typically go through an approved verification service provider (like XDS, Experian SA, or Home Affairs' own e-Verification system). We'd build the integration point and call their API during learner registration.
+
+5. Additional Suggestions
+
+Digital signatures — Require learners to digitally sign attendance registers, making it harder for providers to fabricate records.
+SMS/OTP verification — Send a one-time code to the learner's registered phone number during key actions (registration, stipend claim) to confirm identity.
+Provider audit scoring — Track provider compliance history and automatically flag high-risk providers for more frequent audits.
+Biometric attendance — Fingerprint scanning at training sites as an alternative to selfie check-ins.
+Whistleblower portal — Anonymous reporting mechanism for suspected fraud.
+Blockchain audit trail — Immutable record of all transactions and approvals that can't be tampered with after the fact.
+What I can build right now:
+
+SA ID number validation with Luhn checksum
+Geolocation capture on key forms (registration, attendance)
+Duplicate detection and fraud risk scoring
+The integration point/interface for DHA verification (the actual API connection would need credentials from an approved provider)
+Photo upload fields for selfie verification (the facial comparison would need an external AI service)

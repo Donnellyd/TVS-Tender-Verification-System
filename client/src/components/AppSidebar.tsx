@@ -32,6 +32,7 @@ import {
   FileSpreadsheet,
   Palette,
   Smartphone,
+  Plug,
 } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import {
@@ -67,6 +68,7 @@ const mainNavItems = [
   { title: "Document Vault", url: "/vendor-vault", icon: Vault },
   { title: "Tender Q&A", url: "/tender-clarifications", icon: CircleHelp },
   { title: "Tender Calendar", url: "/tender-calendar", icon: CalendarDays },
+  { title: "API Integrations", url: "/api-integrations", icon: Plug },
 ];
 
 const settingsNavItems = [

@@ -48,6 +48,7 @@ import AuditExport from "@/pages/audit-export";
 import ReportBuilder from "@/pages/report-builder";
 import WhiteLabel from "@/pages/white-label";
 import MobilePwa from "@/pages/mobile-pwa";
+import ApiIntegrations from "@/pages/api-integrations";
 import PortalRegister from "@/pages/portal-register";
 import PortalVerify from "@/pages/portal-verify";
 import PortalDashboard from "@/pages/portal-dashboard";
@@ -114,6 +115,7 @@ function AuthenticatedApp() {
             <Route path="/report-builder" component={ReportBuilder} />
             <Route path="/white-label" component={WhiteLabel} />
             <Route path="/mobile-pwa" component={MobilePwa} />
+            <Route path="/api-integrations" component={ApiIntegrations} />
             <Route path="/notifications" component={Dashboard} />
             <Route path="/settings" component={Dashboard} />
             <Route component={NotFound} />
